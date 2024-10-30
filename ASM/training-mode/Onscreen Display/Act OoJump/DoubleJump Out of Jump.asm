@@ -1,9 +1,9 @@
-    # To be inserted at 800cc51c
-    # (.fn ftCo_JumpAerial_IASA in asm/melee/ft/ft_0C88.s)
+    # To be inserted at 800cb400
+    # (.fn ftCo_Jump_IASA in asm/melee/ft/ft_0C88.s)
     .include "../../Globals.s"
 
-    .set playerdata, 30
-    .set player, 29
+    .set playerdata, 31
+    .set player, 30
 
 ##########################################################
 ## 804a1f5c -> 804a1fd4 = Static Stock Icon Text Struct ##
@@ -48,7 +48,7 @@ RedText:
     load r5, MSGCOLOR_RED
 
 DisplayText:
-    li r3, OSD.ActOoJump        # message kind
+    li r3, OSD.Miscellaneous    # message kind / Originally OSD.ActOoJump is natural, but use other ID to show at the same time as Aerial OoJump for fighters with DoubleJump cancel techniques
     lbz r4, 0xC(playerdata)     # message queue
     bl Text
     mflr r6
@@ -61,7 +61,7 @@ DisplayText:
 
 Text:
     blrl
-    .string "Special OoDoubleJump\nFrame %d"
+    .string "DoubleJump OoJump\nFrame %d"
     .align 2
 
 ##############################

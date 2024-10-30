@@ -48,7 +48,7 @@ RedText:
     load r5, MSGCOLOR_RED
 
 DisplayText:
-    mr r3, OSD.ActOoJump        # message kind
+    li r3, OSD.ActOoJump        # message kind
     lbz r4, 0xC(playerdata)     # message queue
     bl Text
     mflr r6
