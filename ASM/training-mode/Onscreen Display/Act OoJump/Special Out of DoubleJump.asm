@@ -1,8 +1,9 @@
-    # To be inserted at 800cb3a8
-    .include "../Globals.s"
+    # To be inserted at 800cc51c
+    # (.fn ftCo_JumpAerial_IASA in asm/melee/ft/ft_0C88.s)
+    .include "../../Globals.s"
 
-    .set playerdata, 31
-    .set player, 30
+    .set playerdata, 30
+    .set player, 29
 
 ##########################################################
 ## 804a1f5c -> 804a1fd4 = Static Stock Icon Text Struct ##
@@ -13,7 +14,6 @@
 
     backup
 
-    mr player, r30
     lwz playerdata, 0x2c(player)
 
     # Check For Interrupt
@@ -48,7 +48,7 @@ RedText:
     load r5, MSGCOLOR_RED
 
 DisplayText:
-    mr r3, 18                   # message kind
+    mr r3, OSD.ActOoJump        # message kind
     lbz r4, 0xC(playerdata)     # message queue
     bl Text
     mflr r6
@@ -61,7 +61,7 @@ DisplayText:
 
 Text:
     blrl
-    .string "Aerial OoJump\nFrame %d"
+    .string "Special OoDoubleJump\nFrame %d"
     .align 2
 
 ##############################
