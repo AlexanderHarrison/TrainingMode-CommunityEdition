@@ -2,8 +2,6 @@
     .include "../../../Globals.s"
     .include "../../../m-ex/Header.s"
 
-    .set FFVar, 0x240C
-
     # Only in Event Mode
     load r3, SceneController
     lbz r3, Scene.CurrentMajor(r3)
