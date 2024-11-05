@@ -1,16 +1,8 @@
     # To be inserted at 800cb354
-    # (.fn ftCo_Jump_IASA in asm/melee/ft/ft_0C88.s)
     .include "../../Globals.s"
 
     .set playerdata, 31
     .set player, 30
-
-##########################################################
-## 804a1f5c -> 804a1fd4 = Static Stock Icon Text Struct ##
-## Is 0x80 long and is zero'd at the start ##
-## of every VS Match ##
-## Store Text Info here ##
-##########################################################
 
     backup
 
