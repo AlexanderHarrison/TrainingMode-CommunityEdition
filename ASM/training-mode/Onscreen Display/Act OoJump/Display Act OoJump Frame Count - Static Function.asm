@@ -30,6 +30,15 @@ CheckForFollower:
     cmpwi r3, 0x1
     beq Exit
 
+CheckForYVelocity:
+    lfs f1, 0x84(playerdata)  # Get Y Velocity
+    lis r3, 0xBF00            # Exit threshold is -0.5 (BF00 0000 is the bit pattern of -0.5)
+    ori r3, r3, 0x0000
+    stw r3, -4(r1)            # store threshold to stack
+    lfs f2, -4(r1)            # load threshold as float from stack
+    fcmpo cr0, f1, f2         # Exit if Y velocity is less than threshold
+    blt Exit
+
 CheckForPreviousFrame:
     lhz r7, TM_FramesinOneASAgo(playerdata)
     cmpwi r7, 0x1
