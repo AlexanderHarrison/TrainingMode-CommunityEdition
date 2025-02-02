@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 XDELTA_PATCH_PATH="$SCRIPT_DIR/patch.xdelta"
@@ -14,18 +14,18 @@ else
     exit 1
 fi
 
-if [[ -z ${1} ]]; then 
+if [[ -z "${1}" ]]; then
     echo "ERROR: ISO was not passed"
     exit 1
 fi
 
-if [[ ! -f ${1} ]]; then 
+if [[ ! -f "${1}" ]]; then
     echo "ERROR: ISO '${1}' is not a valid file"
     exit 1
 fi
 
-xdelta3 -f -d -s ${1} ${XDELTA_PATCH_PATH} TM-CE.iso
-if [[ ! $? -eq 0 ]]; then 
+${XDELTA_CMD} -f -d -s "${1}" "${XDELTA_PATCH_PATH}" TM-CE.iso
+if ! ${XDELTA_CMD} -f -d -s "${1}" "${XDELTA_PATCH_PATH}" TM-CE.iso; then 
     echo "ERROR: The ISO '${1}' is not a valid v1.02 NTSC melee iso"
     exit 1
 fi
