@@ -24,7 +24,6 @@ if [[ ! -f "${1}" ]]; then
     exit 1
 fi
 
-${XDELTA_CMD} -f -d -s "${1}" "${XDELTA_PATCH_PATH}" TM-CE.iso
 if ! ${XDELTA_CMD} -f -d -s "${1}" "${XDELTA_PATCH_PATH}" TM-CE.iso; then 
     echo "ERROR: The ISO '${1}' is not a valid v1.02 NTSC melee iso"
     exit 1
