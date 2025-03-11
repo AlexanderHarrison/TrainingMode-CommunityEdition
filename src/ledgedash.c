@@ -7,7 +7,7 @@ static GXColor tmgbar_blue = {128, 128, 255, 255};
 static GXColor tmgbar_green = {128, 255, 128, 255};
 static GXColor tmgbar_cyan = {52, 202, 228, 255};
 static GXColor tmgbar_red = {255, 128, 128, 255};
-static GXColor tmgbar_indigo = {255, 128, 255, 255};
+static GXColor tmgbar_indigo = {230, 22, 198, 255};
 static GXColor tmgbar_white = {255, 255, 255, 255};
 static GXColor *tmgbar_colors[] = {
     &tmgbar_black,
