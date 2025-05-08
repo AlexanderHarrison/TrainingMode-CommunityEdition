@@ -9,7 +9,7 @@ void ChangeFireSpeedOption(GOBJ *event_menu, int value);
 void ChangeDirection(GOBJ *event_menu, int value);
 void ChangeRandomFireDelayMin(GOBJ *event_menu, int value);
 void ChangeRandomFireDelayMax(GOBJ *event_menu, int value);
-int get_random_laser_delay();
+int GetRandomLaserDelay(void);
 
 enum menu_options {
     OPT_FIRE_SPEED,
@@ -45,53 +45,53 @@ static char *Options_Direction[] = { "Right", "Left" };
 
 static EventOption Options_Main[] = {
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(Options_FireSpeed) / 4,
-        .option_name = "Fire Speed",
+        .name = "Fire Speed",
         .desc = "Change the rate of fire.",
-        .option_values = Options_FireSpeed,
-        .onOptionChange = ChangeFireSpeedOption,
+        .values = Options_FireSpeed,
+        .OnChange = ChangeFireSpeedOption,
     },
     {
-        .option_kind = OPTKIND_INT,
+        .kind = OPTKIND_INT,
         .value_num = 61,
-        .option_val = 0,
-        .option_name = "Min Fire Delay",
+        .val = 0,
+        .name = "Min Fire Delay",
         .desc = "Adjust the minimum number of frames between lasers",
-        .option_values = "%d",
-        .onOptionChange = ChangeRandomFireDelayMin,
+        .values = "%d",
+        .OnChange = ChangeRandomFireDelayMin,
         .disable = false,
     },
     {
-        .option_kind = OPTKIND_INT,
+        .kind = OPTKIND_INT,
         .value_num = 61,
-        .option_val = 20,
-        .option_name = "Max Fire Delay",
+        .val = 20,
+        .name = "Max Fire Delay",
         .desc = "Adjust the maximum number of frames between lasers",
-        .option_values = "%d",
-        .onOptionChange = ChangeRandomFireDelayMax,
+        .values = "%d",
+        .OnChange = ChangeRandomFireDelayMax,
         .disable = false,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(Options_LaserHeight) / 4,
-        .option_name = "Laser Height",
+        .name = "Laser Height",
         .desc = "Change the laser height.",
-        .option_values = Options_LaserHeight,
+        .values = Options_LaserHeight,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(Options_Direction) / 4,
-        .option_name = "Direction",
+        .name = "Direction",
         .desc = "Change which way falco shoots a laser.",
-        .option_values = Options_Direction,
-        .onOptionChange = ChangeDirection,
+        .values = Options_Direction,
+        .OnChange = ChangeDirection,
     },
     {
-        .option_kind = OPTKIND_FUNC,
-        .option_name = "Exit",
+        .kind = OPTKIND_FUNC,
+        .name = "Exit",
         .desc = "Return to the Event Select Screen.",
-        .onOptionSelect = Exit,
+        .OnSelect = Exit,
     },
 };
 
@@ -123,7 +123,7 @@ void Event_Think(GOBJ *menu) {
         new_direction = DIRECTION_LEFT;
     }
     if (new_direction != -1) {
-        Options_Main[OPT_DIRECTION].option_val = new_direction;
+        Options_Main[OPT_DIRECTION].val = new_direction;
         ChangeDirection(Options_Main, new_direction);
     }
 
@@ -147,10 +147,10 @@ void Event_Think(GOBJ *menu) {
     if (ground_actionable && falco_wait_delay == -1) {
         // set wait timer
 
-        int delay_option = Options_Main[OPT_FIRE_SPEED].option_val;
+        int delay_option = Options_Main[OPT_FIRE_SPEED].val;
 
         if (delay_option == FIRE_SPEED_RANDOM)
-            falco_wait_delay = get_random_laser_delay();
+            falco_wait_delay = GetRandomLaserDelay();
         else if (delay_option == FIRE_SPEED_SLOW)
             falco_wait_delay = 20;
         else if (delay_option == FIRE_SPEED_MEDIUM)
@@ -169,7 +169,7 @@ void Event_Think(GOBJ *menu) {
     if (air_actionable && falco_shoot_delay == -1) {
         // set shoot timer
 
-        int delay_option = Options_Main[OPT_LASER_HEIGHT].option_val;
+        int delay_option = Options_Main[OPT_LASER_HEIGHT].val;
 
         if (delay_option == LASER_HEIGHT_RANDOM) {
             falco_shoot_delay = HSD_Randi(4) + 2;
@@ -228,28 +228,28 @@ void ChangeDirection(GOBJ *event_menu, int value) {
 }
 
 void ChangeRandomFireDelayMin(GOBJ *event_menu, int value) {
-    int random_fire_delay_min = Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].option_val;
-    int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].option_val;
+    int random_fire_delay_min = Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].val;
+    int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].val;
 
     // Ensure the min is never greater than the max
     if (random_fire_delay_min > random_fire_delay_max) {
-        Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].option_val = random_fire_delay_min;
+        Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].val = random_fire_delay_min;
     }
 }
 
 void ChangeRandomFireDelayMax(GOBJ *event_menu, int value) {
-    int random_fire_delay_min = Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].option_val;
-    int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].option_val;
+    int random_fire_delay_min = Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].val;
+    int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].val;
 
     // Ensure the max is never less than the min
     if (random_fire_delay_max < random_fire_delay_min) {
-        Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].option_val = random_fire_delay_max;
+        Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].val = random_fire_delay_max;
     }
 }
 
-int get_random_laser_delay() {
-    int random_fire_delay_min = Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].option_val;
-    int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].option_val;
+int GetRandomLaserDelay(void) {
+    int random_fire_delay_min = Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].val;
+    int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].val;
 
     return HSD_Randi(random_fire_delay_max - random_fire_delay_min) + random_fire_delay_min;
 }

@@ -67,93 +67,93 @@ static int LdshOptions_ResetDelayFailure[] = { 60, 20, 1, 1 };
 
 static EventOption LdshOptions_Main[] = {
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_Start) / 4,
-        .option_name = "Starting Position",
+        .name = "Starting Position",
         .desc = "Choose where the fighter is placed \nafter resetting positions.",
-        .option_values = LdshOptions_Start,
-        .onOptionChange = Ledgedash_ToggleStartPosition,
+        .values = LdshOptions_Start,
+        .OnChange = Ledgedash_ToggleStartPosition,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_Reset) / 4,
-        .option_val = OPTRESET_SAME_SIDE,
-        .option_name = "Reset",
+        .val = OPTRESET_SAME_SIDE,
+        .name = "Reset",
         .desc = "Change where the fighter gets placed\nafter a ledgedash attempt.",
-        .option_values = LdshOptions_Reset,
+        .values = LdshOptions_Reset,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_HUD) / 4,
-        .option_name = "HUD",
+        .name = "HUD",
         .desc = "Toggle visibility of the HUD.",
-        .option_values = LdshOptions_HUD,
+        .values = LdshOptions_HUD,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_HUD) / 4,
-        .option_name = "Tips",
+        .name = "Tips",
         .desc = "Toggle the onscreen display of tips.",
-        .option_values = LdshOptions_HUD,
-        .onOptionChange = Tips_Toggle,
+        .values = LdshOptions_HUD,
+        .OnChange = Tips_Toggle,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_CamMode) / 4,
-        .option_name = "Camera Mode",
+        .name = "Camera Mode",
         .desc = "Adjust the camera's behavior.\nIn advanced mode, use C-Stick while holding\nA/B/Y to pan, rotate and zoom, respectively.",
-        .option_values = LdshOptions_CamMode,
-        .onOptionChange = Ledgedash_ChangeCamMode,
+        .values = LdshOptions_CamMode,
+        .OnChange = Ledgedash_ChangeCamMode,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_Inv) / 4,
-        .option_name = "Keep Ledge Invincibility",
+        .name = "Keep Ledge Invincibility",
         .desc = "Keep maximum invincibility while on the ledge\nto practice the ledgedash inputs.",
-        .option_values = LdshOptions_Inv,
+        .values = LdshOptions_Inv,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_GameSpeedText) / sizeof(*LdshOptions_GameSpeedText),
-        .option_name = "Game Speed",
+        .name = "Game Speed",
         .desc = "Change how fast the game engine runs.",
-        .option_values = LdshOptions_GameSpeedText,
+        .values = LdshOptions_GameSpeedText,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_Overlays) / sizeof(*LdshOptions_Overlays),
-        .option_name = "Color Overlays",
+        .name = "Color Overlays",
         .desc = "Show which state you are in with a color overlay.",
-        .option_values = LdshOptions_Overlays,
+        .values = LdshOptions_Overlays,
     },
     {
-        .option_kind = OPTKIND_STRING,
+        .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_ResetDelay) / sizeof(*LdshOptions_ResetDelay),
-        .option_val = 1,
-        .option_name = "Reset Delay",
+        .val = 1,
+        .name = "Reset Delay",
         .desc = "Change how quickly you can start a new ledgedash.",
-        .option_values = LdshOptions_ResetDelay,
+        .values = LdshOptions_ResetDelay,
     },
     {
-        .option_kind = OPTKIND_FUNC,
-        .option_name = "About",
+        .kind = OPTKIND_FUNC,
+        .name = "About",
         .desc = "Ledgedashing is the act of wavedashing onto stage from ledge.\nThis is most commonly done by dropping off ledge, double jumping \nimmediately, and quickly airdodging onto stage. Each input \nis performed quickly after the last, making it difficult and risky.",
     },
     {
-        .option_kind = OPTKIND_FUNC,
-        .option_name = "Exit",
+        .kind = OPTKIND_FUNC,
+        .name = "Exit",
         .desc = "Return to the Event Selection Screen.",
-        .onOptionSelect = Event_Exit,
+        .OnSelect = Event_Exit,
     },
 };
 
 static char **LdshOptions_FrameAdvance[] = {"Off", "On"};
 static EventOption Ldsh_FrameAdvance = {
-    .option_kind = OPTKIND_STRING,
+    .kind = OPTKIND_STRING,
     .value_num = sizeof(LdshOptions_FrameAdvance) / 4,
-    .option_name = "Frame Advance",
+    .name = "Frame Advance",
     .desc = "Enable frame advance. Press to advance one\nframe. Hold to advance at normal speed.",
-    .option_values = LdshOptions_FrameAdvance,
+    .values = LdshOptions_FrameAdvance,
 };
 
 static Shortcut Ldsh_Shortcuts[] = {
@@ -164,7 +164,7 @@ static Shortcut Ldsh_Shortcuts[] = {
 };
 
 static ShortcutList Ldsh_ShortcutList = {
-    .count = ARRAY_LEN(Ldsh_Shortcuts),
+    .count = countof(Ldsh_Shortcuts),
     .list = Ldsh_Shortcuts,
 };
 
@@ -226,7 +226,7 @@ void Event_Think(GOBJ *event)
     if (hmn_data->state_id == ASID_CLIFFWAIT)
         ft_state->fall_timer = 2;
 
-    if (LdshOptions_Main[OPT_INV].option_val == 1) {
+    if (LdshOptions_Main[OPT_INV].val == 1) {
         if (hmn_data->state_id == ASID_CLIFFWAIT) {
             hmn_data->hurt.intang_frames.ledge = 30;
             hmn_data->TM.state_frame = 1;
@@ -245,7 +245,7 @@ void Event_Think(GOBJ *event)
     Ledgedash_HUDThink(event_data, hmn_data);
     Ledgedash_HitLogThink(event_data, hmn);
 
-    if (LdshOptions_Main[OPT_OVERLAYS].option_val == 1) {
+    if (LdshOptions_Main[OPT_OVERLAYS].val == 1) {
         memset(&hmn_data->color[1], 0, sizeof(ColorOverlay));
         memset(&hmn_data->color[0], 0, sizeof(ColorOverlay));
 
@@ -557,7 +557,7 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
 void Ledgedash_HUDCamThink(GOBJ *gobj)
 {
     // if HUD enabled and not paused
-    if (LdshOptions_Main[OPT_HUD].option_val == 0 && Pause_CheckStatus(1) != 2)
+    if (LdshOptions_Main[OPT_HUD].val == 0 && Pause_CheckStatus(1) != 2)
         CObjThink_Common(gobj);
 }
 
@@ -566,7 +566,7 @@ void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
     FighterData *hmn_data = hmn->userdata;
     JOBJ *hud_jobj = event_data->hud.gobj->hsd_object;
 
-    int reset_mode = LdshOptions_Main[OPT_RESET].option_val;
+    int reset_mode = LdshOptions_Main[OPT_RESET].val;
 
     if (reset_mode == OPTRESET_NONE)
         return;
@@ -598,7 +598,7 @@ void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
         Fighter_PlaceOnLedge();
     } else if (event_data->action_state.is_finished) {
         
-        int reset_idx = LdshOptions_Main[OPT_RESETDELAY].option_val;
+        int reset_idx = LdshOptions_Main[OPT_RESETDELAY].val;
         event_data->reset_timer = LdshOptions_ResetDelaySuccess[reset_idx];
         if (event_data->was_successful)
             SFX_Play(303);
@@ -618,7 +618,7 @@ void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
             && hmn_data->TM.state_frame >= 12;
 
         if (dead || missed_airdodge || ledge_action || non_landing_grounded) {
-            int reset_idx = LdshOptions_Main[OPT_RESETDELAY].option_val;
+            int reset_idx = LdshOptions_Main[OPT_RESETDELAY].val;
             event_data->reset_timer = LdshOptions_ResetDelayFailure[reset_idx];
             event_data->was_successful = false;
             SFX_PlayCommon(3);
@@ -818,7 +818,7 @@ void Ledgedash_ChangeCamMode(GOBJ *menu_gobj, int value)
 void Event_Update()
 {
     if (Pause_CheckStatus(1) != 2) {
-        float speed = LdshOptions_GameSpeeds[LdshOptions_Main[OPT_SPEED].option_val];
+        float speed = LdshOptions_GameSpeeds[LdshOptions_Main[OPT_SPEED].val];
         HSD_SetSpeedEasy(speed);
     } else {
         HSD_SetSpeedEasy(1.0);
@@ -830,7 +830,7 @@ void Event_Update()
 void Update_Camera()
 {
     // if camera is set to advanced
-    if (LdshOptions_Main[OPT_CAM].option_val == 3)
+    if (LdshOptions_Main[OPT_CAM].val == 3)
     {
 
         // Get player gobj
@@ -1072,7 +1072,7 @@ void Fighter_PlaceOnLedge(void)
     hmn_data->facing_direction = ledge_dir;
 
     // check starting position
-    switch (LdshOptions_Main[OPT_POS].option_val)
+    switch (LdshOptions_Main[OPT_POS].val)
     {
     case OPTPOS_LEDGE:
     {
@@ -1324,7 +1324,7 @@ void Tips_Toggle(GOBJ *menu_gobj, int value)
 void Tips_Think(LedgedashData *event_data, FighterData *hmn_data)
 {
     // skip if tips turned off
-    if (LdshOptions_Main[OPT_TIPS].option_val == 1)
+    if (LdshOptions_Main[OPT_TIPS].val == 1)
         return;
 
     // check for early fall input in cliffcatch
@@ -1399,7 +1399,7 @@ int Update_CheckPause(void)
     HSD_Pad *pad = PadGet(hmn_data->pad_index, PADGET_MASTER);
 
     // menu paused
-    if (Ldsh_FrameAdvance.option_val == 1)
+    if (Ldsh_FrameAdvance.val == 1)
     {
         // check if unpaused
         if (update->pause_kind != PAUSEKIND_SYS)
@@ -1434,12 +1434,12 @@ int Update_CheckAdvance(void)
     static int stc_advance_btns[] = {HSD_TRIGGER_L, HSD_TRIGGER_Z, HSD_BUTTON_X, HSD_BUTTON_Y, HSD_TRIGGER_R};
     Memcard *memcard = R13_PTR(MEMCARD);
     int btn_idx = memcard->TM_LabFrameAdvanceButton;
-    if (btn_idx >= ARRAY_LEN(stc_advance_btns))
+    if (btn_idx >= countof(stc_advance_btns))
         btn_idx = 0;
     int advance_btn = stc_advance_btns[btn_idx];
 
     // check if holding L
-    if (Ldsh_FrameAdvance.option_val == 1 && (pad->held & advance_btn))
+    if (Ldsh_FrameAdvance.val == 1 && (pad->held & advance_btn))
     {
         timer++;
 

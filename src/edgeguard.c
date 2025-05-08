@@ -99,61 +99,61 @@ static AltText FalcoAltText[] = {
 
 static EventOption Options_Main[] = {
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Hit Strength",
+        .kind = OPTKIND_STRING,
+        .name = "Hit Strength",
         .desc = "How far Fox will be knocked back.",
-        .option_values = Values_HitStrength,
+        .values = Values_HitStrength,
         .value_num = countof(Values_HitStrength),
-        .option_val = 1
+        .val = 1
     },
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Firefox Low",
+        .kind = OPTKIND_STRING,
+        .name = "Firefox Low",
         .desc = "Allow Fox to aim his up special to the ledge.",
-        .option_values = OffOn,
+        .values = OffOn,
         .value_num = 2,
-        .option_val = 1,
+        .val = 1,
     },
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Firefox Mid",
+        .kind = OPTKIND_STRING,
+        .name = "Firefox Mid",
         .desc = "Allow Fox to aim his up special to the stage.",
-        .option_values = OffOn,
+        .values = OffOn,
         .value_num = 2,
     },
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Firefox High",
+        .kind = OPTKIND_STRING,
+        .name = "Firefox High",
         .desc = "Allow Fox to aim his up special high.",
-        .option_values = OffOn,
+        .values = OffOn,
         .value_num = 2,
     },
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Double Jump",
+        .kind = OPTKIND_STRING,
+        .name = "Double Jump",
         .desc = "Allow Fox to double jump.",
-        .option_values = OffOn,
+        .values = OffOn,
         .value_num = 2,
     },
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Illusion",
+        .kind = OPTKIND_STRING,
+        .name = "Illusion",
         .desc = "Allow Fox to side special.",
-        .option_values = OffOn,
+        .values = OffOn,
         .value_num = 2,
     },
     {
-        .option_kind = OPTKIND_STRING,
-        .option_name = "Fast Fall",
+        .kind = OPTKIND_STRING,
+        .name = "Fast Fall",
         .desc = "Allow Fox to fast fall.",
-        .option_values = OffOn,
+        .values = OffOn,
         .value_num = 2,
     },
     {
-        .option_kind = OPTKIND_FUNC,
-        .option_name = "Exit",
+        .kind = OPTKIND_FUNC,
+        .name = "Exit",
         .desc = "Return to the Event Select Screen.",
-        .onOptionSelect = Exit,
+        .OnSelect = Exit,
     },
 };
 static EventMenu Menu_Main = {
@@ -221,21 +221,21 @@ static float Vec2_Length(Vec2 *a) {
     return sqrtf(x*x + y*y);
 }
 
-static bool enabled(int opt_idx) {
-    return Options_Main[opt_idx].option_val;
+static bool Enabled(int opt_idx) {
+    return Options_Main[opt_idx].val;
 }
 
-static int in_hitstun_anim(int state) {
+static int InHitstunAnim(int state) {
     return ASID_DAMAGEHI1 <= state && state <= ASID_DAMAGEFLYROLL;
 }
 
-static int hitstun_ended(GOBJ *fighter) {
+static int HitstunEnded(GOBJ *fighter) {
     FighterData *data = fighter->userdata;
     float hitstun = *((float*)&data->state_var.state_var1);
     return hitstun == 0.0;
 }
 
-static bool air_actionable(GOBJ *fighter) {
+static bool IsAirActionable(GOBJ *fighter) {
     FighterData *data = fighter->userdata;
 
     // ensure airborne
@@ -244,7 +244,7 @@ static bool air_actionable(GOBJ *fighter) {
 
     int state = data->state_id;
 
-    if (in_hitstun_anim(state) && hitstun_ended(fighter))
+    if (InHitstunAnim(state) && HitstunEnded(fighter))
         return true;
 
     return (ASID_JUMPF <= state && state <= ASID_FALLAERIALB)
@@ -310,7 +310,7 @@ void Reset(void) {
     Fighter_HitboxDisableAll(hmn);
     hmn_data->script.script_current = 0;
 
-    KBValues vals = HitStrength_KBRange[Options_Main[OPT_HITSTRENGTH].option_val];
+    KBValues vals = HitStrength_KBRange[Options_Main[OPT_HITSTRENGTH].val];
     
     float mag = vals.mag_min + (vals.mag_max - vals.mag_min) * HSD_Randf();
     
@@ -366,7 +366,7 @@ void Event_Init(GOBJ *gobj) {
         Menu_Main.name = "Falco Edgeguard";
         for (int i = 0; i < countof(FalcoAltText); ++i) {
             AltText *alt = &FalcoAltText[i];
-            Options_Main[i].option_name = alt->name;
+            Options_Main[i].name = alt->name;
             Options_Main[i].desc = alt->desc;
         } 
     }
@@ -393,7 +393,7 @@ void Event_Think(GOBJ *menu) {
     Vec2 vel = { cpu_data->phys.self_vel.X, cpu_data->phys.self_vel.Y };
     int state = cpu_data->state_id;
     int dir = pos.X > 0.f ? -1 : 1;
-    bool can_jump = cpu_data->jump.jumps_used < 2 && enabled(OPT_JUMP);
+    bool can_jump = cpu_data->jump.jumps_used < 2 && Enabled(OPT_JUMP);
     
     Vec2 target_ledge = ledge_positions[pos.X > 0.f];
     
@@ -432,7 +432,7 @@ void Event_Think(GOBJ *menu) {
         illusion_chance = ILLUSION_CHANCE_TO_LEDGE;
     }
     
-    bool can_upb = enabled(OPT_FF_LOW) | enabled(OPT_FF_MID) | enabled(OPT_FF_HIGH);
+    bool can_upb = Enabled(OPT_FF_LOW) | Enabled(OPT_FF_MID) | Enabled(OPT_FF_HIGH);
     
     float upb_distance = cpu_data->kind == FTKIND_FOX ?
         FIREFOX_DISTANCE : FIREBIRD_DISTANCE;
@@ -441,11 +441,11 @@ void Event_Think(GOBJ *menu) {
         // DI inwards
         cpu_data->cpu.lstickX = 90 * dir;
         cpu_data->cpu.lstickY = 90;
-    } else if (air_actionable(cpu)) {
+    } else if (IsAirActionable(cpu)) {
 
         // JUMP
         if (
-            enabled(OPT_JUMP)
+            Enabled(OPT_JUMP)
             && can_jump
             && (
                 // force jump if at end of range
@@ -460,7 +460,7 @@ void Event_Think(GOBJ *menu) {
             
         // ILLUSION
         } else if (
-            enabled(OPT_ILLUSION) && (
+            Enabled(OPT_ILLUSION) && (
                 // force illusion to ledge if no jump and cannot upb
                 (
                     !can_upb && !can_jump
@@ -497,7 +497,7 @@ void Event_Think(GOBJ *menu) {
             
         // FASTFALL
         } else if (
-            enabled(OPT_FASTFALL)
+            Enabled(OPT_FASTFALL)
             && !cpu_data->flags.is_fastfall
             && vel.Y < 0.f
             && HSD_Randi(FASTFALL_CHANCE) == 0
@@ -514,9 +514,9 @@ void Event_Think(GOBJ *menu) {
     } else if (0x161 <= state && state <= 0x162) {
         // compute firefox angle
         
-        int low = enabled(OPT_FF_LOW);
-        int mid = enabled(OPT_FF_MID);
-        int high = enabled(OPT_FF_HIGH);
+        int low = Enabled(OPT_FF_LOW);
+        int mid = Enabled(OPT_FF_MID);
+        int high = Enabled(OPT_FF_HIGH);
         int option_count = low + mid + high;
         int choice = HSD_Randi(option_count);
         

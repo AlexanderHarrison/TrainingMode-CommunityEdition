@@ -7,59 +7,59 @@ static char **LcOptions_HUD[] = {"On", "Off"};
 static EventOption LcOptions_Main[] = {
     // Target
     {
-        .option_kind = OPTKIND_STRING,                                            // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_STRING,                                            // the type of option this is; menu, string list, integers list, etc
         .value_num = sizeof(LcOptions_Barrel) / 4,                                // number of values for this option
-        .option_val = 0,                                                          // value of this option
+        .val = 0,                                                          // value of this option
         .menu = 0,                                                                // pointer to the menu that pressing A opens
-        .option_name = "Target",                                                  // pointer to a string
+        .name = "Target",                                                  // pointer to a string
         .desc = "Enable a target to attack. Use DPad down to\nmanually move it.", // string describing what this option does
-        .option_values = LcOptions_Barrel,                                        // pointer to an array of strings
-        .onOptionChange = 0,
+        .values = LcOptions_Barrel,                                        // pointer to an array of strings
+        .OnChange = 0,
     },
     // HUD
     {
-        .option_kind = OPTKIND_STRING,           // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_STRING,           // the type of option this is; menu, string list, integers list, etc
         .value_num = sizeof(LcOptions_HUD) / 4,  // number of values for this option
-        .option_val = 0,                         // value of this option
+        .val = 0,                         // value of this option
         .menu = 0,                               // pointer to the menu that pressing A opens
-        .option_name = "HUD",                    // pointer to a string
+        .name = "HUD",                    // pointer to a string
         .desc = "Toggle visibility of the HUD.", // string describing what this option does
-        .option_values = LcOptions_HUD,          // pointer to an array of strings
-        .onOptionChange = 0,
+        .values = LcOptions_HUD,          // pointer to an array of strings
+        .OnChange = 0,
     },
     // Tips
     {
-        .option_kind = OPTKIND_STRING,                  // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_STRING,                  // the type of option this is; menu, string list, integers list, etc
         .value_num = sizeof(LcOptions_HUD) / 4,         // number of values for this option
-        .option_val = 0,                                // value of this option
+        .val = 0,                                // value of this option
         .menu = 0,                                      // pointer to the menu that pressing A opens
-        .option_name = "Tips",                          // pointer to a string
+        .name = "Tips",                          // pointer to a string
         .desc = "Toggle the onscreen display of tips.", // string describing what this option does
-        .option_values = LcOptions_HUD,                 // pointer to an array of strings
-        .onOptionChange = Tips_Toggle,
+        .values = LcOptions_HUD,                 // pointer to an array of strings
+        .OnChange = Tips_Toggle,
     },
     // Help
     {
-        .option_kind = OPTKIND_FUNC,                                                                                                                                                                                       // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_FUNC,                                                                                                                                                                                       // the type of option this is; menu, string list, integers list, etc
         .value_num = 0,                                                                                                                                                                                                    // number of values for this option
-        .option_val = 0,                                                                                                                                                                                                   // value of this option
+        .val = 0,                                                                                                                                                                                                   // value of this option
         .menu = 0,                                                                                                                                                                                                         // pointer to the menu that pressing A opens
-        .option_name = "Help",                                                                                                                                                                                             // pointer to a string
+        .name = "Help",                                                                                                                                                                                             // pointer to a string
         .desc = "L-canceling is performed by pressing L, R, or Z up to \n7 frames before landing from a non-special aerial\nattack. This will cut the landing lag in half, allowing \nyou to act sooner after attacking.", // string describing what this option does
-        .option_values = 0,                                                                                                                                                                                                // pointer to an array of strings
-        .onOptionChange = 0,
+        .values = 0,                                                                                                                                                                                                // pointer to an array of strings
+        .OnChange = 0,
     },
     // Exit
     {
-        .option_kind = OPTKIND_FUNC,                     // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_FUNC,                     // the type of option this is; menu, string list, integers list, etc
         .value_num = 0,                                  // number of values for this option
-        .option_val = 0,                                 // value of this option
+        .val = 0,                                 // value of this option
         .menu = 0,                                       // pointer to the menu that pressing A opens
-        .option_name = "Exit",                           // pointer to a string
+        .name = "Exit",                           // pointer to a string
         .desc = "Return to the Event Selection Screen.", // string describing what this option does
-        .option_values = 0,                              // pointer to an array of strings
-        .onOptionChange = 0,
-        .onOptionSelect = Event_Exit,
+        .values = 0,                              // pointer to an array of strings
+        .OnChange = 0,
+        .OnSelect = Event_Exit,
     },
 };
 static EventMenu LabMenu_Main = {
@@ -210,24 +210,24 @@ void LCancel_Think(LCancelData *event_data, FighterData *hmn_data)
             event_data->fastfall_frame++; // increment frames
     }
 
-    if (is_aerial_landing_state(hmn_data->state_id) && hmn_data->state.frame == 0) {
+    if (IsAerialLandingState(hmn_data->state_id) && hmn_data->state.frame == 0) {
         // Record L input timing on the first frame of aerial landing
         event_data->current_l_input_timing = hmn_data->input.timer_trigger_any_ignore_hitlag;
     }
 
     bool has_horizontal_velocity = hmn_data->phys.self_vel.X != 0;
     bool is_success_l_input = event_data->current_l_input_timing < 7;
-    bool was_previous_state_aerial_landing = is_aerial_landing_state(hmn_data->TM.state_prev[0]);
+    bool was_previous_state_aerial_landing = IsAerialLandingState(hmn_data->TM.state_prev[0]);
 
-    bool is_success_l_cancel = is_aerial_landing_state(hmn_data->state_id) && is_success_l_input;
+    bool is_success_l_cancel = IsAerialLandingState(hmn_data->state_id) && is_success_l_input;
 
-    bool is_missed_l_cancel = is_aerial_landing_state(hmn_data->state_id)
+    bool is_missed_l_cancel = IsAerialLandingState(hmn_data->state_id)
         && !is_success_l_input
         // If there's no horizontal velocity then it's not possible to edge cancel and a miss is confirmed
         // OR if the number of landing frames has exceeded the number of frames of the l-cancelled animation then it's considered a miss (even if an edge cancel can still occur)
         && (!has_horizontal_velocity || ((hmn_data->state.frame + 1) > (hmn_data->figatree_curr->frame_num / 2)));
 
-    bool is_edge_cancel = is_edge_cancel_state(hmn_data->state_id)
+    bool is_edge_cancel = IsEdgeCancelState(hmn_data->state_id)
         && was_previous_state_aerial_landing;
 
     if (!event_data->is_current_aerial_counted && (is_success_l_cancel || is_missed_l_cancel || is_edge_cancel))
@@ -287,12 +287,12 @@ void LCancel_Think(LCancelData *event_data, FighterData *hmn_data)
         JOBJ_AddAnimAll(hud_jobj, 0, event_data->lcancel_assets->hudmatanim[is_fail], 0);
         JOBJ_ReqAnimAll(hud_jobj, 0);
     } 
-    else if (!is_aerial_landing_state(hmn_data->state_id) && !is_edge_cancel_state(hmn_data->state_id))
+    else if (!IsAerialLandingState(hmn_data->state_id) && !IsEdgeCancelState(hmn_data->state_id))
     {
         event_data->is_current_aerial_counted = false;
     }
 
-    if (is_auto_cancel_landing(hmn_data))
+    if (IsAutoCancelLanding(hmn_data))
     {
         // state as autocancelled
         Text_SetText(event_data->hud.text_time, 0, "Auto-canceled");
@@ -330,7 +330,7 @@ void LCancel_Think(LCancelData *event_data, FighterData *hmn_data)
             Text_SetText(event_data->hud.text_air, 0, "-");
     }
 
-    if (!can_fastfall && !is_aerial_landing_state(state)) // cant fastfall, reset frames
+    if (!can_fastfall && !IsAerialLandingState(state)) // cant fastfall, reset frames
     {
         event_data->fastfall_frame = 0;
         event_data->is_fastfall = false;
@@ -343,7 +343,7 @@ void LCancel_HUDCamThink(GOBJ *gobj)
 {
 
     // if HUD enabled and not paused
-    if ((LcOptions_Main[1].option_val == 0) && (Pause_CheckStatus(1) != 2))
+    if ((LcOptions_Main[1].val == 0) && (Pause_CheckStatus(1) != 2))
     {
         CObjThink_Common(gobj);
     }
@@ -359,7 +359,7 @@ void Tips_Toggle(GOBJ *menu_gobj, int value)
 void Tips_Think(LCancelData *event_data, FighterData *hmn_data)
 {
 
-    if (LcOptions_Main[2].option_val == 0)
+    if (LcOptions_Main[2].val == 0)
     {
         // shield tip
         if (event_data->tip.shield_isdisp == 0) // if not shown
@@ -452,7 +452,7 @@ void Tips_Think(LCancelData *event_data, FighterData *hmn_data)
             }
 
             // update tip conditions
-            if (is_aerial_landing_state(hmn_data->state_id) && (hmn_data->TM.state_frame == 0) && // is in aerial landing
+            if (IsAerialLandingState(hmn_data->state_id) && (hmn_data->TM.state_frame == 0) && // is in aerial landing
                 ((event_data->current_l_input_timing >= 7) && (event_data->current_l_input_timing <= 15)) &&      // was early for an l-cancel
                 (event_data->tip.fastfall_active == 0))                                           // succeeded the last aerial landing
             {
@@ -510,7 +510,7 @@ void Barrel_Think(LCancelData *event_data)
 {
     GOBJ *barrel_gobj = event_data->barrel_gobj;
 
-    switch (LcOptions_Main[0].option_val)
+    switch (LcOptions_Main[0].val)
     {
     case (0): // off
     {
@@ -740,7 +740,7 @@ int Barrel_OnHurt(GOBJ *barrel_gobj)
     // get event data
     LCancelData *event_data = event_vars->event_gobj->userdata;
 
-    switch (LcOptions_Main[0].option_val)
+    switch (LcOptions_Main[0].val)
     {
     case (0): // off
     {
@@ -778,23 +778,19 @@ int Barrel_OnDestroy(GOBJ *barrel_gobj)
     return 0;
 }
 
-bool is_aerial_landing_state(int state_id) {
-    return (state_id >= ASID_LANDINGAIRN) && (state_id <= ASID_LANDINGAIRLW);
+bool IsAerialLandingState(int state_id) {
+    return ASID_LANDINGAIRN <= state_id && state_id <= ASID_LANDINGAIRLW;
 }
 
-bool is_edge_cancel_state(int state_id) {
-    return (state_id == ASID_FALL || state_id == ASID_OTTOTTO);
+bool IsEdgeCancelState(int state_id) {
+    return state_id == ASID_FALL || state_id == ASID_OTTOTTO;
 }
 
-bool is_auto_cancel_landing(FighterData *hmn_data) {
+bool IsAutoCancelLanding(FighterData *hmn_data) {
     return hmn_data->state_id == ASID_LANDING
         && hmn_data->TM.state_frame == 0                   // if first frame of landing
         && hmn_data->TM.state_prev[0] >= ASID_ATTACKAIRN
         && hmn_data->TM.state_prev[0] <= ASID_ATTACKAIRLW; // came from aerial attack
-}
-
-int min(int a, int b) {
-    return a < b ? a : b;
 }
 
 static void *item_callbacks[] = {

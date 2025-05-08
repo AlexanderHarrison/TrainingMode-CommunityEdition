@@ -18,13 +18,9 @@
 
 /*** Functions ***/
 
-// float fabs(float x)
-// {
-//     if (x < 0)
-//         return -x;
-//     else
-//         return x;
-// }
+static int min(int a, int b) {
+    return a < b ? a : b;
+}
 
 static int Preload_GetEntryIndexFromEntrynum(int entry_num)
 {

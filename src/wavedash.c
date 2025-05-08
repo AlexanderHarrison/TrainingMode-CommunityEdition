@@ -7,69 +7,46 @@ static char **WdOptions_HUD[] = {"On", "Off"};
 static EventOption WdOptions_Main[] = {
     // Target
     {
-        .option_kind = OPTKIND_STRING,                                 // the type of option this is; menu, string list, integers list, etc
-        .value_num = sizeof(WdOptions_Target) / 4,                     // number of values for this option
-        .option_val = 0,                                               // value of this option
-        .menu = 0,                                                     // pointer to the menu that pressing A opens
-        .option_name = "Target",                                       // pointer to a string
-        .desc = "Highlight an area of the stage to wavedash towards.", // string describing what this option does
-        .option_values = WdOptions_Target,                             // pointer to an array of strings
-        .onOptionChange = 0,
+        .kind = OPTKIND_STRING,
+        .value_num = sizeof(WdOptions_Target) / 4,
+        .name = "Target",
+        .desc = "Highlight an area of the stage to wavedash towards.",
+        .values = WdOptions_Target,
     },
     // HUD
     {
-        .option_kind = OPTKIND_STRING,           // the type of option this is; menu, string list, integers list, etc
-        .value_num = sizeof(WdOptions_HUD) / 4,  // number of values for this option
-        .option_val = 0,                         // value of this option
-        .menu = 0,                               // pointer to the menu that pressing A opens
-        .option_name = "HUD",                    // pointer to a string
-        .desc = "Toggle visibility of the HUD.", // string describing what this option does
-        .option_values = WdOptions_HUD,          // pointer to an array of strings
-        .onOptionChange = 0,
+        .kind = OPTKIND_STRING,
+        .value_num = sizeof(WdOptions_HUD) / 4,
+        .name = "HUD",
+        .desc = "Toggle visibility of the HUD.",
+        .values = WdOptions_HUD,
     },
     // Tips
     {
-        .option_kind = OPTKIND_STRING,                  // the type of option this is; menu, string list, integers list, etc
-        .value_num = sizeof(WdOptions_HUD) / 4,         // number of values for this option
-        .option_val = 0,                                // value of this option
-        .menu = 0,                                      // pointer to the menu that pressing A opens
-        .option_name = "Tips",                          // pointer to a string
-        .desc = "Toggle the onscreen display of tips.", // string describing what this option does
-        .option_values = WdOptions_HUD,                 // pointer to an array of strings
-        .onOptionChange = 0,
+        .kind = OPTKIND_STRING,
+        .value_num = sizeof(WdOptions_HUD) / 4,
+        .name = "Tips",
+        .desc = "Toggle the onscreen display of tips.",
+        .values = WdOptions_HUD,
     },
     // Help
     {
-        .option_kind = OPTKIND_FUNC,                                                                                                                                                                                                                               // the type of option this is; menu, string list, integers list, etc
-        .value_num = 0,                                                                                                                                                                                                                                            // number of values for this option
-        .option_val = 0,                                                                                                                                                                                                                                           // value of this option
-        .menu = 0,                                                                                                                                                                                                                                                 // pointer to the menu that pressing A opens
-        .option_name = "Help",                                                                                                                                                                                                                                     // pointer to a string
-        .desc = "A wavedash is performed by air-dodging diagonally down\nas soon you leave the ground from a jump, causing the fighter\nto slide a short distance. This technique will allow you to quickly\nadjust your position and even attack while sliding.", // string describing what this option does
-        .option_values = 0,                                                                                                                                                                                                                                        // pointer to an array of strings
-        .onOptionChange = 0,
+        .kind = OPTKIND_FUNC,
+        .name = "Help",
+        .desc = "A wavedash is performed by air-dodging diagonally down\nas soon you leave the ground from a jump, causing the fighter\nto slide a short distance. This technique will allow you to quickly\nadjust your position and even attack while sliding.",
     },
     // Exit
     {
-        .option_kind = OPTKIND_FUNC,                     // the type of option this is; menu, string list, integers list, etc
-        .value_num = 0,                                  // number of values for this option
-        .option_val = 0,                                 // value of this option
-        .menu = 0,                                       // pointer to the menu that pressing A opens
-        .option_name = "Exit",                           // pointer to a string
-        .desc = "Return to the Event Selection Screen.", // string describing what this option does
-        .option_values = 0,                              // pointer to an array of strings
-        .onOptionChange = 0,
-        .onOptionSelect = Event_Exit,
+        .kind = OPTKIND_FUNC,
+        .name = "Exit",
+        .desc = "Return to the Event Selection Screen.",
+        .OnSelect = Event_Exit,
     },
 };
 static EventMenu WdMenu_Main = {
-    .name = "Wavedash Training",                                // the name of this menu
-    .option_num = sizeof(WdOptions_Main) / sizeof(EventOption), // number of options this menu contains
-    .scroll = 0,                                                // runtime variable used for how far down in the menu to start
-    .state = 0,                                                 // bool used to know if this menu is focused, used at runtime
-    .cursor = 0,                                                // index of the option currently selected, used at runtime
-    .options = &WdOptions_Main,                                 // pointer to all of this menu's options
-    .prev = 0,                                                  // pointer to previous menu, used at runtime
+    .name = "Wavedash Training",
+    .option_num = sizeof(WdOptions_Main) / sizeof(EventOption),
+    .options = &WdOptions_Main,
 };
 
 // Init Function
@@ -79,8 +56,6 @@ void Event_Init(GOBJ *gobj)
     EventDesc *event_desc = event_data->event_desc;
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
-    //GOBJ *cpu = Fighter_GetGObj(1);
-    //FighterData *cpu_data = cpu->userdata;
 
     // theres got to be a better way to do this...
     event_vars = *event_vars_ptr;
@@ -281,7 +256,7 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
                 event_data->wd_succeeded++;
 
                 // check for perfect
-                //if (WdOptions_Main[0].option_val == 0)
+                //if (WdOptions_Main[0].val == 0)
                 {
                     if (event_data->airdodge_frame == ((int)hmn_data->attr.jump_startup_time + 1))
                         SFX_Play(303);
@@ -455,7 +430,7 @@ void Wavedash_HUDCamThink(GOBJ *gobj)
 {
 
     // if HUD enabled and not paused
-    if ((WdOptions_Main[1].option_val == 0) && (Pause_CheckStatus(1) != 2))
+    if ((WdOptions_Main[1].val == 0) && (Pause_CheckStatus(1) != 2))
     {
         CObjThink_Common(gobj);
     }
@@ -508,7 +483,7 @@ void Target_Manager(WavedashData *event_data, FighterData *hmn_data)
 {
     GOBJ *target_gobj = event_data->target.gobj;
 
-    switch (WdOptions_Main[0].option_val)
+    switch (WdOptions_Main[0].val)
     {
     case (0): // off
     {
@@ -810,7 +785,7 @@ Tips_Think(WavedashData *event_data, FighterData *hmn_data)
 {
 
     // only if enabled
-    if (WdOptions_Main[2].option_val == 0)
+    if (WdOptions_Main[2].val == 0)
     {
 
         // shield after wavedash
