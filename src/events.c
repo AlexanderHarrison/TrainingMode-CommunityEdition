@@ -46,8 +46,10 @@ EventDesc Lab = {
     .eventName = "Training Lab\n",
     .eventDescription = "Free practice with\ncomplete control.\n",
     .eventFile = "lab",
+    .jumpTableIndex = -1,
     .eventCSSFile = "TM/labCSS.dat",
     .CSSType = SLCHRKIND_TRAINING,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -90,7 +92,9 @@ EventDesc LCancel = {
     .eventName = "L-Cancel Training\n",
     .eventDescription = "Practice L-Cancelling on\na stationary CPU.\n",
     .eventFile = "lcancel",
+    .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -132,7 +136,9 @@ EventDesc Ledgedash = {
     .eventName = "Ledgedash Training\n",
     .eventDescription = "Practice Ledgedashes!\nUse D-Pad to change ledge.\n",
     .eventFile = "ledgedash",
+    .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -174,7 +180,9 @@ EventDesc Wavedash = {
     .eventName = "Wavedash Training\n",
     .eventDescription = "Practice timing your wavedash,\na fundamental movement technique.\n",
     .eventFile = "wavedash",
+    .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -217,7 +225,9 @@ EventDesc Combo = {
     .eventName = "Combo Training\n",
     .eventDescription = "L+DPad adjusts percent | DPadDown moves CPU\nDPad right/left saves and loads positions.",
     .eventFile = 0,
+    .jumpTableIndex = 2,
     .CSSType = SLCHRKIND_TRAINING,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -259,7 +269,9 @@ EventDesc AttackOnShield = {
     .eventName = "Attack on Shield\n",
     .eventDescription = "Practice attacks on a shielding opponent\nPause to change their OoS option.\n",
     .eventFile = 0,
+    .jumpTableIndex = 1,
     .CSSType = SLCHRKIND_TRAINING,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -301,7 +313,9 @@ EventDesc Reversal = {
     .eventName = "Reversal Training\n",
     .eventDescription = "Practice OoS punishes! DPad left/right\nmoves characters closer and further apart.",
     .eventFile = 0,
+    .jumpTableIndex = 11,
     .CSSType = SLCHRKIND_TRAINING,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -342,7 +356,9 @@ EventDesc SDI = {
     .eventName = "SDI Training\n",
     .eventDescription = "Use Smash DI to escape\nFox's up-air!",
     .eventFile = 0,
+    .jumpTableIndex = 12,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -384,7 +400,9 @@ EventDesc Powershield = {
     .eventName = "Powershield Training\n",
     .eventDescription = "Powershield Falco's laser!",
     .eventFile = "powershield",
+    .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -394,7 +412,6 @@ EventDesc Powershield = {
     .matchData = &Powershield_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
-
 static EventMatchData Ledgetech_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -425,7 +442,9 @@ EventDesc Ledgetech = {
     .eventName = "Ledge-Tech Training\n",
     .eventDescription = "Practice ledge-teching\nFalco's down-smash!",
     .eventFile = 0,
+    .jumpTableIndex = 7,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -466,7 +485,9 @@ EventDesc AmsahTech = {
     .eventName = "Amsah-Tech Training\n",
     .eventDescription = "Taunt to have Marth Up-B,\nthen ASDI down and tech!\n",
     .eventFile = 0,
+    .jumpTableIndex = 0,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -507,7 +528,9 @@ EventDesc ShieldDrop = {
     .eventName = "Shield Drop Training\n",
     .eventDescription = "Counter with a shield-drop aerial!\nDPad left/right moves players apart.",
     .eventFile = 0,
+    .jumpTableIndex = 13,
     .CSSType = SLCHRKIND_TRAINING,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -517,7 +540,22 @@ EventDesc ShieldDrop = {
     .matchData = &ShieldDrop_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
-
+static const EventCharList WaveshineSDI_EventCharList = {
+    .values = {
+        [DOCTOR_MARIO] = 1,
+        [MARIO] = 1,
+        [BOWSER] = 1,
+        [PEACH] = 1,
+        [YOSHI] = 1,
+        [DONKEY_KONG] = 1,
+        [CAPTAIN_FALCON] = 1,
+        [GANONDORF] = 1,
+        [NESS] = 1,
+        [SAMUS] = 1,
+        [ZELDA] = 1,
+        [LINK] = 1
+    }
+};
 static EventMatchData WaveshineSDI_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -548,7 +586,9 @@ EventDesc WaveshineSDI = {
     .eventName = "Waveshine SDI\n",
     .eventDescription = "Use Smash DI to get out\nof Fox's waveshine!",
     .eventFile = 0,
+    .jumpTableIndex = 16,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = &WaveshineSDI_EventCharList,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -589,7 +629,9 @@ EventDesc SlideOff = {
     .eventName = "Slide-Off Training\n",
     .eventDescription = "Use Slide-Off DI to slide off\nthe platform and counter attack!\n",
     .eventFile = 0,
+    .jumpTableIndex = 15,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -630,7 +672,9 @@ EventDesc GrabMash = {
     .eventName = "Grab Mash Training\n",
     .eventDescription = "Mash buttons to escape the grab\nas quickly as possible!\n",
     .eventFile = 0,
+    .jumpTableIndex = 5,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -640,7 +684,12 @@ EventDesc GrabMash = {
     .matchData = &GrabMash_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
-
+static const EventCharList TechCounter_EventCharList = {
+    .values = {
+        [FALCO] = 1,
+        [FOX] = 1
+    }
+};
 static EventMatchData TechCounter_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -671,7 +720,9 @@ EventDesc TechCounter = {
     .eventName = "Ledgetech Marth Counter\n",
     .eventDescription = "Practice ledge-teching\nMarth's counter!\n",
     .eventFile = 0,
+    .jumpTableIndex = 8,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = &TechCounter_EventCharList,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -712,7 +763,9 @@ EventDesc FoxEdgeguard = {
     .eventName = "Fox Edgeguard Training\n",
     .eventDescription = "Finish off the enemy Fox\nafter you hit him offstage!",
     .eventFile = "edgeguard",
+    .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -753,7 +806,9 @@ EventDesc FalcoEdgeguard = {
     .eventName = "Falco Edgeguard Training\n",
     .eventDescription = "Finish off the enemy Falco\nafter you hit him offstage!",
     .eventFile = "edgeguard",
+    .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -763,7 +818,12 @@ EventDesc FalcoEdgeguard = {
     .matchData = &FalcoEdgeguard_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
-
+static const EventCharList SideBSweet_EventCharList = {
+    .values = {
+        [FALCO] = 1,
+        [FOX] = 1
+    }
+};
 static EventMatchData SideBSweet_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -794,7 +854,9 @@ EventDesc SideBSweet = {
     .eventName = "Side-B Sweetspot\n",
     .eventDescription = "Use a sweetspot Side-B to avoid Marth's\ndown-tilt and grab the ledge!",
     .eventFile = 0,
+    .jumpTableIndex = 14,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = &SideBSweet_EventCharList,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -804,7 +866,15 @@ EventDesc SideBSweet = {
     .matchData = &SideBSweet_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
-
+static const EventCharList EscapeSheik_EventCharList = {
+    .values = {
+        [YOSHI] = 1,
+        [CAPTAIN_FALCON] = 1,
+        [FALCO] = 1,
+        [FOX] = 1,
+        [PIKACHU] = 1
+    }
+};
 static EventMatchData EscapeSheik_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -835,7 +905,9 @@ EventDesc EscapeSheik = {
     .eventName = "Escape Sheik Techchase\n",
     .eventDescription = "Practice escaping the tech chase with a\nframe perfect shine or jab SDI!\n",
     .eventFile = 0,
+    .jumpTableIndex = 4,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = &EscapeSheik_EventCharList,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -876,7 +948,9 @@ EventDesc Eggs = {
     .eventName = "Eggs-ercise\n",
     .eventDescription = "Break the eggs! Only strong hits will\nbreak them. DPad down = free practice.",
     .eventFile = 0,
+    .jumpTableIndex = 3,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = true,
     .use_savestates = false,
     .disable_hazards = true,
@@ -886,7 +960,12 @@ EventDesc Eggs = {
     .matchData = &Eggs_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
-
+static const EventCharList Multishine_EventCharList = {
+    .values = {
+        [FALCO] = 1,
+        [FOX] = 1
+    }
+};
 static EventMatchData Multishine_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -917,7 +996,9 @@ EventDesc Multishine = {
     .eventName = "Shined Blind\n",
     .eventDescription = "How many shines can you\nperform in 10 seconds?",
     .eventFile = 0,
+    .jumpTableIndex = 9,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = &Multishine_EventCharList,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -958,7 +1039,9 @@ EventDesc Reaction = {
     .eventName = "Reaction Test\n",
     .eventDescription = "Test your reaction time by pressing\nany button when you see/hear Fox shine!",
     .eventFile = 0,
+    .jumpTableIndex = 10,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -999,7 +1082,9 @@ EventDesc Ledgestall = {
     .eventName = "Under Fire\n",
     .eventDescription = "Ledgestall to remain\ninvincible while the lava rises!\n",
     .eventFile = 0,
+    .jumpTableIndex = 6,
     .CSSType = SLCHRKIND_EVENT,
+    .CSSList = NULL,
     .isSelectStage = false,
     .use_savestates = false,
     .disable_hazards = true,
@@ -1074,6 +1159,35 @@ static EventPage **EventPages[] = {
     &General_Page,
     &Spacie_Page,
 };
+int GetPageEventOffset(int pageID) {
+    int eventIndex = 0;
+    // Add the number of events for each previous page
+    for(int i = 0;i < pageID; i++){
+        EventPage *thisPage = EventPages[i];
+        eventIndex += (thisPage->eventNum) + 1;
+    }
+    return eventIndex;
+}
+int GetJumpTableOffset(int pageID, uint32_t jumpTableAddress, int eventID) {
+    // jumpTableAddress is in r4 and is passed through without being used to simplify asm changes
+    EventPage *thisPage = EventPages[pageID];
+    EventDesc *thisEvent = thisPage->events[eventID];
+    return (thisEvent->jumpTableIndex);
+}
+long* GetEventCharList(int eventID,int pageID) {
+    EventPage *thisPage = EventPages[pageID];
+    EventDesc *thisEvent = thisPage->events[eventID];
+    EventCharList *thisEventCharList = thisEvent->CSSList;
+    static long mask = 0;
+    mask = 0;
+    if (!thisEventCharList) return (long*)-1;
+    for (int i = 0; i < 25; i++) {
+      if (thisEventCharList->values[i]){
+          mask |= CSSID_TABLE[i];
+      }
+    }
+    return &mask;
+}
 
 ////////////////////////
 /// Static Variables ///
@@ -4361,7 +4475,7 @@ char *GetTMCompile()
 }
 int GetPageNum()
 {
-    int pageNum = (sizeof(EventPages) / 4) - 1;
+    int pageNum = (sizeof(EventPages)/sizeof(EventPages[0])) - 1;
     return (pageNum);
 }
 u8 GetCSSType(int page, int event)

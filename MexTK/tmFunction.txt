@@ -22,3 +22,6 @@ OnStartMelee
 OnFileLoad
 Message_Display
 GetScoreType
+GetPageEventOffset
+GetJumpTableOffset
+GetEventCharList

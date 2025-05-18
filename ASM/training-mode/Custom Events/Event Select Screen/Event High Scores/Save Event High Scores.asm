@@ -10,16 +10,18 @@
     .set REG_EventScore, 4
     .set REG_EventScorePointer, 5
     .set REG_PageID, 6
-    .set REG_HighScoreTable, 7
 
     backup
 
-    # Get page ID
-    lbz REG_PageID, CurrentEventPage(REG_EventScorePointer)
-    # Get event's score offset using table
-    bl EventHighScores
-    mflr REG_HighScoreTable
-    lbzx REG_PageID, REG_PageID, REG_HighScoreTable
+    # temp move eventID
+    mr 7, REG_EventID
+    # Get Page ID in r3 for function call
+    lbz r3, CurrentEventPage(REG_EventScorePointer)
+    # Get event's score offset using function
+    rtocbl r12, TM_GetPageEventOffset
+    mr REG_PageID, 3
+    #restore REG_EventID
+    mr REG_EventID, 7
     # Multiply and add to score pointer
     mulli REG_PageID, REG_PageID, 4
     add REG_EventScorePointer, REG_PageID, REG_EventScorePointer
@@ -29,8 +31,6 @@
     # Save score
     stw REG_EventScore, 0x1A70(REG_EventScorePointer)
     b Exit
-
-    EventHighScores
 
 Exit:
     restore

@@ -98,42 +98,6 @@ LegacyEvent:
     EventJumpTable
 
 #######################
-Minigames:
-    bl Eggs
-    bl Multishine
-    bl Reaction
-    bl LedgeStall
-    .long -1
-
-#######################
-GeneralTech:
-    bl 0x0              # Training
-    bl 0x0              # LCancel
-    bl 0x0              # Ledgedash
-    bl 0x0              # Wavedash
-    bl ComboTraining
-    bl AttackOnShield
-    bl Reversal
-    bl SDITraining
-    bl Powershield
-    bl Ledgetech
-    bl AmsahTech
-    bl ShieldDrop
-    bl WaveshineSDI
-    bl SlideOff
-    bl GrabMashOut
-    .long -1
-
-#######################
-SpacieTech:
-    bl LedgetechCounter
-    bl 0x0 # Fox Edgeguard
-    bl 0x0 # Falco Edgeguard
-    bl SideBSweetspot
-    bl EscapeSheik
-    .long -1
-
-#######################
 
 SkipPageList:
     # Get Page Jump Table
@@ -141,13 +105,10 @@ SkipPageList:
     # Get Current Page
     lwz r3, MemcardData(r13)
     lbz r3, CurrentEventPage(r3)
-    mulli r5, r3, 0x4                                   # Each Pointer is 0x4 Long
-    add r4, r4, r5                                      # Get Event's Pointer Address
-    lwz r5, 0x0(r4)                                     # Get bl Instruction
-    rlwinm r5, r5, 0, 6, 29                             # Mask Bits 6-29(the offset)
-    add r4, r4, r5                                      # Gets ASCII Address in r4
+    mr 5, 25
+    rtocbl r12, TM_GetJumpTableOffset
     # Get Event Code Pointer
-    mulli r5, r25, 0x4                                  # Each Pointer is 0x4 Long
+    mulli r5, r3, 0x4                                  # Each Pointer is 0x4 Long
     add r4, r4, r5                                      # Get Event's Pointer Address
     lwz r5, 0x0(r4)                                     # Get bl Instruction
     cmpwi r5, -1
@@ -547,11 +508,6 @@ Eggs_OnCollision:
     load r4, SceneController
     lbz r4, Scene.CurrentMajor(r4)
     cmpwi r4, Scene.EventMode
-    bne Eggs_OnCollisionOriginalFunction
-    # Now check if its eggs-ercise
-    lwz r4, MemcardData(r13)
-    lbz r4, 0x0535(r4)                                  # get event ID
-    cmpwi r4, Event_Eggs
     beq Eggs_OnCollisionStart
 
 Eggs_OnCollisionOriginalFunction:

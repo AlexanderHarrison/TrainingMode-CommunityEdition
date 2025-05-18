@@ -4,203 +4,32 @@
     #######################
     ## Codeset Variables ##
     #######################
-    # Number of Pages
-    .set NumOfPages, 3 -1
 
     # Score Types
     .set KO, 0x0
     .set Time, 0x1
 
     ##################################
-    # Number of Events
-    .set Minigames.NumOfEvents, 5 -1
 
-    .set Event_Eggs, 0
-
-    .macro Event_Eggs_PlayableCharacters
-    .endm
-
-    .set Event_Multishine, 1
-
-    .macro Event_Multishine_PlayableCharacters
-    .byte Event_Multishine
-    .long Falco_CSSID | Fox_CSSID
-    .endm
-
-    .set Event_Reaction, 2
-
-    .macro Event_Reaction_PlayableCharacters
-    .endm
-
-    .set Event_Ledgestall, 3
-
-    .macro Event_Ledgestall_PlayableCharacters
-    .endm
-
-
-
-    # Number of Events
-    .set GeneralTech.NumOfEvents, 13 -1
-
-    # Event List
-    .set Event_Combo, 4
-
-    .macro Event_Combo_PlayableCharacters
-    .endm
-
-    .set Event_AttackOnShield, 5
-
-    .macro Event_AttackOnShield_PlayableCharacters
-    .endm
-
-    .set Event_Reversal, 6
-
-    .macro Event_Reversal_PlayableCharacters
-    .endm
-
-    .set Event_SDI, 7
-
-    .macro Event_SDI_PlayableCharacters
-    .endm
-
-    # Skip one for powershield event
-    .set Event_LedgeTech, 9
-
-    .macro Event_LedgeTech_PlayableCharacters
-    .endm
-
-    .set Event_AmsahTech, 10
-
-    .macro Event_AmsahTech_PlayableCharacters
-    .endm
-
-    .set Event_ShieldDrop, 11
-
-    .macro Event_ShieldDrop_PlayableCharacters
-    .endm
-
-    .set Event_WaveshineSDI, 12
-
-    .macro Event_WaveshineSDI_PlayableCharacters
-    .byte Event_WaveshineSDI
-    .long Doc_CSSID | Mario_CSSID | Bowser_CSSID | Peach_CSSID | Yoshi_CSSID | DK_CSSID | CaptainFalcon_CSSID | Ganondorf_CSSID | Ness_CSSID | Samus_CSSID | Zelda_CSSID | Link_CSSID
-    .endm
-
-    .set Event_SlideOff, 13
-
-    .macro Event_SlideOff_PlayableCharacters
-    .endm
-
-
-    .set Event_GrabMashOut, 14
-
-    .macro Event_GrabMashOut_PlayableCharacters
-    .endm
-
-
-
-    # Number of Events
-    .set SpacieTech.NumOfEvents, 4 -1
-
-    # Event List
-    .set Event_LedgetechCounter, 0
-
-    .macro Event_LedgetechCounter_PlayableCharacters
-    .byte Event_LedgetechCounter
-    .long Fox_CSSID | Falco_CSSID                       # Player Characters
-    .endm
-
-    .set Event_EdgeguardFox, 1
-
-    .macro Event_EdgeguardFox_PlayableCharacters
-    .endm
-
-    .set Event_EdgeguardFalco, 2
-
-    .macro Event_EdgeguardFalco_PlayableCharacters
-    .endm
-
-    .set Event_SideBSweetspot, 3
-
-    .macro Event_SideBSweetspot_PlayableCharacters
-    .byte Event_SideBSweetspot
-    .long Fox_CSSID | Falco_CSSID                       # Player Characters
-    .endm
-
-    .set Event_EscapeSheik, 4
-
-    .macro Event_EscapeSheik_PlayableCharacters
-    .byte Event_EscapeSheik
-    .long Fox_CSSID | Falco_CSSID | CaptainFalcon_CSSID | Yoshi_CSSID | Pikachu_CSSID # Player Characters
-    .endm
-
-##################################
-
-    # This macro will change the order of the pages
-    # Only thing this macro doesn't affect is Load CSS + Preload CPU + high scores. Must change this manually.
     .macro EventJumpTable
-    bl Minigames
-    bl GeneralTech
-    bl SpacieTech
-    .endm
-
-    .macro EventAmountPerPage
-Minigames:
-    .long Minigames.NumOfEvents
-    .align 2
-
-GeneralTech:
-    .long GeneralTech.NumOfEvents
-    .align 2
-
-SpacieTech:
-    .long SpacieTech.NumOfEvents
-    .align 2
-
-    .endm
-
-    .macro EventPlayableCharacters
-Minigames:
-    Event_Eggs_PlayableCharacters
-    Event_Multishine_PlayableCharacters
-    Event_Reaction_PlayableCharacters
-    Event_Ledgestall_PlayableCharacters
-    .byte -1
-    .align 2
-
-GeneralTech:
-    Event_SDI_PlayableCharacters
-    Event_Reversal_PlayableCharacters
-    Event_ShieldDrop_PlayableCharacters
-    Event_AttackOnShield_PlayableCharacters
-    Event_LedgeTech_PlayableCharacters
-    Event_AmsahTech_PlayableCharacters
-    Event_Combo_PlayableCharacters
-    Event_WaveshineSDI_PlayableCharacters
-    Event_SlideOff_PlayableCharacters
-    Event_GrabMashOut_PlayableCharacters
-    .byte -1
-    .align 2
-
-SpacieTech:
-    Event_LedgetechCounter_PlayableCharacters
-    Event_EdgeguardFox_PlayableCharacters
-    Event_EdgeguardFalco_PlayableCharacters
-    Event_SideBSweetspot_PlayableCharacters
-    Event_EscapeSheik_PlayableCharacters
-    .byte -1
-    .align 2
-
-    .endm
-
-    .macro EventHighScores
-EventHighScores:
-    blrl
-    .byte 0
-    .byte Minigames.NumOfEvents +1
-    .byte Minigames.NumOfEvents + GeneralTech.NumOfEvents +1
-    .align 2
-
+    bl AmsahTech
+    bl AttackOnShield
+    bl ComboTraining
+    bl Eggs
+    bl EscapeSheik
+    bl GrabMashOut
+    bl LedgeStall
+    bl Ledgetech
+    bl LedgetechCounter
+    bl Multishine
+    bl Reaction
+    bl Reversal
+    bl SDITraining
+    bl ShieldDrop
+    bl SideBSweetspot
+    bl SlideOff
+    bl WaveshineSDI
+    .long -1
     .endm
 
 ############################
@@ -340,6 +169,9 @@ EventHighScores:
     .set TM_OnFileLoad, TM_OnStartMelee + 0x4
     .set TM_MessageDisplay, TM_OnFileLoad + 0x4
     .set TM_GetScoreType, TM_MessageDisplay + 0x4
+    .set TM_GetPageEventOffset, TM_GetScoreType + 0x4
+    .set TM_GetJumpTableOffset, TM_GetPageEventOffset+ 0x4
+    .set TM_GetEventCharList, TM_GetJumpTableOffset+ 0x4
 
     # TmDt Data Pointers
     .set TM_Data, TM_tmFunction - 0x4
@@ -592,34 +424,6 @@ EventHighScores:
     .set GaW.Int, 0x18
     .set Ganondorf.Int, 0x19
     .set Roy.Int, 0x1A
-
-    # Character CSS Bitflag IDs
-    # (used for TM's lookup tables for displaying CSS icons)
-    .set Doc_CSSID, 0x1
-    .set Mario_CSSID, 0x2
-    .set Luigi_CSSID, 0x4
-    .set Bowser_CSSID, 0x8
-    .set Peach_CSSID, 0x10
-    .set Yoshi_CSSID, 0x20
-    .set DK_CSSID, 0x40
-    .set CaptainFalcon_CSSID, 0x80
-    .set Ganondorf_CSSID, 0x100
-    .set Falco_CSSID, 0x200
-    .set Fox_CSSID, 0x400
-    .set Ness_CSSID, 0x800
-    .set IceClimbers_CSSID, 0x1000
-    .set Kirby_CSSID, 0x2000
-    .set Samus_CSSID, 0x4000
-    .set Zelda_CSSID, 0x8000
-    .set Link_CSSID, 0x10000
-    .set YLink_CSSID, 0x20000
-    .set Pichu_CSSID, 0x40000
-    .set Pikachu_CSSID, 0x80000
-    .set Jigglypuff_CSSID, 0x100000
-    .set Mewtwo_CSSID, 0x200000
-    .set GaW_CSSID, 0x400000
-    .set Marth_CSSID, 0x800000
-    .set Roy_CSSID, 0x1000000
 
     # Stage External IDs
     .set FoD, 0x2

@@ -19,20 +19,13 @@
     # Get pointer page's string array
     bl SkipJumpTable
 
-    ##### Page List #######
-    EventJumpTable
-
 #######################
 
 SkipJumpTable:
-    # Get number of events on this page
-    mflr r4                 # Jump Table Start in r4
-    mulli r5, PageID, 0x4   # Each Pointer is 0x4 Long
-    add r4, r4, r5          # Get Event's Pointer Address
-    lwz r5, 0x0(r4)         # Get bl Instruction
-    rlwinm r5, r5, 0, 6, 29 # Mask Bits 6-29(the offset)
-    add r5, r4, r5          # Gets Address in r4
-    lwz NumOfEvents, 0x0(r5)
+    mr 3, PageID
+    mr 4, EventID
+    rtocbl r12, TM_GetPageEventNum
+    mr NumOfEvents, 3
 
     # Check if already on last event
     cmpw EventID, NumOfEvents
@@ -69,9 +62,6 @@ LessThan9Events:
     li r3, 0
     stw r3, 0x4(r28)
     b UpdateText
-
-    #############################
-    EventAmountPerPage
 
 ##############################
 

@@ -40,7 +40,11 @@
     branchl r12, GObj_AddProc
 
     # Store Whitelist to GObj Data
-    bl GetCharacterList
+    lwz r4, MemcardData(r13)
+    lbz r3, 0x0535(r4)
+    # Get Current Page
+    lbz r4, CurrentEventPage(r4)
+    rtocbl r12, TM_GetEventCharList
     stw r3, 0x0(REG_Data)
     mr REG_Whitelist, r3
     # Check if exists
@@ -174,58 +178,6 @@ ToggleCSSIcon_ToggleSelectedIconsIncLoop:
 ToggleCSSIcon_ToggleSelectedIconsExit:
     restore
     blr
-
-#######################
-GetCharacterList:
-    backup
-
-    .set EventID, 31
-    .set PageID, 30
-
-    # Get Hovered Over Event ID in r23
-    lwz r4, MemcardData(r13)
-    lbz EventID, 0x0535(r4)
-    # Get Current Page
-    lbz PageID, CurrentEventPage(r4)
-
-    # Get pointer page's string array
-    bl GetCharacterList_SkipJumpTable
-    ##### Page List #######
-    EventJumpTable
-
-#######################
-
-GetCharacterList_SkipJumpTable:
-    mflr r4                     # Jump Table Start in r4
-    mulli r5, PageID, 0x4       # Each Pointer is 0x4 Long
-    add r4, r4, r5              # Get Event's Pointer Address
-    lwz r5, 0x0(r4)             # Get bl Instruction
-    rlwinm r5, r5, 0, 6, 29     # Mask Bits 6-29(the offset)
-    add r6, r4, r5              # Gets Address in r6
-
-# Loop Through Whitelisted Events
-GetCharacterList_Loop:
-    lbzu r3, 0x0(r6)
-    extsb r0, r3
-    cmpwi r0, -1
-    beq GetCharacterList_Failed
-    cmpw r3, EventID
-    beq GetCharacterList_Success
-    addi r6, r6, 0x5
-    b GetCharacterList_Loop
-
-GetCharacterList_Failed:
-    li r3, -1
-    b GetCharacterList_Exit
-
-GetCharacterList_Success:
-    addi r3, r6, 1
-
-GetCharacterList_Exit:
-    restore
-    blr
-    # ******************************#
-    EventPlayableCharacters
 
 # ******************************#
 Original:
