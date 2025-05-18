@@ -10,7 +10,8 @@
     .set Time, 0x1
 
     ##################################
-
+    # This must match the order of the
+    # JumpTableIndex in events.h
     .macro EventJumpTable
     bl AmsahTech
     bl AttackOnShield

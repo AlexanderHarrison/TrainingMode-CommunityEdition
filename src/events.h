@@ -76,78 +76,66 @@ typedef struct EventMatchData //r8
     unsigned int timerSeconds : 32;   // 0xFFFFFFFF
     unsigned int timerSubSeconds : 8; // 0xFF
 } EventMatchData;
-
-// Enum order defines bitmask position;
 typedef enum {
-    DOCTOR_MARIO,
-    MARIO,
-    LUIGI,
-    BOWSER,
-    PEACH,
-    YOSHI,
-    DONKEY_KONG,
-    CAPTAIN_FALCON,
-    GANONDORF,
-    FALCO,
-    FOX,
-    NESS,
-    ICE_CLIMBERS,
-    KIRBY,
-    SAMUS,
-    ZELDA,
-    LINK,
-    YOUNG_LINK,
-    PICHU,
-    PIKACHU,
-    JIGGLYPUFF,
-    MEWTWO,
-    GAME_AND_WATCH,
-    MARTH,
-    ROY
-} CharacterIndex;
-static const long CSSID_TABLE[25] = {
-    [DOCTOR_MARIO] = 0x1,
-    [MARIO] = 0x2,
-    [LUIGI] = 0x4,
-    [BOWSER] = 0x8,
-    [PEACH] = 0x10,
-    [YOSHI] = 0x20,
-    [DONKEY_KONG] = 0x40,
-    [CAPTAIN_FALCON] = 0x80,
-    [GANONDORF] = 0x100,
-    [FALCO] = 0x200,
-    [FOX] = 0x400,
-    [NESS] = 0x800,
-    [ICE_CLIMBERS] = 0x1000,
-    [KIRBY] = 0x2000,
-    [SAMUS] = 0x4000,
-    [ZELDA] = 0x8000,
-    [LINK] = 0x10000,
-    [YOUNG_LINK] = 0x20000,
-    [PICHU] = 0x40000,
-    [PIKACHU] = 0x80000,
-    [JIGGLYPUFF] = 0x100000,
-    [MEWTWO] = 0x200000,
-    [GAME_AND_WATCH] = 0x400000,
-    [MARTH] = 0x800000,
-    [ROY] = 0x1000000
-};
-typedef struct EventCharList{
-    long values[25];
-} EventCharList;
+    DOCTOR_MARIO   = 1 << 0,
+    MARIO          = 1 << 1,
+    LUIGI          = 1 << 2,
+    BOWSER         = 1 << 3,
+    PEACH          = 1 << 4,
+    YOSHI          = 1 << 5,
+    DONKEY_KONG    = 1 << 6,
+    CAPTAIN_FALCON = 1 << 7,
+    GANONDORF      = 1 << 8,
+    FALCO          = 1 << 9,
+    FOX            = 1 << 10,
+    NESS           = 1 << 11,
+    ICE_CLIMBERS   = 1 << 12,
+    KIRBY          = 1 << 13,
+    SAMUS          = 1 << 14,
+    ZELDA          = 1 << 15,
+    LINK           = 1 << 16,
+    YOUNG_LINK     = 1 << 17,
+    PICHU          = 1 << 18,
+    PIKACHU        = 1 << 19,
+    JIGGLYPUFF     = 1 << 20,
+    MEWTWO         = 1 << 21,
+    GAME_AND_WATCH = 1 << 22,
+    MARTH          = 1 << 23,
+    ROY            = 1 << 24
+} CharacterBitfield;
+// This order must match the EventJumpTable in Globals.s
+typedef enum {
+    AMSAHTECH,
+    ATTACKONSHIELD,
+    COMBO,
+    EGGS,
+    ESCAPESHIEK,
+    GRABMASH,
+    LEDGESTALL,
+    LEDGETECH,
+    LEDGETECHCOUNTER,
+    MULTISHINE,
+    REACTION,
+    REVERSAL,
+    SDITRAINING,
+    SHIELDDROP,
+    SIDEBSWEET,
+    SLIDEOFF,
+    WAVESHINESDI
+} JumpTableIndex;
 typedef struct EventDesc
 {
     char *eventName;
     char *eventDescription;
     char *eventFile;
-    int jumpTableIndex;
+    JumpTableIndex jumpTableIndex;
     char *eventCSSFile;
     u8 isSelectStage : 1;
     u8 use_savestates : 1;  // enables dpad left and right savestates
     u8 disable_hazards : 1; // removes stage hazards
     u8 force_sopo : 1;
     u8 CSSType;
-    EventCharList *CSSList;
+    long *CSSList;
     u8 scoreType;
     u8 callbackPriority;
     EventMatchData *matchData;
