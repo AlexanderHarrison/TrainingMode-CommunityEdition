@@ -22,10 +22,10 @@
 #######################
 
 SkipJumpTable:
-    mr 3, PageID
-    mr 4, EventID
+    mr r3, PageID
+    mr r4, EventID
     rtocbl r12, TM_GetPageEventNum
-    mr NumOfEvents, 3
+    mr NumOfEvents, r3
 
     # Check if already on last event
     cmpw EventID, NumOfEvents

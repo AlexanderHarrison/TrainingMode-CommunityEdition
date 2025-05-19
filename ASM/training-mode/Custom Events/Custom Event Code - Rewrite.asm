@@ -101,12 +101,14 @@ LegacyEvent:
 
 SkipPageList:
     # Get Page Jump Table
-    mflr r4                                             # Jump Table Start in r4
+    mflr r14                                             # Jump Table Start in r14
+
     # Get Current Page
     lwz r3, MemcardData(r13)
     lbz r3, CurrentEventPage(r3)
-    mr 5, 25
+    mr r4, r25
     rtocbl r12, TM_GetJumpTableOffset
+    mr r4, r14
     # Get Event Code Pointer
     mulli r5, r3, 0x4                                  # Each Pointer is 0x4 Long
     add r4, r4, r5                                      # Get Event's Pointer Address

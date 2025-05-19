@@ -171,8 +171,8 @@
     .set TM_MessageDisplay, TM_OnFileLoad + 0x4
     .set TM_GetScoreType, TM_MessageDisplay + 0x4
     .set TM_GetPageEventOffset, TM_GetScoreType + 0x4
-    .set TM_GetJumpTableOffset, TM_GetPageEventOffset+ 0x4
-    .set TM_GetEventCharList, TM_GetJumpTableOffset+ 0x4
+    .set TM_GetJumpTableOffset, TM_GetPageEventOffset + 0x4
+    .set TM_GetEventCharList, TM_GetJumpTableOffset + 0x4
 
     # TmDt Data Pointers
     .set TM_Data, TM_tmFunction - 0x4

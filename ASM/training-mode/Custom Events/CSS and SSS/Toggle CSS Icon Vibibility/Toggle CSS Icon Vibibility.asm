@@ -40,6 +40,7 @@
     branchl r12, GObj_AddProc
 
     # Store Whitelist to GObj Data
+    # Get Current Event Number
     lwz r4, MemcardData(r13)
     lbz r3, 0x0535(r4)
     # Get Current Page

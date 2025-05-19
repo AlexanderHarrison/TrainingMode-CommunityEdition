@@ -19,9 +19,9 @@
     lbz r3, CurrentEventPage(REG_EventScorePointer)
     # Get event's score offset using function
     rtocbl r12, TM_GetPageEventOffset
-    mr REG_PageID, 3
+    mr REG_PageID, r3
     #restore REG_EventID
-    mr REG_EventID, 7
+    mr REG_EventID, r7
     # Multiply and add to score pointer
     mulli REG_PageID, REG_PageID, 4
     add REG_EventScorePointer, REG_PageID, REG_EventScorePointer

@@ -1121,26 +1121,21 @@ static EventPage **EventPages[] = {
 int GetPageEventOffset(int pageID) {
     int eventIndex = 0;
     // Add the number of events for each previous page
-    for(int i = 0;i < pageID; i++){
+    for(int i = 0; i < pageID; i++) {
         EventPage *thisPage = EventPages[i];
-        eventIndex += (thisPage->eventNum) + 1;
+        eventIndex += thisPage->eventNum + 1;
     }
     return eventIndex;
 }
-int GetJumpTableOffset(int pageID, uint32_t jumpTableAddress, int eventID) {
-    // jumpTableAddress is in r4 and is passed through without being used to simplify asm changes
+int GetJumpTableOffset(int pageID, int eventID) {
     EventPage *thisPage = EventPages[pageID];
     EventDesc *thisEvent = thisPage->events[eventID];
-    return (thisEvent->jumpTableIndex);
+    return thisEvent->jumpTableIndex;
 }
 int GetEventCharList(int eventID,int pageID) {
-    static int mask = 0;
     EventPage *thisPage = EventPages[pageID];
-    EventDesc *thisEvent = thisPage->events[eventID];
-    long *thisEventCharList = thisEvent->CSSList;
-    if (!thisEventCharList) return (int*)-1;
-    mask = thisEventCharList;
-    return &mask;
+    EventDesc *thisEvent = thisPage->events[eventID];;
+    return &thisEvent->CSSList;
 }
 
 ////////////////////////
