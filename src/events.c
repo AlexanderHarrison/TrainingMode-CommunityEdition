@@ -1136,7 +1136,7 @@ int* GetEventCharList(int eventID,int pageID) {
     EventPage *thisPage = EventPages[pageID];
     EventDesc *thisEvent = thisPage->events[eventID];
     long *thisEventCharList = thisEvent->CSSList;
-    if (!thisEventCharList) int (long*)-1;
+    if (!thisEventCharList) return (int*)-1;
     mask = thisEventCharList;
     return &mask;
 }
