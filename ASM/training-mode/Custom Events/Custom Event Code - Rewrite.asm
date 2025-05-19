@@ -648,7 +648,7 @@ Multishine:
     # 1 Player
     lwz r4, 0x0(r29)
     li r3, 0x20
-    stb r3, 0x1(r9)
+    stb r3, 0x1(r4)
 
     # STORE THINK FUNCTION
     bl MultishineLoad
