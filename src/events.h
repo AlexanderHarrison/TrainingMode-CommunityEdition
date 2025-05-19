@@ -1,6 +1,5 @@
 #include "../MexTK/mex.h"
 #include <stdint.h>
-#include <stddef.h>
 
 #define TM_VERSSHORT "TM-CE v1.2 d5"
 #define TM_VERSLONG "TM Community Edition v1.2 d5"
@@ -135,7 +134,7 @@ typedef struct EventDesc
     u8 disable_hazards : 1; // removes stage hazards
     u8 force_sopo : 1;
     u8 CSSType;
-    long *CSSList;
+    int *CSSList;
     u8 scoreType;
     u8 callbackPriority;
     EventMatchData *matchData;
