@@ -1128,13 +1128,11 @@ int GetPageEventOffset(int pageID) {
     return eventIndex;
 }
 int GetJumpTableOffset(int pageID, int eventID) {
-    EventPage *thisPage = EventPages[pageID];
-    EventDesc *thisEvent = thisPage->events[eventID];
+    EventDesc *thisEvent = GetEventDesc(pageID, eventID);
     return thisEvent->jumpTableIndex;
 }
 int GetEventCharList(int eventID,int pageID) {
-    EventPage *thisPage = EventPages[pageID];
-    EventDesc *thisEvent = thisPage->events[eventID];;
+    EventDesc *thisEvent = GetEventDesc(pageID, eventID);
     return &thisEvent->CSSList;
 }
 
