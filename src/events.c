@@ -798,6 +798,48 @@ EventDesc FalcoEdgeguard = {
     .matchData = &FalcoEdgeguard_MatchData,
     .defaultOSD = 0xFFFFFFFF,
 };
+
+static EventMatchData SheikEdgeguard_MatchData = {
+    .timer = MATCH_TIMER_COUNTUP,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .isDisableMusic = true,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = true,
+    .isDisablePause = true,
+    .timerRunOnPause = false,
+    .isHidePauseHUD = true,
+    .isShowLRAStart = true,
+    .isCheckForLRAStart = true,
+    .isShowZRetry = true,
+    .isCheckForZRetry = true,
+    .isShowAnalogStick = true,
+    .isShowScore = false,
+
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .playerKind = -1,
+    .cpuKind = CKIND_SHEIK,
+    .stage = -1,
+    .timerSeconds = 0,
+    .timerSubSeconds = 0,
+};
+EventDesc SheikEdgeguard = {
+    .eventName = "Sheik Edgeguard Training\n",
+    .eventDescription = "Finish off the enemy Falco\nafter you hit him offstage!",
+    .eventFile = "edgeguard",
+    .CSSType = SLCHRKIND_EVENT,
+    .isSelectStage = true,
+    .use_savestates = false,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &SheikEdgeguard_MatchData,
+    .defaultOSD = 0xFFFFFFFF,
+};
+
 static EventMatchData SideBSweet_MatchData = {
     .timer = MATCH_TIMER_COUNTUP,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -1100,6 +1142,7 @@ static EventDesc *Spacie_Events[] = {
     &TechCounter,
     &FoxEdgeguard,
     &FalcoEdgeguard,
+    &SheikEdgeguard,
     &SideBSweet,
     &EscapeSheik,
 };
@@ -1306,6 +1349,12 @@ void EventLoad()
     GObj_AddUserData(gobj, 4, HSD_Free, userdata);
     GObj_AddProc(gobj, cb, pri);
 
+    // Run this event's init function
+    if (evFunction->Event_Init != 0)
+    {
+        evFunction->Event_Init(gobj);
+    }
+
     // store pointer to the event's data
     userdata[0] = event_desc;
 
@@ -1331,12 +1380,6 @@ void EventLoad()
     // disable hazards if enabled
     if (event_desc->disable_hazards == 1)
         Hazards_Disable();
-
-    // Run this event's init function
-    if (evFunction->Event_Init != 0)
-    {
-        evFunction->Event_Init(gobj);
-    }
 
     // Store update function
     HSD_Update *update = stc_hsd_update;

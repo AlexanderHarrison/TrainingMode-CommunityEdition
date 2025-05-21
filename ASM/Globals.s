@@ -12,6 +12,9 @@
     ##################################
     # This must match the order of the
     # JumpTableIndex in events.h
+
+    # This macro will change the order of the pages
+    # Only thing this macro doesn't affect is Load CSS + Preload CPU + high scores. Must change this manually.
     .macro EventJumpTable
     bl AmsahTech
     bl AttackOnShield

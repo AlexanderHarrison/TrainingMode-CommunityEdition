@@ -55,7 +55,7 @@ build/wavedash.dat: src/wavedash.c src/wavedash.h src/events.h
 build/powershield.dat: src/powershield.c src/events.h
 	$(MEX_BUILD) -i "src/powershield.c" -s "evFunction" -dat "build/powershield.dat" -t "MexTK/evFunction.txt"
 
-build/edgeguard.dat: src/edgeguard.c src/events.h
+build/edgeguard.dat: src/edgeguard.c src/edgeguard.h src/events.h
 	$(MEX_BUILD) -i "src/edgeguard.c" -s "evFunction" -dat "build/edgeguard.dat" -t "MexTK/evFunction.txt"
 
 build/codes.gct: Additional\ ISO\ Files/opening.bnr $(ASM_FILES)
