@@ -20,8 +20,19 @@ static inline float Progress(float n, float a, float b) { return (n - a) / (b - 
 
 EventMenu *Event_Menu = &Menu_Main;
 
-static void UpdatePosition(GOBJ *fighter) {
-    FighterData *data = fighter->userdata;
+static void ResetPosition(FighterData *data, int side_idx) {
+    int side = side_idx * 2 - 1;
+    float ledge_x = ledge_positions[side_idx].X - DISTANCE_FROM_LEDGE * side;
+
+    data->facing_direction = -side; 
+    
+    // set phys
+    data->phys.kb_vel.X = 0.f;
+    data->phys.kb_vel.Y = 0.f;
+    data->phys.self_vel.X = 0.f;
+    data->phys.self_vel.Y = 0.f;
+    data->phys.pos.X = ledge_x;
+    data->phys.pos.Y = 0.f;
 
     Vec3 pos = data->phys.pos;
     data->coll_data.topN_Curr = pos;
@@ -187,28 +198,8 @@ static void Reset(void) {
     int side_idx = HSD_Randi(2);
     int side = side_idx * 2 - 1;
 
-    hmn_data->facing_direction = -side; 
-    cpu_data->facing_direction = -side;
-
-    float ledge_x = ledge_positions[side_idx].X - DISTANCE_FROM_LEDGE * side;
-    
-    // set phys
-    cpu_data->phys.kb_vel.X = 0.f;
-    cpu_data->phys.kb_vel.Y = 0.f;
-    cpu_data->phys.self_vel.X = 0.f;
-    cpu_data->phys.self_vel.Y = 0.f;
-    hmn_data->phys.kb_vel.X = 0.f;
-    hmn_data->phys.kb_vel.Y = 0.f;
-    hmn_data->phys.self_vel.X = 0.f;
-    hmn_data->phys.self_vel.Y = 0.f;
-
-    hmn_data->phys.pos.X = ledge_x;
-    hmn_data->phys.pos.Y = 0.f;
-    cpu_data->phys.pos.X = ledge_x;
-    cpu_data->phys.pos.Y = 0.f;
-
-    UpdatePosition(hmn);
-    UpdatePosition(cpu);
+    ResetPosition(hmn_data, side_idx);
+    ResetPosition(cpu_data, side_idx);
     
     cpu_data->jump.jumps_used = 1;
     hmn_data->jump.jumps_used = 1;
