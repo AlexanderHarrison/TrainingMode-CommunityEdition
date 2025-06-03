@@ -258,6 +258,21 @@ static void Reset(void) {
     int hmn_dmg = Options_Main[OPT_MAIN_PERCENT].val;
     hmn_data->dmg.percent = hmn_dmg;
     Fighter_SetHUDDamage(hmn_data->ply, hmn_dmg);
+
+    GOBJ *follower = Fighter_GetSubcharGObj(hmn_data->ply, 1);
+    if (follower) {
+        FighterData * follower_data = follower->userdata;
+        ResetPosition(follower_data, side_idx);
+        Fighter_EnterAerial(follower, ASID_ATTACKAIRB);
+        Fighter_ApplyAnimation(follower, 7, 1, 0);
+        follower_data->state.frame = 7;
+        follower_data->script.script_event_timer = 0;
+        Fighter_SubactionFastForward(follower);
+        Fighter_UpdateStateFrameInfo(follower);
+        Fighter_HitboxDisableAll(follower);
+        follower_data->script.script_current = 0;
+        follower_data->dmg.percent = hmn_dmg;
+    }
 }
 
 static void ChangePlayerPercent(GOBJ *menu_gobj, int dmg) {
