@@ -200,9 +200,6 @@ static void Reset(void) {
 
     ResetPosition(hmn_data, side_idx);
     ResetPosition(cpu_data, side_idx);
-    
-    cpu_data->jump.jumps_used = 1;
-    hmn_data->jump.jumps_used = 1;
 
     // set hmn action state
     Fighter_EnterAerial(hmn, ASID_ATTACKAIRB);
