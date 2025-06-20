@@ -7533,6 +7533,7 @@ LedgetechCounterThink:
     .set MarthState_Wait, 0x0
     .set MarthState_Attacked, 0x1
     .set Timer, 0x2
+    .set TechSuccess, 0x3
 
     backup
 
@@ -7587,6 +7588,10 @@ LedgetechCounterThink_Start:
     bl IsAnyoneDead
     cmpwi r3, 0
     bne LedgetechCounterThink_Restore
+    # Check for tech input first
+    b LedgetechCounterThink_CheckTech
+
+LedgetechCounterThink_CheckTechContinue:
 
     # Switch case for state of event
     lbz r3, EventState(EventData)
@@ -7645,6 +7650,35 @@ LedgetechCounterThink_Recovering:
 
 ############################################
 
+LedgetechCounterThink_CheckTech:
+    # Check current action state
+    lwz r3, 0x10(P1Data)
+    cmpwi r3, ASID_PassiveWall
+    beq LedgetechCounterThink_TechDetected
+    cmpwi r3, ASID_PassiveWallJump
+    beq LedgetechCounterThink_TechDetected
+    # No tech state, continue
+    b LedgetechCounterThink_CheckTechContinue
+
+LedgetechCounterThink_TechDetected:
+    # Check if already processed
+    lbz r4, TechSuccess(EventData)
+    cmpwi r4, 0x1
+    beq LedgetechCounterThink_ExtendTimer
+    # First time detecting tech, set flag
+    li r4, 1
+    stb r4, TechSuccess(EventData)
+    b LedgetechCounterThink_CheckTechContinue
+
+LedgetechCounterThink_ExtendTimer:
+    # Reset Tech Bool and extend timer
+    li r4, 0
+    stb r4, TechSuccess(EventData)
+    li r4, 120
+    stb r4, Timer(EventData)
+    # Continue to main logic
+    b LedgetechCounterThink_CheckTechContinue
+
 LedgetechCounterThink_CheckForTimer:
     # Check Timer
     lbz r3, Timer(EventData)
@@ -7684,6 +7718,7 @@ LedgetechCounterThink_Restore:
     stb r3, MarthState(EventData)
     li r3, 0
     stb r3, Timer(EventData)
+    stb r3, TechSuccess(EventData)
 
 LedgetechCounterThink_Exit:
     restore
