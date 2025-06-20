@@ -262,8 +262,8 @@ EventDesc Powershield = {
     .matchData = &Powershield_MatchData,
 };
 EventDesc Ledgetech = {
-    .eventName = "Ledge-Tech Training\n",
-    .eventDescription = "Practice ledge-teching\nFalco's down-smash!",
+    .eventName = "Ledgetech Training\n",
+    .eventDescription = "Practice ledgeteching\nFalco's down-smash!",
     .eventFile = 0,
     .jumpTableIndex = JUMP_LEDGETECH,
     .CSSType = SLCHRKIND_EVENT,
@@ -374,7 +374,7 @@ EventDesc GrabMash = {
 };
 EventDesc TechCounter = {
     .eventName = "Ledgetech Marth Counter\n",
-    .eventDescription = "Practice ledge-teching\nMarth's counter!\n",
+    .eventDescription = "Practice ledgeteching\nMarth's counter!\n",
     .eventFile = 0,
     .jumpTableIndex = JUMP_LEDGETECHCOUNTER,
     .CSSType = SLCHRKIND_EVENT,
