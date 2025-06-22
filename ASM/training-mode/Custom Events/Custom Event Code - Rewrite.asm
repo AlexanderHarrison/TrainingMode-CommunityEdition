@@ -3532,7 +3532,10 @@ LedgetechLoad:
     bl LedgetechThink
     mflr r3
     li r4, 3                                            # Priority (After Interrupt)
-    li r5, 0                                            # No Option Menu
+    bl LedgetechWindowInfo
+    mflr r5
+    bl LedgetechWindowText
+    mflr r6
     bl CreateEventThinkFunction
 
     b LedgetechLoadExit
@@ -3549,6 +3552,10 @@ LedgetechThink:
     .set P2Data, 29
     .set P2GObj, 30
     .set EventData, 31
+    .set MenuData, 26
+    
+    # Menu Option Offsets
+    .set StageSideOption, MenuData_OptionMenuMemory+0x2 + 0x0
 
     backup
 
@@ -3561,6 +3568,8 @@ LedgetechThink:
     mr P2GObj, r5
     mr P2Data, r6
 
+    lwz MenuData, EventData_MenuDataPointer(EventData)
+
     bl StoreCPUTypeAndZeroInputs
 
     # ON FIRST FRAME
@@ -3570,9 +3579,25 @@ LedgetechThink:
 
     # Clear Inputs
     bl RemoveFirstFrameInputs
-    # Random Side of Stage
+    # Select Side of Stage based on menu option
+    lbz r3, StageSideOption(MenuData)                      # Load stage side option (0=Random, 1=Left, 2=Right)
+    cmpwi r3, 0
+    beq LedgetechThink_RandomSide
+    cmpwi r3, 1
+    beq LedgetechThink_LeftSide
+    cmpwi r3, 2
+    beq LedgetechThink_RightSide
+    # Default to random if invalid value
+LedgetechThink_RandomSide:
     li r3, 2
     branchl r12, HSD_Randi
+    b LedgetechThink_InitPositions
+LedgetechThink_LeftSide:
+    li r3, 0                                                # 0 = Left side
+    b LedgetechThink_InitPositions
+LedgetechThink_RightSide:
+    li r3, 1                                                # 1 = Right side
+LedgetechThink_InitPositions:
     bl Ledgetech_InitializePositions
     # Enter SquatWait
     mr r3, P2GObj
@@ -3662,10 +3687,10 @@ LedgetechSkipFalcoFreze:
     beq Ledgetech_UpdateLedgetechFlags
 
     # Check For Tech
-    lwz r3, 0x10(r27)
-    cmpwi r3, 0xCA
+    lwz r3, 0x10(P1Data)
+    cmpwi r3, ASID_PassiveWall
     beq LedgetechWallTeched
-    cmpwi r3, 0xCB
+    cmpwi r3, ASID_PassiveWallJump
     beq LedgetechWallTeched
     b Ledgetech_UpdateLedgetechFlags
 
@@ -3682,10 +3707,10 @@ LedgetechWallTeched:
 
 Ledgetech_UpdateLedgetechFlags:
     # Check If Still Ledgeteching
-    lwz r3, 0x10(r27)
-    cmpwi r3, 0xCA
+    lwz r3, 0x10(P1Data)
+    cmpwi r3, ASID_PassiveWall
     beq LedgetechUpdateScore
-    cmpwi r3, 0xCB
+    cmpwi r3, ASID_PassiveWallJump
     beq LedgetechUpdateScore
     # Not Ledgeteching, Remove Gatekeeper Flag
     li r3, 0
@@ -3775,9 +3800,25 @@ LedgetechRestoreState:
     # Restore State
     addi r3, EventData, EventData_SaveStateStruct
     bl SaveState_Load
-    # Random Side of Stage
+    # Select Side of Stage based on menu option
+    lbz r3, StageSideOption(MenuData)                      # Load stage side option (0=Random, 1=Left, 2=Right)
+    cmpwi r3, 0
+    beq LedgetechRestore_RandomSide
+    cmpwi r3, 1
+    beq LedgetechRestore_LeftSide
+    cmpwi r3, 2
+    beq LedgetechRestore_RightSide
+    # Default to random if invalid value
+LedgetechRestore_RandomSide:
     li r3, 2
     branchl r12, HSD_Randi
+    b LedgetechRestore_InitPositions
+LedgetechRestore_LeftSide:
+    li r3, 0                                                # 0 = Left side
+    b LedgetechRestore_InitPositions
+LedgetechRestore_RightSide:
+    li r3, 1                                                # 1 = Right side
+LedgetechRestore_InitPositions:
     bl Ledgetech_InitializePositions
     # Enter SquatWait
     mr r3, P2GObj
@@ -3932,6 +3973,40 @@ Ledgetech_InitializePositions_SkipGroundCorrection:
 LedgetechLoadExit:
     restore
     blr
+
+#################################
+## Ledgetech WINDOW INFO FUNCT ##
+#################################
+LedgetechWindowInfo:
+    blrl
+    # amount of options, amount of options in each window
+    .long 0x00020000                                    # 1 window, Stage Side has 3 options
+
+#################################
+## Ledgetech WINDOW TEXT FUNCT ##
+#################################
+LedgetechWindowText:
+    blrl
+
+#######################
+## Stage Side Option ##
+#######################
+
+    # Window Title
+    .string "Stage Side"
+    .align 2
+
+    # Option 1
+    .string "Random"
+    .align 2
+
+    # Option 2
+    .string "Left"
+    .align 2
+
+    # Option 3
+    .string "Right"
+    .align 2
 
 ###################################################
 
