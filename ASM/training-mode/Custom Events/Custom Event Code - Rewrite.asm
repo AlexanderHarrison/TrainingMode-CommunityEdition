@@ -7505,14 +7505,16 @@ LedgetechCounterLoad:
     bl LedgetechCounterThink
     mflr r3
     li r4, 3                                            # Priority (After EnvCOllision)
-    li r5, 0
+    bl LedgetechCounterWindowInfo
+    mflr r5
+    bl LedgetechCounterWindowText
+    mflr r6
     bl CreateEventThinkFunction
     b LedgetechCounterThink_Exit
 
 ###################################
 ## Ledgetech Counter THINK FUNCT ##
 ###################################
-
 LedgetechCounterThink:
     blrl
 
@@ -7534,6 +7536,9 @@ LedgetechCounterThink:
     .set MarthState_Attacked, 0x1
     .set Timer, 0x2
     .set TechSuccess, 0x3
+    
+    # Menu Option Offsets
+    .set StageSideOption, MenuData_OptionMenuMemory+0x2 + 0x0
 
     backup
 
@@ -7557,9 +7562,25 @@ LedgetechCounterThink:
     bl CheckIfFirstFrame
     cmpwi r3, 0x0
     beq LedgetechCounterThink_Start
-    # Random Side of Stage
+    # Select Side of Stage based on menu option
+    lbz r3, StageSideOption(MenuData)                      # Load stage side option (0=Random, 1=Left, 2=Right)
+    cmpwi r3, 0
+    beq LedgetechCounterThink_RandomSide
+    cmpwi r3, 1
+    beq LedgetechCounterThink_LeftSide
+    cmpwi r3, 2
+    beq LedgetechCounterThink_RightSide
+    # Default to random if invalid value
+LedgetechCounterThink_RandomSide:
     li r3, 2
     branchl r12, HSD_Randi
+    b LedgetechCounterThink_InitPositions
+LedgetechCounterThink_LeftSide:
+    li r3, 0                                                # 0 = Left side
+    b LedgetechCounterThink_InitPositions
+LedgetechCounterThink_RightSide:
+    li r3, 1                                                # 1 = Right side
+LedgetechCounterThink_InitPositions:
     bl Ledgetech_InitializePositions
     # Move Marth forward a bit
     lfs f1, 0x2C(P2Data)
@@ -7694,9 +7715,25 @@ LedgetechCounterThink_Restore:
     # Load State
     addi r3, EventData, EventData_SaveStateStruct
     bl SaveState_Load
-    # Random Side of Stage
+    # Select Side of Stage based on menu option
+    lbz r3, StageSideOption(MenuData)                      # Load stage side option (0=Random, 1=Left, 2=Right)
+    cmpwi r3, 0
+    beq LedgetechCounterThink_RestoreRandomSide
+    cmpwi r3, 1
+    beq LedgetechCounterThink_RestoreLeftSide
+    cmpwi r3, 2
+    beq LedgetechCounterThink_RestoreRightSide
+    # Default to random if invalid value
+LedgetechCounterThink_RestoreRandomSide:
     li r3, 2
     branchl r12, HSD_Randi
+    b LedgetechCounterThink_RestoreInitPositions
+LedgetechCounterThink_RestoreLeftSide:
+    li r3, 0                                                # 0 = Left side
+    b LedgetechCounterThink_RestoreInitPositions
+LedgetechCounterThink_RestoreRightSide:
+    li r3, 1                                                # 1 = Right side
+LedgetechCounterThink_RestoreInitPositions:
     bl Ledgetech_InitializePositions
     # Move Marth forward a bit
     lfs f1, 0x2C(P2Data)
@@ -7730,6 +7767,42 @@ LedgetechCounter_Constants:
     .float 33                                           # Mm away from fox to init counter
     .float 5                                            # Mm to move marth forward after placing on ledge
     .float -15                                          # Mm to move spacies down after placing in the air
+
+######
+
+###########################################
+## Ledgetech Counter WINDOW INFO FUNCT ##
+###########################################
+LedgetechCounterWindowInfo:
+    blrl
+    # amount of options, amount of options in each window
+    .long 0x00020000                                    # 1 window, Stage Side has 3 options
+
+###########################################
+## Ledgetech Counter WINDOW TEXT FUNCT ##
+###########################################
+LedgetechCounterWindowText:
+    blrl
+
+#############################
+## Stage Side Option ##
+#############################
+
+    # Window Title
+    .string "Stage Side"
+    .align 2
+
+    # Option 1
+    .string "Random"
+    .align 2
+
+    # Option 2
+    .string "Left"
+    .align 2
+
+    # Option 3
+    .string "Right"
+    .align 2
 
 ######
 
