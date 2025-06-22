@@ -7609,6 +7609,12 @@ LedgetechCounterThink_Start:
     bl IsAnyoneDead
     cmpwi r3, 0
     bne LedgetechCounterThink_Restore
+
+    # D-Pad Left Restores State
+    lwz r3, 0x668(P1Data)
+    rlwinm. r0, r3, 0, 31, 31
+    bne LedgetechCounterThink_Restore
+
     # Check for tech input first
     b LedgetechCounterThink_CheckTech
 
