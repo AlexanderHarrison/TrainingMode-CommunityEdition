@@ -7611,6 +7611,8 @@ LedgetechCounterThink:
     .set MarthState_Attacked, 0x1
     .set Timer, 0x2
     .set TechSuccess, 0x3
+    .set CapturedHitlagFrames, 0x4
+    .set TechInputDuringCounterHitlagMessageDisplayed, 0x5
     
     # Menu Option Offsets
     .set StageSideOption, MenuData_OptionMenuMemory+0x2 + 0x0
@@ -7694,6 +7696,10 @@ LedgetechCounterThink_Start:
     b LedgetechCounterThink_CheckTech
 
 LedgetechCounterThink_CheckTechContinue:
+
+    # Check for counter tech input
+    mr r3, EventData
+    bl LedgetechCounterThink_CheckTechInputDuringCounterHitlag
 
     # Switch case for state of event
     lbz r3, EventState(EventData)
@@ -7837,8 +7843,114 @@ LedgetechCounterThink_RestoreInitPositions:
     li r3, 0
     stb r3, Timer(EventData)
     stb r3, TechSuccess(EventData)
+    stb r3, TechInputDuringCounterHitlagMessageDisplayed(EventData)                         # Clear message displayed flag
 
 LedgetechCounterThink_Exit:
+    restore
+    blr
+
+##################################
+## Check Counter Input Function ##
+##################################
+LedgetechCounterThink_CheckTechInputDuringCounterHitlag:
+    backup
+    
+    mr EventData, r3
+    
+    bl GetAllPlayerPointers
+    mr P1GObj, r3
+    mr P1Data, r4
+    mr P2GObj, r5
+    mr P2Data, r6
+    
+    # Check if Marth is in Counter action state (0x172 = SpecialLwHit)
+    lwz r3, 0x10(P2Data)
+    cmpwi r3, 0x172
+    bne LedgetechCounterThink_CheckTechInputDuringCounterHitlag_Exit
+    
+    # Check if it's frame 1 of the Counter state
+    lhz r3, TM_FramesinCurrentAS(P2Data) 
+    cmpwi r3, 0x0
+    bne LedgetechCounterThink_CheckTechInputDuringCounterHitlag_Exit
+    
+    # Check for tech input (Tech Input During Counter Hitlag makes tech fail and be lockout, so this means failure of ledgetech)
+    lwz r3, 0x668(P1Data)                                  # instant buttons
+    andi. r4, r3, 0x0060                                   # L, R buttons (0x0040 | 0x0020)
+    beq LedgetechCounterThink_CheckTechInputDuringCounterHitlag_Exit
+
+    # Check if message is already displayed
+    lbz r4, TechInputDuringCounterHitlagMessageDisplayed(EventData)
+    cmpwi r4, 1
+    beq LedgetechCounterThink_CheckTechInputDuringCounterHitlag_Exit        # Already displaying, don't capture again
+
+    # Capture hitlag frames at the moment of input (only first time)
+    lfs f1, 0x195c(P1Data)                                 # load hitlag frames as float
+    fctiwz f1, f1                                          # convert to integer
+    stfd f1, -0x8(r1)                                      # store to stack
+    lwz r3, -0x4(r1)                                       # load integer part (hitlag remaining)
+    # Calculate 12 - hitlag_remaining
+    li r4, 12                                              # load constant 12
+    subf r3, r3, r4                                        # r3 = 12 - hitlag_remaining
+    stb r3, CapturedHitlagFrames(EventData)                # store calculated value
+    
+    # Set message displayed flag
+    li r3, 1
+    stb r3, TechInputDuringCounterHitlagMessageDisplayed(EventData)
+    
+    # Display message
+    mr r3, EventData
+    bl LedgetechCounter_DisplayTechInputDuringCounterHitlagMessage
+
+LedgetechCounterThink_CheckTechInputDuringCounterHitlag_Exit:
+    restore
+    blr
+
+###########################################
+## Display Counter Tech Message Function ##
+###########################################
+LedgetechCounter_DisplayTechInputDuringCounterHitlagMessage:
+    backup
+    
+    # Store EventData parameter from r3
+    mr EventData, r3                                       # Use defined EventData register
+    
+    # Re-acquire player data pointers
+    bl GetAllPlayerPointers
+    mr P1GObj, r3                                          # Use defined register names
+    mr P1Data, r4
+    mr P2GObj, r5
+    mr P2Data, r6
+    
+    # Create text structure
+    mr r3, P1Data                                          # p1 data
+    li r4, 120                                             # text timeout (2 seconds)
+    li r5, 0                                               # Area to Display (0-2)
+    li r6, OSD.Miscellaneous                               # Window ID
+    branchl r12, TextCreateFunction
+    mr r22, r3                                             # backup text pointer
+    
+    # Set text color to red
+    load r3, 0xffa2baff                                    # Red text color
+    stw r3, 0x30(r22)                                      # store color to text structure
+    
+    # Create Text 1
+    mr r3, r22                                             # text pointer
+    bl LedgetechCounter_TechInputDuringCounterHitlag_TopText
+    mflr r4
+    lfs f1, -0x37B4(rtoc)                                  # default text X/Y
+    lfs f2, -0x37B4(rtoc)                                  # default text X/Y
+    branchl r12, Text_InitializeSubtext
+    
+    # Create Text 2 with saved hitlag frame parameter
+    mr r3, r22                                             # text pointer
+    bl LedgetechCounter_TechInputDuringCounterHitlag_BottomText
+    mflr r4                                                # text format
+    lfs f1, -0x37B4(rtoc)                                  # default text X/Y
+    lfs f2, -0x37B0(rtoc)                                  # default text X/Y (different Y position)
+    # Load saved hitlag frames from event data
+    lbz r5, CapturedHitlagFrames(EventData)                # load saved hitlag frames
+    branchl r12, Text_InitializeSubtext
+
     restore
     blr
 
@@ -7883,6 +7995,19 @@ LedgetechCounterWindowText:
 
     # Option 3
     .string "Right"
+    .align 2
+
+##################################
+## Ledgetech Counter TEXT FUNCT ##
+##################################
+LedgetechCounter_TechInputDuringCounterHitlag_TopText:
+    blrl
+    .string "L/R on Counter"
+    .align 2
+
+LedgetechCounter_TechInputDuringCounterHitlag_BottomText:
+    blrl
+    .string "Hitlag %d/11"
     .align 2
 
 ######
@@ -8484,7 +8609,7 @@ EscapeSheikThink:
 
     # ON FIRST FRAME
     bl CheckIfFirstFrame
-    cmpwi r3, 0x0
+    cmpwi r3, 0x0c
     beq EscapeSheikThink_Start
     # Init Positions
     mr r3, REG_P1GObj
