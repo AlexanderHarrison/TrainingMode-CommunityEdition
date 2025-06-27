@@ -14,7 +14,7 @@
 #include "preload.h"
 
 /*** Macros ***/
-#define GetElementsIn(arr) sizeof(arr) / sizeof(arr[0])
+#define countof(A) (sizeof(A)/sizeof(*(A)))
 
 /*** Functions ***/
 
@@ -25,7 +25,7 @@ static int min(int a, int b) {
 static int Preload_GetEntryIndexFromEntrynum(int entry_num)
 {
     Preload *preload = Preload_GetTable();
-    for (int i = 0; i < GetElementsIn(preload->entry); i++)
+    for (int i = 0; i < countof(preload->entry); i++)
     {
         PreloadEntry *this_entry = &preload->entry[i];
 
