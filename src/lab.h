@@ -3068,7 +3068,7 @@ typedef enum overlay_type
     OVERLAY_FULLHOP,
     OVERLAY_SHORTHOP,
     OVERLAY_IASA,
-	OVERLAY_SHIELD_STUN,
+    OVERLAY_SHIELD_STUN,
 
     OVERLAY_COUNT,
 } OverlayGroup;
@@ -3206,7 +3206,7 @@ static EventOption LabOptions_OverlaysDefault[OVERLAY_COUNT] = {
         .values = LabValues_OverlayNames,
         .OnChange = Lab_ChangeOverlays,
     },
-	{
+    {
         .kind = OPTKIND_STRING,
         .value_num = OVERLAY_COLOUR_COUNT,
         .name = "Shield Stun",
