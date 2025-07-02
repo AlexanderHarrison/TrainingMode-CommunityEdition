@@ -93,6 +93,7 @@ static int GetCurrentStateName(GOBJ *fighter, char *buf);
 static bool CheckHasJump(GOBJ *g);
 static int InHitstunAnim(int state);
 static int IsHitlagVictim(GOBJ *character);
+static int InShieldStun(int state);
 void CustomTDI_Update(GOBJ *gobj);
 void CustomTDI_Destroy(GOBJ *gobj);
 void CustomTDI_Apply(GOBJ *cpu, GOBJ *hmn, CustomTDI *di);
@@ -3067,6 +3068,7 @@ typedef enum overlay_type
     OVERLAY_FULLHOP,
     OVERLAY_SHORTHOP,
     OVERLAY_IASA,
+	OVERLAY_SHIELD_STUN,
 
     OVERLAY_COUNT,
 } OverlayGroup;
@@ -3204,6 +3206,15 @@ static EventOption LabOptions_OverlaysDefault[OVERLAY_COUNT] = {
         .values = LabValues_OverlayNames,
         .OnChange = Lab_ChangeOverlays,
     },
+	{
+        .kind = OPTKIND_STRING,
+        .value_num = OVERLAY_COLOUR_COUNT,
+        .name = "Shield Stun",
+        .desc = "",
+        .values = LabValues_OverlayNames,
+        .OnChange = Lab_ChangeOverlays,
+    }
+
 };
 
 static EventMenu LabMenu_OverlaysHMN = {

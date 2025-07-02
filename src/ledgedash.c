@@ -25,6 +25,7 @@ enum menu_options
     OPT_POS,
     OPT_RESET,
     OPT_HUD,
+	OPT_TARGET,
     OPT_TIPS,
     OPT_CAM,
     OPT_INV,
@@ -56,6 +57,7 @@ enum reset_pos
 static char **LdshOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced"};
 static char **LdshOptions_Start[] = {"Ledge", "Falling", "Stage", "Respawn Platform"};
 static char **LdshOptions_HUD[] = {"On", "Off"};
+static char **LdshOptions_Target[] = {"Off", "On"};
 static char **LdshOptions_Inv[] = {"Off", "On"};
 static char **LdshOptions_Overlays[] = {"Off", "On"};
 static float LdshOptions_GameSpeeds[] = {1.f, 5.f/6.f, 2.f/3.f, 1.f/2.f, 1.f/4.f};
@@ -89,6 +91,14 @@ static EventOption LdshOptions_Main[] = {
         .desc = "Toggle visibility of the HUD.",
         .values = LdshOptions_HUD,
     },
+	{
+		.kind = OPTKIND_STRING,
+        .value_num = sizeof(LdshOptions_Target) / 4,
+		.val = 0,
+        .name = "Target",
+        .desc = "Enable a target to attack. Use DPad down to\nmanually move it.",
+        .values = LdshOptions_Target,
+	},
     {
         .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_HUD) / 4,
@@ -203,6 +213,7 @@ void Event_Init(GOBJ *gobj)
     // Init hitlog
     event_data->hitlog_gobj = Ledgedash_HitLogInit();
 
+
     // Init HUD
     Ledgedash_HUDInit(event_data);
 
@@ -270,6 +281,9 @@ void Event_Think(GOBJ *event)
             hmn_data->color[1].color_enable = 1;
         }
     }
+
+	Barrel_Think(event_data);
+
 }
 void Event_Exit()
 {
@@ -823,6 +837,269 @@ void Event_Update()
     }
 
     Update_Camera();
+}
+
+void Barrel_Break(GOBJ *barrel_gobj)
+{
+    ItemData *barrel_data = barrel_gobj->userdata;
+    Effect_SpawnSync(1063, barrel_gobj, &barrel_data->pos);
+    SFX_Play(251);
+    ScreenRumble_Execute(2, &barrel_data->pos);
+    JOBJ *barrel_jobj = barrel_gobj->hsd_object;
+    JOBJ_SetFlagsAll(barrel_jobj, JOBJ_HIDDEN);
+    barrel_data->xd0c = 2;
+    barrel_data->self_vel.X = 0;
+    barrel_data->self_vel.Y = 0;
+    barrel_data->item_var.var1 = 1;
+    barrel_data->item_var.var2 = 40;
+    barrel_data->xdcf3 = 1;
+    ItemStateChange(barrel_gobj, 7, 2);
+}
+
+int Barrel_OnDestroy(GOBJ *barrel_gobj)
+{
+
+    // get event data
+    LedgedashData *event_data = event_vars->event_gobj->userdata;
+
+    // if this barrel is still the current barrel
+    if (barrel_gobj == event_data->barrel_gobj)
+        event_data->barrel_gobj = 0;
+
+    return 0;
+}
+
+int Barrel_OnHurt(GOBJ *barrel_gobj) {
+	GOBJ *hmn = Fighter_GetGObj(0);
+	FighterData *hmn_data = hmn->userdata;
+
+	if (hmn_data->hurt.intang_frames.ledge > 0) {
+		Barrel_Break(barrel_gobj);	
+	}
+
+	return 0;
+}
+
+static void *item_callbacks[] = {
+    0x803f58e0,
+    0x80287458,
+    Barrel_OnDestroy, // onDestroy
+    0x80287e68,
+    0x80287ea8,
+    0x80287ec8,
+    0x80288818,
+    Barrel_OnHurt, // onhurt
+    0x802889f8,
+    0x802888b8,
+    0x00000000,
+    0x00000000,
+    0x80288958,
+    0x80288c68,
+    0x803f5988,
+};
+
+void Barrel_Null() { return; }
+
+/* Copied from lcancel.c */
+GOBJ *Barrel_Spawn()
+{
+
+    LedgedashData *event_data = event_vars->event_gobj->userdata;
+    Vec3 *barrel_lastpos = &event_data->barrel_lastpos;
+    GOBJ *barrel_gobj = event_data->barrel_gobj;
+    Vec3 pos;
+    pos.Z = 0;
+
+	bool barrel_placed = false;
+
+	// Set the barrel by the ledge
+	if (!event_data->barrel_has_spawned) {
+		float ledge_dir;
+		Vec3 ledge_pos;
+		int line_index = Ledge_Find(event_data->ledge, 0.f, &ledge_dir);
+
+		if (line_index != -1) {
+			if (ledge_dir > 0) {
+				GrColl_GetGroundLineEndLeft(line_index, &ledge_pos);
+				ledge_pos.X += 30;
+			} else {
+				GrColl_GetGroundLineEndRight(line_index, &ledge_pos);
+				ledge_pos.X -= 30;
+			}
+
+			ledge_pos.Y += 6;
+			barrel_placed = true;
+
+			pos = ledge_pos;
+		}
+
+		event_data->barrel_has_spawned = true;
+	} else {
+		pos = *barrel_lastpos;
+		barrel_placed = true;
+	}
+
+	// Default to center stage for now
+	if (!barrel_placed) {
+		int line_index;
+        int line_kind;
+        Vec3 line_angle;
+        float from_x = 0;
+        float to_x = from_x;
+        float from_y = 6;
+        float to_y = from_y - 1000;
+        int is_ground = GrColl_RaycastGround(&pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, from_x, from_y, to_x, to_y, 0);
+	}
+
+
+    // spawn item
+    SpawnItem spawnItem;
+    spawnItem.parent_gobj = 0;
+    spawnItem.parent_gobj2 = 0;
+    spawnItem.it_kind = ITEM_BARREL;
+    spawnItem.hold_kind = 0;
+    spawnItem.unk2 = 0;
+    spawnItem.pos = pos;
+    spawnItem.pos2 = pos;
+    spawnItem.vel.X = 0;
+    spawnItem.vel.Y = 0;
+    spawnItem.vel.Z = 0;
+    spawnItem.facing_direction = 1;
+    spawnItem.damage = 0;
+    spawnItem.unk5 = 0;
+    spawnItem.unk6 = 0;
+    spawnItem.is_raycast_below = 1;
+    spawnItem.is_spin = 0;
+    barrel_gobj = Item_CreateItem2(&spawnItem);
+    Item_CollAir_Bounce(barrel_gobj, Barrel_Null);
+
+    // replace collision callback
+    ItemData *barrel_data = barrel_gobj->userdata;
+	barrel_data->it_func = item_callbacks;
+    // TODO replace functions individually
+    // barrel_data->it_func->OnDestroy = Barrel_OnDestroy;
+    // barrel_data->it_func->OnHurt = Barrel_OnHurt;
+    barrel_data->camera_subject->kind = 0;
+
+    // update last barrel pos
+    event_data->barrel_lastpos = pos;
+
+	event_data->barrel_lastledge = event_data->ledge;
+
+    return barrel_gobj;
+}
+
+void Barrel_Think(LedgedashData *event_data) {
+	GOBJ *barrel_gobj = event_data->barrel_gobj;
+	Vec3* barrel_lastpos = &event_data->barrel_lastpos;
+	int* barrel_lastledge = &event_data->barrel_lastledge;
+	if (LdshOptions_Main[OPT_TARGET].val == 0) {
+		if (barrel_gobj != 0) {
+			Item_Destroy(barrel_gobj);
+			event_data->barrel_gobj = 0;
+			return;
+		}
+		event_data->barrel_has_spawned = false;
+	} else {
+		if (barrel_gobj == 0) {
+			barrel_gobj = Barrel_Spawn();
+			event_data->barrel_gobj = barrel_gobj;
+		}
+
+		/* If player moves ledge, move the barrel as well */
+		if (*barrel_lastledge != event_data->ledge) { 
+			float ledge_dir;
+			float last_ledge_dir;
+
+			int line_index = Ledge_Find(event_data->ledge, 0.f, &ledge_dir);
+			int last_line_index = Ledge_Find(*barrel_lastledge, 0.f, &last_ledge_dir);
+
+			Vec3 ledge_pos;
+			Vec3 last_ledge_pos;
+
+			// event_vars->Tip_Display(180, "li: %d, lli: %d\nld: %.1f, lld: %.1f", line_index, last_line_index, ledge_dir, last_ledge_dir);
+
+			if (line_index != -1 && last_line_index != -1) {
+
+				if (ledge_dir > 0)
+					GrColl_GetGroundLineEndLeft(line_index, &ledge_pos);
+				else
+					GrColl_GetGroundLineEndRight(line_index, &ledge_pos);
+
+
+				if (last_ledge_dir > 0)
+					GrColl_GetGroundLineEndLeft(last_line_index, &last_ledge_pos);
+				else
+					GrColl_GetGroundLineEndRight(last_line_index, &last_ledge_pos);
+
+				int distance_from_ledge = barrel_lastpos->X - last_ledge_pos.X;
+				barrel_lastpos->X = ledge_pos.X - distance_from_ledge;
+
+				ItemData* barrel_data = barrel_gobj->userdata;
+
+				// place barrel here
+				barrel_data->pos = *barrel_lastpos;
+
+				// update ECB
+				barrel_data->coll_data.topN_Curr = barrel_data->pos; // move current ECB location to new position
+				Coll_ECBCurrToPrev(&barrel_data->coll_data);
+				barrel_data->cb.coll(barrel_gobj);
+
+			}
+
+		}
+
+		/* Following logic from lcancel.c */
+		ItemData *barrel_data = barrel_gobj->userdata;
+		barrel_data->can_hold = 0;
+
+		GOBJ *hmn = Fighter_GetGObj(0);
+        FighterData *hmn_data = hmn->userdata;
+        if (hmn_data->input.down & PAD_BUTTON_DPAD_DOWN)
+        {
+            // ensure player is grounded
+            int isGround = 0;
+            if (hmn_data->phys.air_state == 0)
+            {
+
+                // check for ground in front of player
+                Vec3 coll_pos;
+                int line_index;
+                int line_kind;
+                Vec3 line_unk;
+                float fromX = (hmn_data->phys.pos.X) + (hmn_data->facing_direction * 16);
+                float toX = fromX;
+                float fromY = (hmn_data->phys.pos.Y + 5);
+                float toY = fromY - 10;
+                isGround = GrColl_RaycastGround(&coll_pos, &line_index, &line_kind, &line_unk, -1, -1, -1, 0, fromX, fromY, toX, toY, 0);
+                if (isGround == 1)
+                {
+
+                    // update last pos
+                    event_data->barrel_lastpos = coll_pos;
+
+                    // place barrel here
+                    barrel_data->pos = coll_pos;
+                    barrel_data->coll_data.ground_index = line_index;
+
+                    // update ECB
+                    barrel_data->coll_data.topN_Curr = barrel_data->pos; // move current ECB location to new position
+                    Coll_ECBCurrToPrev(&barrel_data->coll_data);
+                    barrel_data->cb.coll(barrel_gobj);
+
+                    SFX_Play(221);
+                }
+                else
+                {
+                    // play SFX
+                    SFX_PlayCommon(3);
+                }
+            }
+        }
+
+	}
+
+	*barrel_lastledge = event_data->ledge;
 }
 
 void Update_Camera()

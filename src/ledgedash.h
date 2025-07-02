@@ -45,6 +45,10 @@ struct LedgedashData
         u8 refresh_displayed : 1;
         u8 is_input_release : 1;
     } tip;
+	GOBJ *barrel_gobj;
+    Vec3 barrel_lastpos;
+	bool barrel_has_spawned; // Rename? 
+	int barrel_lastledge;
 };
 
 struct LedgedashAssets
