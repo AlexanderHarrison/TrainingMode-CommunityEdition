@@ -609,10 +609,6 @@ GOBJ *Barrel_Spawn(int pos_kind)
     }
     case (1): // random pos
     {
-        // setup time
-        int raycast_num = 0;
-        int raytime_start, raytime_end, raytime_time;
-        raytime_start = OSGetTick();
     BARREL_RANDPOS:
     {
 
@@ -625,7 +621,6 @@ GOBJ *Barrel_Spawn(int pos_kind)
         float from_y = Stage_GetCameraBottom() + (HSD_Randi(Stage_GetCameraTop() - Stage_GetCameraBottom())) + HSD_Randf();
         float to_y = from_y - 1000;
         int is_ground = GrColl_RaycastGround(&pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, from_x, from_y, to_x, to_y, 0);
-        raycast_num++;
         if (is_ground == 0)
             goto BARREL_RANDPOS;
 
@@ -640,19 +635,12 @@ GOBJ *Barrel_Spawn(int pos_kind)
         float near_fromY = pos.Y + 4;
         to_y = near_fromY - 4;
         is_ground = GrColl_RaycastGround(&near_pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, near_fromX, near_fromY, near_fromX, to_y, 0);
-        raycast_num++;
         if (is_ground == 0)
             goto BARREL_RANDPOS;
         near_fromX = pos.X - 8;
         is_ground = GrColl_RaycastGround(&near_pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, near_fromX, near_fromY, near_fromX, to_y, 0);
-        raycast_num++;
         if (is_ground == 0)
             goto BARREL_RANDPOS;
-
-        // output num and time
-        raytime_end = OSGetTick();
-        raytime_time = OSTicksToMilliseconds(raytime_end - raytime_start);
-        OSReport("lcl: %d ray in %dms\n", raycast_num, raytime_time);
 
         break;
     }

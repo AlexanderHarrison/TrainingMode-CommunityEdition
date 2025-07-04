@@ -886,7 +886,11 @@ void OnSceneChange(void)
     // Hook exists at 801a4c94
     TM_CreateWatermark();
 
-#if TM_DEBUG == 2
+#if TM_DEBUG == 1   // Create and hide console
+    TM_CreateConsole();
+    stc_event_vars.db_console_text->show_text ^= 1;
+    stc_event_vars.db_console_text->show_background ^= 1;
+#elif TM_DEBUG == 2 // Create and show console
     TM_CreateConsole();
 #endif
 };

@@ -12,22 +12,14 @@
 
 #define ANALOG_TRIGGER_THRESHOLD 43
 
-#define TMLOG(...) DevelopText_AddString(event_vars->db_console_text, __VA_ARGS__)
-
 // disable all logs in release mode
 #if TM_DEBUG == 0
-#define TMLOG (void)sizeof
-//#define assert (void)sizeof
-#endif
-
-// use OSReport for all logs
-#if TM_DEBUG == 1
-#define OSReport OSReport
-#endif
-
-// use TMLog for all logs
-#if TM_DEBUG == 2
-#define OSReport TMLOG
+#define TMLOG(...) (void)0
+#else
+#define TMLOG(...) do { \
+    DevelopText_AddString(event_vars->db_console_text, __VA_ARGS__); \
+    OSReport(__VA_ARGS__); \
+} while (0)
 #endif
 
 #define SHORTCUT_BUTTONS (HSD_BUTTON_A | HSD_BUTTON_B | HSD_BUTTON_X | HSD_TRIGGER_Z)

@@ -194,8 +194,6 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
             event_data->is_wavedashing = 0;
     }
 
-    //OSReport("is_wavedashing: %d since_wavedash: %d", event_data->is_wavedashing, event_data->since_wavedash);
-
     JOBJ *hud_jobj = event_data->hud.gobj->hsd_object;
 
     // start sequence on jump squat
@@ -445,7 +443,6 @@ void Target_Init(WavedashData *event_data, FighterData *hmn_data)
     // determine best wavedash distance (not taking into account friction doubling)
     mag = ftcommon->escapeair_vel * cos(atan2(-0.2875, 0.9500));
     float wd_maxdstn = Target_GetWdashDistance(hmn_data, mag);
-    OSReport("%s wd_maxdstn: %.2f\n", Fighter_GetName(Fighter_GetExternalID(hmn_data->ply)), wd_maxdstn);
     event_data->wd_maxdstn = wd_maxdstn;
 
     // determine scale based on wd distance
