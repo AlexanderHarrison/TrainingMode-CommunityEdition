@@ -300,7 +300,7 @@ void LCancel_Think(LCancelData *event_data, FighterData *hmn_data)
 
         // get this frames position
         float time = 1 - ((float)event_data->hud.arrow_timer / (float)LCLARROW_ANIMFRAMES);
-        float xpos = Bezier(time, event_data->hud.arrow_prevpos, event_data->hud.arrow_nextpos);
+        float xpos = smooth_lerp(time, event_data->hud.arrow_prevpos, event_data->hud.arrow_nextpos);
 
         // update position
         JOBJ *arrow_jobj;
@@ -609,10 +609,6 @@ GOBJ *Barrel_Spawn(int pos_kind)
     }
     case (1): // random pos
     {
-        // setup time
-        int raycast_num = 0;
-        int raytime_start, raytime_end, raytime_time;
-        raytime_start = OSGetTick();
     BARREL_RANDPOS:
     {
 
@@ -625,7 +621,6 @@ GOBJ *Barrel_Spawn(int pos_kind)
         float from_y = Stage_GetCameraBottom() + (HSD_Randi(Stage_GetCameraTop() - Stage_GetCameraBottom())) + HSD_Randf();
         float to_y = from_y - 1000;
         int is_ground = GrColl_RaycastGround(&pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, from_x, from_y, to_x, to_y, 0);
-        raycast_num++;
         if (is_ground == 0)
             goto BARREL_RANDPOS;
 
@@ -640,19 +635,12 @@ GOBJ *Barrel_Spawn(int pos_kind)
         float near_fromY = pos.Y + 4;
         to_y = near_fromY - 4;
         is_ground = GrColl_RaycastGround(&near_pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, near_fromX, near_fromY, near_fromX, to_y, 0);
-        raycast_num++;
         if (is_ground == 0)
             goto BARREL_RANDPOS;
         near_fromX = pos.X - 8;
         is_ground = GrColl_RaycastGround(&near_pos, &line_index, &line_kind, &line_angle, -1, -1, -1, 0, near_fromX, near_fromY, near_fromX, to_y, 0);
-        raycast_num++;
         if (is_ground == 0)
             goto BARREL_RANDPOS;
-
-        // output num and time
-        raytime_end = OSGetTick();
-        raytime_time = OSTicksToMilliseconds(raytime_end - raytime_start);
-        OSReport("lcl: %d ray in %dms\n", raycast_num, raytime_time);
 
         break;
     }
@@ -770,13 +758,6 @@ static void *item_callbacks[] = {
     0x80288c68,
     0x803f5988,
 };
-
-// Misc
-float Bezier(float time, float start, float end)
-{
-    float bez = time * time * (3.0f - 2.0f * time);
-    return bez * (end - start) + start;
-}
 
 // Initial Menu
 EventMenu *Event_Menu = &LabMenu_Main;

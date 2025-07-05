@@ -8,26 +8,17 @@
 #define TM_FUNC -(50 * 4)
 #define MENU_MAXOPTION 9
 #define MENU_POPMAXOPTION 5
-#define countof(A) (sizeof(A)/sizeof(*(A)))
 
 #define ANALOG_TRIGGER_THRESHOLD 43
 
-#define TMLOG(...) DevelopText_AddString(event_vars->db_console_text, __VA_ARGS__)
-
 // disable all logs in release mode
 #if TM_DEBUG == 0
-#define TMLOG (void)sizeof
-//#define assert (void)sizeof
-#endif
-
-// use OSReport for all logs
-#if TM_DEBUG == 1
-#define OSReport OSReport
-#endif
-
-// use TMLog for all logs
-#if TM_DEBUG == 2
-#define OSReport TMLOG
+#define TMLOG(...) (void)0
+#else
+#define TMLOG(...) do { \
+    DevelopText_AddString(event_vars->db_console_text, __VA_ARGS__); \
+    OSReport(__VA_ARGS__); \
+} while (0)
 #endif
 
 #define SHORTCUT_BUTTONS (HSD_BUTTON_A | HSD_BUTTON_B | HSD_BUTTON_X | HSD_TRIGGER_Z)
@@ -595,7 +586,6 @@ void Message_Manager(GOBJ *mngr_gobj);
 void Message_Destroy(GOBJ **msg_queue, int msg_num);
 void Message_Add(GOBJ *msg_gobj, int queue_num);
 void Message_CObjThink(GOBJ *gobj);
-float BezierBlend(float t);
 
 #define MSGQUEUE_NUM 7
 #define MSGQUEUE_SIZE 8

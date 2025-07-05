@@ -10,9 +10,6 @@
 #define M_1DEGREE (0.0174533)
 #define M_NAN ((float)(INFINITY * 0.0F))
 
-/// @brief
-/// @param v
-/// @return the absolute value of a given float
 inline float fabs(float v)
 {
     if (v < 0)
@@ -20,9 +17,7 @@ inline float fabs(float v)
     else
         return v;
 }
-/// @brief
-/// @param v a float value
-/// @return the sign of x
+
 inline float sign(float v)
 {
     if (v >= 0.0)
@@ -30,9 +25,7 @@ inline float sign(float v)
     else
         return -1.0;
 }
-/// @brief
-/// @param v a pointer to a 2d vector
-/// @return the magnitude of the vector
+
 inline float Vec2_Magnitude(Vec2 *v)
 {
     return fabs(v->X) + fabs(v->Y);

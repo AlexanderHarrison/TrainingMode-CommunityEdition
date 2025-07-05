@@ -94,7 +94,6 @@ struct TargetData
     CmSubject *cam;
 };
 
-float Bezier(float time, float start, float end);
 float Target_GetWdashDistance(FighterData *hmn_data, float mag);
 GOBJ *Target_Spawn(WavedashData *event_data, FighterData *fighter_data);
 int Target_CheckArea(WavedashData *event_data, int line, Vec3 *pos, float x_offset, int *ret_line, Vec3 *ret_pos, Vec3 *ret_slope);

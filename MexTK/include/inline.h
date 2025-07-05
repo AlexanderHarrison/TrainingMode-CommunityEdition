@@ -14,7 +14,7 @@
 #include "preload.h"
 
 /*** Macros ***/
-#define GetElementsIn(arr) sizeof(arr) / sizeof(arr[0])
+#define countof(A) (sizeof(A)/sizeof(*(A)))
 
 /*** Functions ***/
 
@@ -25,7 +25,7 @@ static int min(int a, int b) {
 static int Preload_GetEntryIndexFromEntrynum(int entry_num)
 {
     Preload *preload = Preload_GetTable();
-    for (int i = 0; i < GetElementsIn(preload->entry); i++)
+    for (int i = 0; i < countof(preload->entry); i++)
     {
         PreloadEntry *this_entry = &preload->entry[i];
 
@@ -566,6 +566,11 @@ static inline float fmax(float a, float b)
 
 static inline float fclamp(float n, float min, float max) {
     return fmin(max, fmax(min, n));
+}
+
+static inline float smooth_lerp(float time, float start, float end) {
+    float delta = time * time * (3.0f - 2.0f * time);
+    return delta * (end - start) + start;
 }
 
 /*---------------------------------------------*

@@ -5455,7 +5455,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
         }
         else
         {
-            OSReport("max characters!\n");
+            TMLOG("max characters!\n");
         }
     }
     // if START
@@ -6172,7 +6172,7 @@ void Event_Init(GOBJ *gobj)
     }
 
     // Aitch: VERY nice for debugging. Please don't remove.
-    OSReport("HMN: %x\tCPU: %x\n", (u32)hmn_data, (u32)cpu_data);
+    TMLOG("HMN: %x\tCPU: %x\n", (u32)hmn_data, (u32)cpu_data);
 }
 
 // Update Function

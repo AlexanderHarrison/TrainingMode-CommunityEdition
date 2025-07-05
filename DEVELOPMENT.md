@@ -100,5 +100,5 @@ You'll need to right click on the node -> Open As -> JOBJ in HSDRaw in order to 
 - Due to a deficiency in the MexTK headers, we cannot turn on warnings effectively, so be aware of that.
 - Set `TM_DEBUG` to 2 in events.h to get OSReport statements on the screen.
 - **Use the dolphin debugger!** Make sure you have the latest version of dolphin for debugging.
-    - To set a breakpoint, use the `bp()` fn call in C or the `SetBreakpoint` macro in ASM (which will clobber r3). Then when you boot up dolphin, put a breakpoint on the `bp` symbol.
+    - To set a breakpoint, call `bp()` in C or add `branchl rX, bp` (clobbers rX) in ASM. Then when you boot up dolphin, put a breakpoint on the `bp` symbol.
     - **Be sure to load GTME01.map with Symbols->Load Other Map File!**

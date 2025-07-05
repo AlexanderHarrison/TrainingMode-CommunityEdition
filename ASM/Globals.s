@@ -367,6 +367,7 @@
     .set LoadRulesSettingsPointer1, 0x8015cc34
     .set CSS_UpdateCSPInfo, 0x8025db34
     .set Rumble_StoreRumbleFlag, 0x8015ed4c
+    .set bp, 0x8021b2d8
 
     # Custom Functions
     .set TextCreateFunction, 0x80005928
@@ -908,11 +909,6 @@
     lwz r0, 0x104(r1)
     addi r1, r1, 0x100                                  # release the space
     mtlr r0
-    .endm
-
-    # bp call sets r3 to 0!! Only put before a write to r3!!
-    .macro SetBreakpoint
-    branchl r3, 0x8021b2d8
     .endm
 
     .set EventVars_Ptr, 0x803d7054

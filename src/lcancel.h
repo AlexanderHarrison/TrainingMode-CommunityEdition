@@ -59,7 +59,6 @@ typedef struct LCancelAssets
 #define MAX_L_PRESS_TIMING 29
 
 static void *item_callbacks[];
-float Bezier(float time, float start, float end);
 void Tips_Toggle(GOBJ *menu_gobj, int value);
 void LCancel_HUDCamThink(GOBJ *gobj);
 void Barrel_Think(LCancelData *event_data);
