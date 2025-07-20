@@ -70,9 +70,8 @@ build/powershield.dat: src/powershield.c src/events.h
 build/edgeguard.dat: src/edgeguard.c src/edgeguard.h src/events.h
 	$(MEX_BUILD) -i "src/edgeguard.c" -s "evFunction" -o "build/edgeguard.dat" -t "MexTK/evFunction.txt"
 
-build/codes.gct: opening.bnr $(ASM_FILES)
+build/codes.gct: $(ASM_FILES)
 	$(GECKO) ASM build/codes.gct
-	cp opening.bnr build/
 
 build/Start.dol: | build
 	${GC_FST} read '${iso}' Start.dol build/ISOStart.dol
@@ -94,7 +93,7 @@ TM-CE.iso: build/Start.dol build/codes.gct $(DATS)
 		insert TM/edgeguard.dat build/edgeguard.dat \
 		insert codes.gct build/codes.gct \
 		insert Start.dol build/Start.dol \
-		insert opening.bnr build/opening.bnr
+		insert opening.bnr opening.bnr
 	${GC_FST} set-header TM-CE.iso "GTME01" "Training Mode Community Edition"
 
 build:
