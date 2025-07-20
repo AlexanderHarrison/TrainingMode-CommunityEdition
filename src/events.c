@@ -576,7 +576,7 @@ static EventPage Spacie_Page = {
     .events = Spacie_Events,
 };
 
-static EventPage *EventPages[] = {
+EventPage *EventPages[] = {
     &Minigames_Page,
     &General_Page,
     &Spacie_Page,

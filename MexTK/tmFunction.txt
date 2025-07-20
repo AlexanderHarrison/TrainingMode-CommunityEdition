@@ -1,4 +1,4 @@
-eventPages
+EventPages
 GetEventDesc
 GetEventName
 GetEventDescription
