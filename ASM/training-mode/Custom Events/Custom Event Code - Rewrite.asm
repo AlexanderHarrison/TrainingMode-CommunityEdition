@@ -1170,7 +1170,6 @@ LedgeStallThink:
 
     # Registers
     .set REG_EventConstants, 25
-    .set REG_MenuData, 26
     .set REG_EventData, 31
     .set REG_EventGObj, 24
     .set REG_P1Data, 27
@@ -1208,7 +1207,6 @@ LedgeStallThink:
     mr REG_P2Data, r6
 
     # Get Menu and Constants Pointers
-    lwz REG_MenuData, REG_EventData_REG_MenuDataPointer(REG_EventData)
     bl LedgeStallThink_Constants
     mflr REG_EventConstants
 
@@ -6624,7 +6622,6 @@ SlideOffThink:
 
     # Registers
     .set REG_EventConstants, 25
-    .set REG_MenuData, 26
     .set REG_EventData, 31
     .set REG_P1Data, 27
     .set REG_P1GObj, 28
@@ -6667,7 +6664,6 @@ SlideOffThink:
     mr REG_P2Data, r6
 
     # Get Menu and Constants Pointers
-    lwz REG_MenuData, REG_EventData_REG_MenuDataPointer(REG_EventData)
     bl SlideOffThink_Constants
     mflr REG_EventConstants
 
@@ -7249,7 +7245,6 @@ GrabMashOutThink:
 
     # Registers
     .set REG_EventConstants, 25
-    .set REG_MenuData, 26
     .set REG_EventData, 31
     .set REG_P1Data, 27
     .set REG_P1GObj, 28
@@ -7285,7 +7280,6 @@ GrabMashOutThink:
     mr REG_P2Data, r6
 
     # Get Menu and Constants Pointers
-    lwz REG_MenuData, REG_EventData_REG_MenuDataPointer(REG_EventData)
     bl GrabMashOutThink_Constants
     mflr REG_EventConstants
 
@@ -8174,7 +8168,6 @@ SideBSweetspotThink:
 
     # Registers
     .set REG_EventConstants, 25
-    .set REG_MenuData, 26
     .set REG_EventData, 31
     .set REG_P1Data, 27
     .set REG_P1GObj, 28
@@ -8213,7 +8206,6 @@ SideBSweetspotThink:
     mr REG_P2Data, r6
 
     # Get Menu and Constants Pointers
-    lwz REG_MenuData, REG_EventData_REG_MenuDataPointer(REG_EventData)
     bl SideBSweetspotThink_Constants
     mflr REG_EventConstants
 
@@ -8669,7 +8661,6 @@ EscapeSheikThink:
 
     # Registers
     .set REG_EventConstants, 25
-    .set REG_MenuData, 26
     .set REG_EventData, 31
     .set REG_P1Data, 27
     .set REG_P1GObj, 28
@@ -8716,7 +8707,6 @@ EscapeSheikThink:
     mr REG_P2Data, r6
 
     # Get Menu and Constants Pointers
-    lwz REG_MenuData, REG_EventData_REG_MenuDataPointer(REG_EventData)
     bl EscapeSheikThink_Constants
     mflr REG_EventConstants
 
@@ -13043,43 +13033,6 @@ DisableHazards_SkipList:
 ########################
 
 DisableHazards_Story:
-    /*
-    # Get randall's line ID
-    mr r3, REG_map_gobj
-    branchl r12, 0x801c6330
-    lwz r3, 0x4(r3)                                     # get map_head
-    lwz r3, 0x8(r3)                                     # get map_gobj info
-    mulli r4, REG_map_gobj, 52                          # get randall's info
-    add r3, r3, r4
-    lwz r3, 0x20(r3)                                    # pointer to the collision data
-    lhz r3, 0x0(r3)                                     # i believe this is randalls line ID
-    # Get randalls corner IDs
-    mulli r3, r3, 8                                     # 0x8 in length
-    lwz r4, -0x51E4(r13)                                # line to corner ID table
-    lwzx r5, r3, r4                                     # now have the corner ID struct
-    lhz r3, 0x0(r5)                                     # left corner id
-    lhz r4, 0x2(r5)                                     # right corner id
-    # Get corner IDs info
-    lwz r5, -0x51E8(r13)
-    mulli r3, r3, 24
-    mulli r4, r4, 24
-    add r3, r3, r5
-    add r4, r4, r5
-    # Zero current X and Y positions, effectively removing these lines
-    li r5, 0
-    stw r5, 0x8(r3)
-    stw r5, 0xC(r3)
-    stw r5, 0x8(r4)
-    stw r5, 0xC(r4)
-    */
-
-    /*
-    # Get randall's map_gobj
-    li r3, 2                                            # randalls map_gobj is 2
-    branchl r12, Stage_map_gobj_Load
-    branchl r12, Stage_Destroy_map_gobj
-    */
-
     # Get shyguy's map_gobj
     li r3, 3                                            # shyguys map_gobj is
     branchl r12, Stage_map_gobj_Load
@@ -13141,6 +13094,36 @@ DisableHazards_OldKongo:
     branchl r12, Stage_map_gobj_Load
     branchl r12, Stage_Destroy_map_gobj
 
+    b DisableHazards_SkipList_Exit
+    
+DisableHazards_Dummy:
+DisableHazards_TEST:
+DisableHazards_Izumi:
+DisableHazards_Castle:
+DisableHazards_Kongo:
+DisableHazards_Zebes:
+DisableHazards_Corneria:
+DisableHazards_Onett:
+DisableHazards_MuteCity:
+DisableHazards_RCruise:
+DisableHazards_Garden:
+DisableHazards_GreatBay:
+DisableHazards_Shrine:
+DisableHazards_Kraid:
+DisableHazards_Yoster:
+DisableHazards_Greens:
+DisableHazards_Fourside:
+DisableHazards_MK1:
+DisableHazards_MK2:
+DisableHazards_Akaneia:
+DisableHazards_Venom:
+DisableHazards_Pura:
+DisableHazards_BigBlue:
+DisableHazards_Icemt:
+DisableHazards_Icetop:
+DisableHazards_FlatZone:
+DisableHazards_Battlefield:
+DisableHazards_FinalDestination:
     b DisableHazards_SkipList_Exit
 
 ########################

@@ -10,20 +10,20 @@ ifndef iso
 $(error Error: INVALID ISO - run `make iso=path/to/vanilla/melee iso`)
 endif
 
-# If we are inside msys2 on windows, we need to use the other gc_fst binary
+# Use exes if we are on windows
 UNAME=$(shell uname)
 ifeq ($(findstring MSYS,$(UNAME)),MSYS)
 	# Windows
-	GC_FST=./gc_fst.exe
-	HMEX=./hmex.exe
+	GC_FST=bin/gc_fst.exe
+	HMEX=bin/hmex.exe
 	XDELTA="Build TM Start.dol/xdelta.exe"
-	GECKO=./gecko.exe
+	GECKO=bin/hgecko.exe
 else
 	# Unix
-	GC_FST=./gc_fst
-	HMEX=./hmex
+	GC_FST=bin/gc_fst
+	HMEX=bin/hmex
 	XDELTA=xdelta3
-	GECKO=./gecko
+	GECKO=bin/hgecko
 endif
 
 export PATH := $(DEVKITPPC)/bin:$(PATH)
@@ -39,7 +39,7 @@ $(error Error: INVALID ISO - run `make iso=path/to/vanilla/melee iso`)
 endif
 endif
 
-MEX_BUILD=$(HMEX) -q -l "MexTK/melee.link" -f "-w -fpermissive -O2"
+MEX_BUILD=$(HMEX) -q -l "MexTK/melee.link" -f "-w -fpermissive"
 
 clean:
 	rm -rf TM-CE/patch.xdelta
@@ -70,9 +70,9 @@ build/powershield.dat: src/powershield.c src/events.h
 build/edgeguard.dat: src/edgeguard.c src/edgeguard.h src/events.h
 	$(MEX_BUILD) -i "src/edgeguard.c" -s "evFunction" -o "build/edgeguard.dat" -t "MexTK/evFunction.txt"
 
-build/codes.gct: Additional\ ISO\ Files/opening.bnr $(ASM_FILES)
-	cd "Build TM Codeset" && ${GECKO} build
-	cp Additional\ ISO\ Files/* build/
+build/codes.gct: opening.bnr $(ASM_FILES)
+	$(GECKO) ASM build/codes.gct
+	cp opening.bnr build/
 
 build/Start.dol: | build
 	${GC_FST} read '${iso}' Start.dol build/ISOStart.dol

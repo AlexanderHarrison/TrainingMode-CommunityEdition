@@ -119,8 +119,8 @@ NotWavedash:
 
     cmpwi ASBeforeWait, ASID_AttackAirN
     blt NotAerial
-    cmpwi ASBeforeWait, ASID_AttackAirLe
-    blt NotAerial
+    cmpwi ASBeforeWait, ASID_AttackAirLw
+    bgt NotAerial
     b ComingFromWhitelist
     
 NotAerial:
