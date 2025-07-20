@@ -7,7 +7,7 @@ ASM_FILES := $(shell find ASM -type f \( -name '*.asm' -o -name '*.s' \) | sed '
 SHELL := /bin/bash
 
 ifndef iso
-$(error Error: INVALID ISO - run `make iso=path/to/vanilla/melee iso`)
+$(error Error: INVALID ISO - run `make iso=path/to/vanilla/melee.iso TM-CE.iso`)
 endif
 
 # Use exes if we are on windows
