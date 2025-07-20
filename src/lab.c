@@ -2637,16 +2637,16 @@ void DIDraw_Update()
 
                 if (fighter_data->flags.hitlag) {
                     // Calculate ASDI
-                    float asdi_mag = pow(ft_common->asdi_mag, 2);
+                    float asdi_mag = squaref(ft_common->asdi_mag);
                     float asdi_units = ft_common->asdi_units;
                     // CStick has priority, check if mag > 0.7
-                    if (pow(cstickX, 2) + (pow(cstickY, 2)) >= asdi_mag)
+                    if (squaref(cstickX) + squaref(cstickY) >= asdi_mag)
                     {
                         asdi.X = cstickX * asdi_units;
                         asdi.Y = cstickY * asdi_units;
                     }
                     // now check if lstick mag > 0.7
-                    else if (pow(lstickX, 2) + (pow(lstickY, 2)) >= asdi_mag)
+                    else if (squaref(lstickX) + squaref(lstickY) >= asdi_mag)
                     {
                         asdi.X = lstickX * asdi_units;
                         asdi.Y = lstickY * asdi_units;
@@ -2663,7 +2663,7 @@ void DIDraw_Update()
                         {
 
                             // get values
-                            float tdi_input = pow((-1 * kb.X * lstickY) + (lstickX * kb.Y), 2) / kb_mult;
+                            float tdi_input = squaref((-1 * kb.X * lstickY) + (lstickX * kb.Y)) / kb_mult;
                             float max_angle = ft_common->tdi_maxAngle * M_1DEGREE;
                             float kb_mag = sqrtf(kb_mult);
 
@@ -4572,23 +4572,6 @@ void Record_MemcardLoad(int slot, int file_no)
 
         HSD_Free(memcard_save.data);
     }
-}
-int Record_MenuThink(GOBJ *menu_gobj)
-{
-
-    int is_update = 1;
-
-    // check to run export logic
-    if (export_status != EXSTAT_NONE)
-    {
-        is_update = Record_ExportThink();
-    }
-
-    return is_update;
-}
-void Record_StartExport(GOBJ *menu_gobj)
-{
-    export_status = EXSTAT_REQSAVE;
 }
 
 void Record_LoadSavestate(Savestate_v1 *savestate) {

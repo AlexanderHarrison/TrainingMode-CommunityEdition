@@ -622,8 +622,8 @@ GOBJ *Barrel_Spawn(int pos_kind)
             goto BARREL_RANDPOS;
 
         // ensure it isnt too close to the previous
-        float distance = sqrtf(pow((pos.X - barrel_lastpos->X), 2) + pow((pos.Y - barrel_lastpos->Y), 2));
-        if (distance < 25)
+        float distance = Math_Vec3Distance(&pos, barrel_lastpos);
+        if (distance < 25.f)
             goto BARREL_RANDPOS;
 
         // ensure left and right have ground

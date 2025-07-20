@@ -15,13 +15,13 @@ UNAME=$(shell uname)
 ifeq ($(findstring MSYS,$(UNAME)),MSYS)
 	# Windows
 	GC_FST=./gc_fst.exe
-	MEX_BUILD=./MexTK/MexTK.exe -ff -b "build" -q -ow -l "MexTK/melee.link" -op 2
+	HMEX=./hmex.exe
 	XDELTA="Build TM Start.dol/xdelta.exe"
 	GECKO=./gecko.exe
 else
 	# Unix
 	GC_FST=./gc_fst
-	MEX_BUILD=mono MexTK/MexTK.exe -ff -b "build" -q -ow -l "MexTK/melee.link" -op 2
+	HMEX=./hmex
 	XDELTA=xdelta3
 	GECKO=./gecko
 endif
@@ -39,40 +39,36 @@ $(error Error: INVALID ISO - run `make iso=path/to/vanilla/melee iso`)
 endif
 endif
 
+MEX_BUILD=$(HMEX) -q -l "MexTK/melee.link" -f "-w -fpermissive -O2"
+
 clean:
 	rm -rf TM-CE/patch.xdelta
 	rm -rf TM-CE.iso
 	rm -rf ./build/
 
 build/eventMenu.dat: src/events.c src/events.h src/menu.c src/menu.h src/savestate_v1.c src/savestate.h
-	cp "dats/eventMenu.dat" "build/eventMenu.dat" 
-	$(MEX_BUILD) -i "src/events.c" -i "src/menu.c" -i "src/savestate_v1.c" -s "tmFunction" -dat "build/eventMenu.dat" -t "MexTK/tmFunction.txt"
+	$(MEX_BUILD) -i "src/events.c" "src/menu.c" "src/savestate_v1.c" -s "tmFunction" -dat "dats/eventMenu.dat" -o "build/eventMenu.dat" -t "MexTK/tmFunction.txt"
 
 build/lab.dat: src/lab.c src/lab.h src/lab_common.h src/events.h
-	cp "dats/lab.dat" "build/lab.dat"
-	$(MEX_BUILD) -i "src/lab.c" -s "evFunction" -dat "build/lab.dat" -t "MexTK/evFunction.txt"
+	$(MEX_BUILD) -i "src/lab.c" -s "evFunction" -dat "dats/lab.dat" -o "build/lab.dat" -t "MexTK/evFunction.txt"
 
 build/labCSS.dat: src/lab_css.c src/lab_common.h src/events.h
-	cp "dats/labCSS.dat" "build/labCSS.dat"
-	$(MEX_BUILD) -i "src/lab_css.c" -s "cssFunction" -dat "build/labCSS.dat" -t "MexTK/cssFunction.txt"
+	$(MEX_BUILD) -i "src/lab_css.c" -s "cssFunction" -dat "dats/labCSS.dat" -o "build/labCSS.dat" -t "MexTK/cssFunction.txt"
 
 build/lcancel.dat: src/lcancel.c src/lcancel.h src/events.h
-	cp "dats/lcancel.dat" "build/lcancel.dat"
-	$(MEX_BUILD) -i "src/lcancel.c" -s "evFunction" -dat "build/lcancel.dat" -t "MexTK/evFunction.txt"
+	$(MEX_BUILD) -i "src/lcancel.c" -s "evFunction" -dat "dats/lcancel.dat" -o "build/lcancel.dat" -t "MexTK/evFunction.txt"
 
 build/ledgedash.dat: src/ledgedash.c src/ledgedash.h src/events.h
-	cp "dats/ledgedash.dat" "build/ledgedash.dat"
-	$(MEX_BUILD) -i "src/ledgedash.c" -s "evFunction" -dat "build/ledgedash.dat" -t "MexTK/evFunction.txt"
+	$(MEX_BUILD) -i "src/ledgedash.c" -s "evFunction" -dat "dats/ledgedash.dat" -o "build/ledgedash.dat" -t "MexTK/evFunction.txt"
 
 build/wavedash.dat: src/wavedash.c src/wavedash.h src/events.h
-	cp "dats/wavedash.dat" "build/wavedash.dat"
-	$(MEX_BUILD) -i "src/wavedash.c" -s "evFunction" -dat "build/wavedash.dat" -t "MexTK/evFunction.txt"
+	$(MEX_BUILD) -i "src/wavedash.c" -s "evFunction" -dat "dats/wavedash.dat" -o "build/wavedash.dat" -t "MexTK/evFunction.txt"
 
 build/powershield.dat: src/powershield.c src/events.h
-	$(MEX_BUILD) -i "src/powershield.c" -s "evFunction" -dat "build/powershield.dat" -t "MexTK/evFunction.txt"
+	$(MEX_BUILD) -i "src/powershield.c" -s "evFunction" -o "build/powershield.dat" -t "MexTK/evFunction.txt"
 
 build/edgeguard.dat: src/edgeguard.c src/edgeguard.h src/events.h
-	$(MEX_BUILD) -i "src/edgeguard.c" -s "evFunction" -dat "build/edgeguard.dat" -t "MexTK/evFunction.txt"
+	$(MEX_BUILD) -i "src/edgeguard.c" -s "evFunction" -o "build/edgeguard.dat" -t "MexTK/evFunction.txt"
 
 build/codes.gct: Additional\ ISO\ Files/opening.bnr $(ASM_FILES)
 	cd "Build TM Codeset" && ${GECKO} build

@@ -10,23 +10,28 @@
 #define M_1DEGREE (0.0174533)
 #define M_NAN ((float)(INFINITY * 0.0F))
 
-inline float fabs(float v)
+static inline float fabs(float v)
 {
-    if (v < 0)
+    if (v < 0.0f)
         return -v;
     else
         return v;
 }
 
-inline float sign(float v)
+static inline float sign(float v)
 {
-    if (v >= 0.0)
-        return 1.0;
+    if (v >= 0.0f)
+        return 1.0f;
     else
-        return -1.0;
+        return -1.0f;
 }
 
-inline float Vec2_Magnitude(Vec2 *v)
+static inline float squaref(float v)
+{
+    return v*v;
+}
+
+static inline float Vec2_Magnitude(Vec2 *v)
 {
     return fabs(v->X) + fabs(v->Y);
 }
