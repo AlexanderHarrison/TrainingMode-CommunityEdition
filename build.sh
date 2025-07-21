@@ -58,11 +58,13 @@ mex_build() {
     
     if [ "${build}" = "release" ]; then
         local opt="-O2"
+    elif [[ -n "${build}" && "${build}" != "${out}" ]]; then
+        return
     else
         local opt=""
     fi
-    
     ${hmex} -q -l "MexTK/melee.link" -f "-w -fpermissive ${opt}" -s "${mode}" -t "MexTK/${mode}.txt" -o "${out}" -i ${src} ${dat} || kill_all
+    echo built ${out}
 }
 
 # make build directory if necessary
@@ -82,7 +84,10 @@ mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
 wait
 
 # compile asm
-${hgecko} -q ASM build/codes.gct
+if [[ -z "${build}" || "${build}" = "build/codes.gct" ]]; then
+    ${hgecko} -q ASM build/codes.gct
+    echo built build/codes.gct
+fi
 
 # build mex Start.dol
 ${gc_fst} read "${iso}" Start.dol build/ISOStart.dol
@@ -109,12 +114,12 @@ ${gc_fst} fs TM-CE.iso \
     insert opening.bnr opening.bnr
 ${gc_fst} set-header TM-CE.iso "GTME01" "Training Mode Community Edition"
 
-echo "Successfully built TM-CE.iso"
+echo "built TM-CE.iso"
 
 # build release
 if [ "${2}" = "release" ]; then
     ${xdelta} -fs "${iso}" -e "TM-CE.iso" "TM-CE/patch.xdelta"
     zip -r TM-CE.zip TM-CE/
-    echo "Successfully built TM-CE.zip"
+    echo "built TM-CE.zip"
 fi
 
