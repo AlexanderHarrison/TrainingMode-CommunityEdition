@@ -16,12 +16,24 @@ if [ ! -f "${iso}" ]; then
     exit 1
 fi
 
+if [[ "$(uname)" =~ "MSYS" ]]; then
+    gc_fst="bin/gc_fst.exe"
+    hgecko="bin/hgecko.exe"
+    hmex="bin/hmex.exe"
+    xdelta="bin/xdelta.exe"
+else
+    gc_fst="bin/gc_fst"
+    hgecko="bin/hgecko"
+    hmex="bin/hmex"
+    xdelta="xdelta3"
+fi
+
 # check if en or jp and use appropriate patch
-HEADER=$(bin/gc_fst get-header "${iso}")
-if [ "${HEADER}" = "GALE01" ]; then
-    PATCH="patch.xdelta"
-elif [ "${HEADER}" = "GALJ01" ]; then
-    PATCH="patch_jp.xdelta"
+header=$(${gc_fst} get-header "${iso}")
+if [ "${header}" = "GALE01" ]; then
+    patch="patch.xdelta"
+elif [ "${header}" = "GALJ01" ]; then
+    patch="patch_jp.xdelta"
 else
     echo "Error: Invalid ISO '${iso}'"
     exit 1
@@ -50,14 +62,11 @@ mex_build() {
         local opt=""
     fi
     
-    bin/hmex -q -l "MexTK/melee.link" -f "-w -fpermissive ${opt}" -s "${mode}" -t "MexTK/${mode}.txt" -o "${out}" -i ${src} ${dat} || kill_all
+    ${hmex} -q -l "MexTK/melee.link" -f "-w -fpermissive ${opt}" -s "${mode}" -t "MexTK/${mode}.txt" -o "${out}" -i ${src} ${dat} || kill_all
 }
 
 # make build directory if necessary
 mkdir -p build
-
-# compile asm
-bin/hgecko -q ASM build/codes.gct
 
 # compile code in parallel
 mex_build "tmFunction" "build/eventMenu.dat" "src/events.c src/menu.c src/savestate_v1.c" "dats/eventMenu.dat" &
@@ -69,18 +78,21 @@ mex_build "evFunction" "build/wavedash.dat" "src/wavedash.c" "dats/wavedash.dat"
 mex_build "evFunction" "build/powershield.dat" "src/powershield.c" &
 mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
 
+# wait for compilation to finish
+wait
+
+# compile asm
+${hgecko} -q ASM build/codes.gct
+
 # build mex Start.dol
-bin/gc_fst read "${iso}" Start.dol build/ISOStart.dol
-xdelta3 -dfs build/ISOStart.dol "Build TM Start.dol/${PATCH}" build/Start.dol
+${gc_fst} read "${iso}" Start.dol build/ISOStart.dol
+${xdelta} -dfs build/ISOStart.dol "Build TM Start.dol/${patch}" build/Start.dol
 
 # copy iso over
 if [ ! -f TM-CE.iso ]; then cp "${iso}" TM-CE.iso; fi
 
-# wait for compilation to finish
-wait
-
 # add TM files to iso
-bin/gc_fst fs TM-CE.iso \
+${gc_fst} fs TM-CE.iso \
     delete MvHowto.mth \
     delete MvOmake15.mth \
     delete MvOpen.mth \
@@ -95,13 +107,13 @@ bin/gc_fst fs TM-CE.iso \
     insert codes.gct build/codes.gct \
     insert Start.dol build/Start.dol \
     insert opening.bnr opening.bnr
-bin/gc_fst set-header TM-CE.iso "GTME01" "Training Mode Community Edition"
+${gc_fst} set-header TM-CE.iso "GTME01" "Training Mode Community Edition"
 
 echo "Successfully built TM-CE.iso"
 
 # build release
 if [ "${2}" = "release" ]; then
-    xdelta3 -fs "${iso}" -e "TM-CE.iso" "TM-CE/patch.xdelta"
+    ${xdelta} -fs "${iso}" -e "TM-CE.iso" "TM-CE/patch.xdelta"
     zip -r TM-CE.zip TM-CE/
     echo "Successfully built TM-CE.zip"
 fi
