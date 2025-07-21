@@ -10,25 +10,25 @@ If you have any questions, feel free to ping me (Aitch) in the dev-discussion ch
 
 ## Compilation
 
-We have completely overhauled the build process.
-Now any developer can easily compile an iso from source with a simple script or makefile.
-
 ### Windows
 1. [Install DevKitPro](https://github.com/devkitPro/installer/releases/latest). Install the Gamecube (aka PPC or PowerPC) package.
-2. Double click to run the 'windows_setup.bat' file. If DevKitPro is installed, a console will show up.
-3. Run the command `make iso=path-to-melee.iso iso` in the console. If all goes well, 'TM-CE.iso' will be created.
+2. Run the 'windows_setup.bat' file.
+3. Run the command `./build.sh path-to-melee.iso` in the console.
 
 ### Linux / MacOS / WSL / MSYS2
 1. [Install DevKitPro](https://devkitpro.org/wiki/Getting_Started#Unix-like_platforms). Install the Gamecube (gamecube-dev) package.
-    - Ensure that `/opt/devkitpro/devkitPPC/bin/` is added to the PATH.
-2. [Install Mono](https://www.mono-project.com/download/stable). Prefer installation through your package manager.
-3. Install xdelta3. This should be simple to install through your package manager.
-4. Run `make iso=path-to-melee.iso iso`. If all goes well, 'TM-CE.iso' will be created.
-    - If the provided 'gecko' binary fails (possibly due to libc issues), you can compile your own binary from [here](https://github.com/JLaferri/gecko/releases/tag/v3.4.0). **YOU MUST USE VERSION 3.4.0 OF GECKO OR IT WILL SILENTLY FAIL**.
-    - If the provided 'gc_fst' binary fails (possibly due to libc issues), you can compile your own binary from [here](https://github.com/AlexanderHarrison/gc_fst).
+2. Install xdelta3. This should be simple to install through your package manager.
+3. Run the command `./build.sh path-to-melee.iso` in the console.
+    - If the provided binaries fail (possibly due to libc issues), you can compile your own binaries from my repos:
+[gc_fst](https://github.com/AlexanderHarrison/gc_fst), [hmex](https://github.com/AlexanderHarrison/cdat), [hgecko](https://github.com/AlexanderHarrison/hgecko)
+
+### Build Mode
+The build script takes an optional additional mode argument called the mode - `build.sh iso [mode]`.
+- `release` mode: compiles with optimizations and creates a TM-CE.zip file suitable for release.
+- `build/<target>` mode: exclusively compiles specified target. This supports all dat files and the assembled codes.gct file.
+For example, `./build.sh path-to-melee.iso build/lab.dat` will only recompile the training lab. This is useful for faster iteration speed.
 
 ## Project Structure
-
 There are three important directories to know about:
 1. `src/`: this directory contains the source for the C events, as well as some setup code for the event in `events.c`.
 2. `MexTK/`:
