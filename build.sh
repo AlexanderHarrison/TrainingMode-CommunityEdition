@@ -9,7 +9,7 @@ if [ -z "${1}" ]; then
     exit 1
 fi
 iso="${1}"
-build="${2}"
+mode="${2}"
 
 if [ ! -f "${iso}" ]; then
     echo "Error: path '${iso}' does not exist!"
@@ -46,7 +46,7 @@ kill_all() {
 
 # fn to build mex executable
 mex_build() {
-    local mode="${1}"
+    local sym="${1}"
     local out="${2}"
     local src="${3}"
     
@@ -56,14 +56,14 @@ mex_build() {
         local dat=""
     fi
     
-    if [ "${build}" = "release" ]; then
+    if [ "${mode}" = "release" ]; then
         local opt="-O2"
-    elif [[ -n "${build}" && "${build}" != "${out}" ]]; then
+    elif [[ -n "${mode}" && "${mode}" != "${out}" ]]; then
         return
     else
         local opt=""
     fi
-    ${hmex} -q -l "MexTK/melee.link" -f "-w -fpermissive ${opt}" -s "${mode}" -t "MexTK/${mode}.txt" -o "${out}" -i ${src} ${dat} || kill_all
+    ${hmex} -q -l "MexTK/melee.link" -f "-w -fpermissive ${opt}" -s "${sym}" -t "MexTK/${sym}.txt" -o "${out}" -i ${src} ${dat} || kill_all
     echo built ${out}
 }
 
@@ -84,7 +84,7 @@ mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
 wait
 
 # compile asm
-if [[ -z "${build}" || "${build}" = "build/codes.gct" ]]; then
+if [[ -z "${mode}" || "${mode}" = "build/codes.gct" ]]; then
     ${hgecko} -q ASM build/codes.gct
     echo built build/codes.gct
 fi
