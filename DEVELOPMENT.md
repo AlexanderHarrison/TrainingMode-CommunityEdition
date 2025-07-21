@@ -24,9 +24,12 @@ If you have any questions, feel free to ping me (Aitch) in the dev-discussion ch
 
 ### Build Mode
 The build script takes an optional additional mode argument called the mode - `build.sh iso [mode]`.
-- `release` mode: compiles with optimizations and creates a TM-CE.zip file suitable for release.
-- `build/<target>` mode: exclusively compiles specified target. This supports all dat files and the assembled codes.gct file.
-For example, `./build.sh path-to-melee.iso build/lab.dat` will only recompile the training lab. This is useful for faster iteration speed.
+This allows building an optimized release, or fine-grained recompilation.
+Examples:
+- `build.sh iso`: debug build from scratch.
+- `build.sh iso release`: release build from scratch.
+- `build.sh iso build/codes.gct`: only rebuild asm.
+- `build.sh iso build/edgeguard.dat`: only rebuild edgeguard event. You can use any dat file here.
 
 ## Project Structure
 There are three important directories to know about:
