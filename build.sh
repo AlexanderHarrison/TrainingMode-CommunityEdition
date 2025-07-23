@@ -9,7 +9,12 @@ if [ -z "${1}" ]; then
     exit 1
 fi
 iso="${1}"
-mode="${2}"
+
+if [ "${2}" = "release" ]; then
+    release=true
+elif [ -n "${2}" ]; then
+    mode="${2}"
+fi
 
 if [ ! -f "${iso}" ]; then
     echo "Error: path '${iso}' does not exist!"
@@ -50,19 +55,20 @@ mex_build() {
     local out="${2}"
     local src="${3}"
     
+    if [[ -n "${mode}" && "${mode}" != "${out}" ]]; then
+        return
+    fi
+    
     if [ -n "${4}" ]; then
         local dat="-dat ${4}"
     else
         local dat=""
     fi
     
-    if [ "${mode}" = "release" ]; then
+    if [ "${release}" = true ]; then
         local opt="-O2"
-    elif [[ -n "${mode}" && "${mode}" != "${out}" ]]; then
-        return
-    else
-        local opt=""
     fi
+    
     ${hmex} -q -l "MexTK/melee.link" -f "-w -fpermissive ${opt}" -s "${sym}" -t "MexTK/${sym}.txt" -o "${out}" -i ${src} ${dat} || kill_all
     echo built ${out}
 }
