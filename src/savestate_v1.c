@@ -303,7 +303,6 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 
                     // restore coll data
                     CollData *thiscoll = &fighter_data->coll_data;
-                    CollData *savedcoll = &ft_data->coll_data;
                     GOBJ *gobj = thiscoll->gobj;                                                            // 0x0
                     JOBJ *joint_1 = thiscoll->joint_1;                                                      // 0x108
                     JOBJ *joint_2 = thiscoll->joint_2;                                                      // 0x10c

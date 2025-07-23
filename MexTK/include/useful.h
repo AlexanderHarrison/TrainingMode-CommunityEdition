@@ -9,6 +9,14 @@
 typedef s64 OSTime;
 
 char *strrchr(const char *, int);
+char *strchr(const char *s, int c);
+int strncmp(const char *s1, const char *s2, int n);
+int strcpy(const char *s1, const char *s2);
+
+void memcpy(void *dest, void *source, int size);
+void memmove(void *dest, void *source, int size);
+void memset(void *dest, int c, int size);
+int sprintf(char *restrict str, const char *restrict format, ...);
 
 // OS Macros
 #define OSRoundUp32B(x) (((u32)(x) + 32 - 1) & ~(32 - 1))
@@ -293,8 +301,8 @@ struct CARDStat
     char fileName[CARD_FILENAME_MAX];
     u32 length;
     u32 time; // seconds since midnight 01/01/2000
-    u8 gameName[4];
-    u8 company[2];
+    char gameName[4];
+    char company[2];
 
     // read/write (Set by CARDGetStatus/CARDSetStatus)
     u8 bannerFormat;

@@ -829,6 +829,7 @@ void EventLoad(void)
 
 void EventUpdate(void)
 {
+    // get event info
     GOBJ *menu_gobj = stc_event_vars.menu_gobj;
     if (menu_gobj)
         EventMenu_Update(menu_gobj);
@@ -1232,7 +1233,6 @@ GOBJ *Message_Display(int msg_kind, int queue_num, int msg_color, char *format, 
     line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
 
     // copy each line to an individual char array
-    char *msg_cursor = &msg;
     for (int i = 0; i < line_num; i++)
     {
 
@@ -1280,8 +1280,6 @@ void Message_Manager(GOBJ *mngr_gobj)
             if (this_msg_gobj != 0)
             {
                 MsgData *this_msg_data = this_msg_gobj->userdata;
-                Text *this_msg_text = this_msg_data->text;
-                JOBJ *this_msg_jobj = this_msg_gobj->hsd_object;
 
                 // check if the message moved this frame
                 if (this_msg_data->orig_index != j)
@@ -1727,7 +1725,6 @@ int Tip_Display(int lifetime, char *fmt, ...)
     line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
 
     // copy each line to an individual char array
-    char *msg_cursor = &msg;
     for (int i = 0; i < line_num; i++)
     {
 

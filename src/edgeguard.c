@@ -343,11 +343,6 @@ static void ChangePlayerPercent(GOBJ *menu_gobj, int dmg) {
     Fighter_SetHUDDamage(hmn_data->ply, dmg);
 }
 
-static void EnsureMaxMin(s16 *min, s16 *max) {
-    if (*min > *max) *max = *min;
-    if (*max < *min) *min = *max;
-}
-
 static void WriteCustomKBValues(void) {
     HitStrength_KBRange[KBVALS_CUSTOM].mag_min = Options_CustomHitStrength[OPT_CUSTOMHIT_MAGMIN].val;
     HitStrength_KBRange[KBVALS_CUSTOM].mag_max = Options_CustomHitStrength[OPT_CUSTOMHIT_MAGMAX].val;
@@ -481,9 +476,7 @@ void Event_Think(GOBJ *menu) {
 #define SWEETSPOT_OFFSET_Y 5
     
 static void Think_Spacies(void) {
-    GOBJ *hmn = Fighter_GetGObj(0);
     GOBJ *cpu = Fighter_GetGObj(1);
-    FighterData *hmn_data = hmn->userdata;
     FighterData *cpu_data = cpu->userdata;
 
     Vec2 pos = { cpu_data->phys.pos.X, cpu_data->phys.pos.Y };
@@ -899,9 +892,7 @@ static void Think_Sheik(void) {
 int drift_back_timer = 0;
 
 static void Think_Falcon(void) {
-    GOBJ *hmn = Fighter_GetGObj(0);
     GOBJ *cpu = Fighter_GetGObj(1);
-    FighterData *hmn_data = hmn->userdata;
     FighterData *cpu_data = cpu->userdata;
 
     Vec2 pos = { cpu_data->phys.pos.X, cpu_data->phys.pos.Y };
@@ -1117,7 +1108,6 @@ static void Think_Marth(void) {
         .Y = target_ledgegrab.Y - pos.Y,
     };
     
-    int hmn_state = hmn_data->state_id;
     bool past_ledgegrab = fabs(pos.X) < fabs(target_ledgegrab.X);
     bool can_jump = cpu_data->jump.jumps_used < 2;
     bool can_upb = vec_to_ledgegrab.Y < UPB_STRAIGHT_HEIGHT

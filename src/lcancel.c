@@ -1,5 +1,4 @@
 #include "lcancel.h"
-static char nullString[] = " ";
 
 // Main Menu
 enum lcancel_option
@@ -66,9 +65,6 @@ static EventMenu LabMenu_Main = {
 void Event_Init(GOBJ *gobj)
 {
     LCancelData *event_data = gobj->userdata;
-    EventDesc *event_desc = event_data->event_desc;
-    GOBJ *hmn = Fighter_GetGObj(0);
-    FighterData *hmn_data = hmn->userdata;
 
     // get l-cancel assets
     event_data->lcancel_assets = Archive_GetPublicAddress(event_vars->event_archive, "lcancel");
@@ -87,7 +83,6 @@ void Event_Think(GOBJ *event)
     // get fighter data
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
-    HSD_Pad *pad = PadGet(hmn_data->pad_index, PADGET_ENGINE);
 
     // set infinite shields
     hmn_data->shield.health = 60;

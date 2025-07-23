@@ -2464,7 +2464,7 @@ struct FighterData
         void (*OnGrabFighter_Self)(GOBJ *fighter);              // 0x2190
         void (*x2194)(GOBJ *fighter);                           // 0x2194, i think this is on grabbed items
         void (*OnGrabFighter_Victim)(GOBJ *victim, GOBJ *self); // 0x2198
-        void (*IASA)(GOBJ *fighter);                            // 0x219C
+        int  (*IASA)(GOBJ *fighter);                            // 0x219C
         void (*Anim)(GOBJ *fighter);                            // 0x21A0
         void (*Phys)(GOBJ *fighter);                            // 0x21a4
         void (*Coll)(GOBJ *fighter);                            // 0x21a8

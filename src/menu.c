@@ -74,8 +74,6 @@ void EventMenu_Update(GOBJ *gobj)
             // humans only
             if (Fighter_GetSlotType(i) == 0)
             {
-                GOBJ *fighter = Fighter_GetGObj(i);
-                FighterData *fighter_data = fighter->userdata;
                 int controller_index = Fighter_GetControllerPort(i);
 
                 HSD_Pad *pad = PadGet(controller_index, PADGET_MASTER);
@@ -239,7 +237,6 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *currMenu) {
     s32 scroll = currMenu->scroll;
     EventOption *currOption = &currMenu->options[cursor + scroll];
     s32 option_num = currMenu->option_num;
-    s32 cursor_min = 0;
     s32 cursor_max = ((option_num > MENU_MAXOPTION) ? MENU_MAXOPTION : option_num) - 1;
 
     // get option variables
@@ -522,7 +519,6 @@ void EventMenu_PopupThink(GOBJ *gobj, EventMenu *currMenu)
     s32 scroll = menuData->popup_scroll;
     EventOption *currOption = &currMenu->options[currMenu->cursor + currMenu->scroll];
     s32 value_num = currOption->value_num;
-    s32 cursor_min = 0;
     s32 cursor_max = value_num;
     if (cursor_max > MENU_POPMAXOPTION)
     {
@@ -788,7 +784,6 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     Text *text;
     int subtext;
     int canvasIndex = menuData->canvas_menu;
-    s32 cursor = menu->cursor;
 
     // free text if it exists
     if (menuData->text_name != 0)
@@ -966,7 +961,6 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
     line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
 
     // copy each line to an individual char array
-    char *msg_cursor = &msg;
     for (int i = 0; i < line_num; i++)
     {
 
@@ -1002,7 +996,6 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
         EventOption *currOption = &menu->options[scroll + i];
 
         // output option name
-        int optionVal = currOption->val;
         char *str = currOption->name ? currOption->name : "";
         Text_SetText(text, i, str);
 
@@ -1158,7 +1151,6 @@ void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu)
     // init variables
     MenuData *menuData = gobj->userdata; // userdata
     s32 cursor = menu->cursor;
-    EventOption *option = &menu->options[cursor];
 
     // create options background
     evMenu *menuAssets = event_vars->menu_assets;

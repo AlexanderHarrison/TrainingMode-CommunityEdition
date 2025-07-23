@@ -1,5 +1,4 @@
 #include "wavedash.h"
-static char nullString[] = " ";
 
 enum options {
     OPT_TARGET,
@@ -63,7 +62,6 @@ static EventMenu WdMenu_Main = {
 void Event_Init(GOBJ *gobj)
 {
     WavedashData *event_data = gobj->userdata;
-    EventDesc *event_desc = event_data->event_desc;
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
 

@@ -57,7 +57,7 @@ void DevelopText_HideText(DevText *text);
 void DevelopText_ShowBG(DevText *text);
 void DevelopText_HideBG(DevText *text);
 void DevelopText_StoreTextScale(DevText *text, float x, float y);
-void Develop_DrawSphere(float size, Vec3 *pos1, Vec2 *pos2, GXColor *diffuse, GXColor *ambient);
+void Develop_DrawSphere(float size, Vec3 *pos1, Vec3 *pos2, GXColor *diffuse, GXColor *ambient);
 void Develop_UpdateMatchHotkeys();
 
 static int *stc_dblevel = R13 + (-0x6C98);

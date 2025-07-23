@@ -85,7 +85,7 @@ typedef struct MenuData
     JOBJ *scroll_bot;
     GOBJ *custom_gobj;                               // onSelect gobj
     int (*custom_gobj_think)(GOBJ *custom_gobj);     // per frame function. Returns bool indicating if the program should check to unpause
-    void *(*custom_gobj_destroy)(GOBJ *custom_gobj); // on destroy function
+    void (*custom_gobj_destroy)(GOBJ *custom_gobj);  // on destroy function
 } MenuData;
 
 
