@@ -24,8 +24,6 @@
 } while (0)
 #endif
 
-#define SHORTCUT_BUTTONS (HSD_BUTTON_A | HSD_BUTTON_B | HSD_BUTTON_X | HSD_TRIGGER_Z)
-
 typedef struct EventMatchData //r8
 {
     unsigned int timer : 2;

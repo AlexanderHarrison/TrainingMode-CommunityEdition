@@ -40,7 +40,7 @@ static EventOption WdOptions_Main[] = {
     },
     // Help
     {
-        .kind = OPTKIND_FUNC,
+        .kind = OPTKIND_INFO,
         .name = "Help",
         .desc = "A wavedash is performed by air-dodging diagonally down\nas soon you leave the ground from a jump, causing the fighter\nto slide a short distance. This technique will allow you to quickly\nadjust your position and even attack while sliding.",
     },

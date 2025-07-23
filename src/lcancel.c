@@ -43,7 +43,7 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
     },
     // Help
     {
-        .kind = OPTKIND_FUNC,                                                                                                                                                                                       // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_INFO,
         .name = "Help",                                                                                                                                                                                             // pointer to a string
         .desc = "L-canceling is performed by pressing L, R, or Z up to \n7 frames before landing from a non-special aerial\nattack. This will cut the landing lag in half, allowing \nyou to act sooner after attacking.", // string describing what this option does
     },
