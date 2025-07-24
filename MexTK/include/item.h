@@ -705,7 +705,7 @@ struct ItemData
     u8 xd09;                                            // 0xd09
     u8 xd0A;                                            // 0xd0A
     u8 xd0B;                                            // 0xd0B
-    GOBJ *xd0c;                                         // 0xd0c
+    int xd0c;                                           // 0xd0c
     int xd10;                                           // 0xd10
     struct                                              // cb
     {                                                   //
@@ -977,8 +977,8 @@ struct ItemData
 
 /*** static reference ***/
 
-static itPublicData **stc_itPublicData = (R13 + -0x4978);
-static ItemDesc **stc_itdesc_enemies = (R13 + -0x4968);
+static itPublicData **stc_itPublicData = R13_OFFSET(-0x4978);
+static ItemDesc **stc_itdesc_enemies = R13_OFFSET(-0x4968);
 
 /*** Functions ***/
 void Item_IndexStageItem(ItemDesc *item_desc, int index);

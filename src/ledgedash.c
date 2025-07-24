@@ -1,5 +1,4 @@
 #include "ledgedash.h"
-static char nullString[] = " ";
 
 static GXColor tmgbar_black = {40, 40, 40, 255};
 static GXColor tmgbar_grey = {120, 120, 120, 255};
@@ -53,15 +52,15 @@ enum reset_pos
 };
 
 // Main Menu
-static char **LdshOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced"};
-static char **LdshOptions_Start[] = {"Ledge", "Falling", "Stage", "Respawn Platform"};
-static char **LdshOptions_HUD[] = {"On", "Off"};
-static char **LdshOptions_Inv[] = {"Off", "On"};
-static char **LdshOptions_Overlays[] = {"Off", "On"};
+static const char *LdshOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced"};
+static const char *LdshOptions_Start[] = {"Ledge", "Falling", "Stage", "Respawn Platform"};
+static const char *LdshOptions_HUD[] = {"On", "Off"};
+static const char *LdshOptions_Inv[] = {"Off", "On"};
+static const char *LdshOptions_Overlays[] = {"Off", "On"};
 static float LdshOptions_GameSpeeds[] = {1.f, 5.f/6.f, 2.f/3.f, 1.f/2.f, 1.f/4.f};
-static char *LdshOptions_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"};
-static char *LdshOptions_Reset[] = {"None", "Same Side", "Swap", "Swap on Success", "Random"};
-static char *LdshOptions_ResetDelay[] = {"Slow", "Normal", "Fast", "Instant"};
+static const char *LdshOptions_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"};
+static const char *LdshOptions_Reset[] = {"None", "Same Side", "Swap", "Swap on Success", "Random"};
+static const char *LdshOptions_ResetDelay[] = {"Slow", "Normal", "Fast", "Instant"};
 static int LdshOptions_ResetDelaySuccess[] = { 120, 60, 30, 1 };
 static int LdshOptions_ResetDelayFailure[] = { 60, 20, 1, 1 };
 
@@ -147,7 +146,7 @@ static EventOption LdshOptions_Main[] = {
     },
 };
 
-static char **LdshOptions_FrameAdvance[] = {"Off", "On"};
+static const char *LdshOptions_FrameAdvance[] = {"Off", "On"};
 static EventOption Ldsh_FrameAdvance = {
     .kind = OPTKIND_STRING,
     .value_num = sizeof(LdshOptions_FrameAdvance) / 4,
@@ -171,7 +170,7 @@ static ShortcutList Ldsh_ShortcutList = {
 static EventMenu LdshMenu_Main = {
     .name = "Ledgedash Training",
     .option_num = sizeof(LdshOptions_Main) / sizeof(EventOption),
-    .options = &LdshOptions_Main,
+    .options = LdshOptions_Main,
     .shortcuts = &Ldsh_ShortcutList,
 };
 
@@ -188,8 +187,7 @@ void Event_Init(GOBJ *gobj)
     hsd_update->checkAdvance = Update_CheckAdvance;
 
     // standardize camera
-    Stage *stage = stc_stage;
-    float *unk_cam = 0x803bcca0;
+    float *unk_cam = (void *)0x803bcca0;
     stc_stage->fov_r = 0; // no camera rotation
     stc_stage->x28 = 1;   // pan value?
     stc_stage->x2c = 1;   // pan value?
@@ -216,10 +214,9 @@ void Event_Think(GOBJ *event)
     // get fighter data
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
-    HSD_Pad *pad = PadGet(hmn_data->pad_index, PADGET_ENGINE);
 
     // no ledgefall
-    FtCliffCatch *ft_state = &hmn_data->state_var;
+    FtCliffCatch *ft_state = (void *)&hmn_data->state_var;
     if (hmn_data->state_id == ASID_CLIFFWAIT)
         ft_state->fall_timer = 2;
 
@@ -246,7 +243,7 @@ void Event_Think(GOBJ *event)
         memset(&hmn_data->color[1], 0, sizeof(ColorOverlay));
         memset(&hmn_data->color[0], 0, sizeof(ColorOverlay));
 
-        int curr_frame = event_data->action_state.timer - 1;
+        u32 curr_frame = event_data->action_state.timer - 1;
         if (curr_frame < 30) {
             int action = event_data->action_state.action_log[curr_frame];
 
@@ -268,7 +265,7 @@ void Event_Think(GOBJ *event)
         }
     }
 }
-void Event_Exit()
+void Event_Exit(GOBJ *menu)
 {
     // end game
     stc_match->state = 3;
@@ -283,7 +280,7 @@ void Ledgedash_HUDInit(LedgedashData *event_data)
 
     // create hud cobj
     GOBJ *hudcam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, 0x803f94d0);
+    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
     COBJDesc *cam_desc = dmgScnMdls[1][0];
     COBJ *hud_cobj = COBJ_LoadDesc(cam_desc);
     // init camera
@@ -365,8 +362,6 @@ void Ledgedash_HUDInit(LedgedashData *event_data)
         count++;
         d = d->next;
     }
-
-    return 0;
 }
 void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
 {
@@ -384,9 +379,9 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
         event_data->tip.refresh_num++;
     }
 
-    int curr_frame = event_data->action_state.timer++;
+    u32 curr_frame = event_data->action_state.timer++;
     int hud_updating =
-        curr_frame < (sizeof(event_data->action_state.action_log) / sizeof(u8))
+        curr_frame < countof(event_data->action_state.action_log)
         && hmn_data->hurt.intang_frames.ledge != 0;
 
     if (hud_updating) {
@@ -559,7 +554,6 @@ void Ledgedash_HUDCamThink(GOBJ *gobj)
 void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
 {
     FighterData *hmn_data = hmn->userdata;
-    JOBJ *hud_jobj = event_data->hud.gobj->hsd_object;
 
     int reset_mode = LdshOptions_Main[OPT_RESET].val;
 
@@ -629,7 +623,7 @@ void Ledgedash_InitVariables(LedgedashData *event_data)
     event_data->action_state.is_finished = 0;
 
     // init action log
-    for (int i = 0; i < sizeof(event_data->action_state.action_log) / sizeof(u8); i++)
+    for (u32 i = 0; i < countof(event_data->action_state.action_log); i++)
     {
         event_data->action_state.action_log[i] = 0;
     }
@@ -638,15 +632,11 @@ void Ledgedash_InitVariables(LedgedashData *event_data)
 // Menu Toggle functions
 void Ledgedash_ToggleStartPosition(GOBJ *menu_gobj, int value)
 {
-    // get fighter data
-    GOBJ *hmn = Fighter_GetGObj(0);
-    LedgedashData *event_data = event_vars->event_gobj->userdata;
-
     Fighter_PlaceOnLedge();
 }
 
 // Hitlog functions
-GOBJ *Ledgedash_HitLogInit()
+GOBJ *Ledgedash_HitLogInit(void)
 {
 
     GOBJ *hit_gobj = GObj_Create(0, 0, 0);
@@ -669,7 +659,7 @@ void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn)
     {
 
         // iterate through fighter hitboxes
-        for (int i = 0; i < sizeof(hmn_data->hitbox) / sizeof(ftHit); i++)
+        for (u32 i = 0; i < countof(hmn_data->hitbox); i++)
         {
 
             ftHit *this_hit = &hmn_data->hitbox[i];
@@ -700,7 +690,7 @@ void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn)
             if (this_itemdata->fighter_gobj == hmn)
             {
                 // iterate through item hitboxes
-                for (int i = 0; i < sizeof(hmn_data->hitbox) / sizeof(ftHit); i++)
+                for (u32 i = 0; i < countof(hmn_data->hitbox); i++)
                 {
 
                     itHit *this_hit = &this_itemdata->hitbox[i];
@@ -741,7 +731,7 @@ void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
         LdshHitboxData *this_ldsh_hit = &hitlog_data->hitlog[i];
 
         // determine color
-        GXColor *diffuse, *ambient;
+        GXColor *diffuse;
         if (this_ldsh_hit->kind == 0)
             diffuse = &hit_diffuse;
         else if (this_ldsh_hit->kind == 8)
@@ -758,9 +748,6 @@ void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
 // Fighter fuctions
 void Ledgedash_FtInit(LedgedashData *event_data)
 {
-    GOBJ *hmn = Fighter_GetGObj(0);
-    FighterData *hmn_data = hmn->userdata;
-
     // create camera box
     CmSubject *cam = CameraSubject_Alloc();
     cam->boundleft_proj = -10;
@@ -810,7 +797,7 @@ void Ledgedash_ChangeCamMode(GOBJ *menu_gobj, int value)
     Match_CorrectCamera();
 }
 
-void Event_Update()
+void Event_Update(void)
 {
     if (Pause_CheckStatus(1) != 2) {
         float speed = LdshOptions_GameSpeeds[LdshOptions_Main[OPT_SPEED].val];
@@ -819,10 +806,10 @@ void Event_Update()
         HSD_SetSpeedEasy(1.0);
     }
 
-    Update_Camera();
+    Ledgedash_UpdateCamera();
 }
 
-void Update_Camera()
+void Ledgedash_UpdateCamera(void)
 {
     // if camera is set to advanced
     if (LdshOptions_Main[OPT_CAM].val == 3)
@@ -874,8 +861,6 @@ int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir)
 {
     // get line and vert pointers
     CollLine *collline = *stc_collline;
-    CollVert *collvert = *stc_collvert;
-    CollDataStage *coll_data = *stc_colldata;
 
     // get initial closest
     float xpos_closest;
@@ -887,10 +872,7 @@ int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir)
         xpos_closest = 5000;
 
     // look for the closest ledge
-    CollLine *line_closest = 0;
     int index_closest = -1;
-    int group_index = 0;                  // first ground link
-    int group_num = coll_data->group_num; // ground link num
     CollGroup *this_group = *stc_firstcollgroup;
     while (this_group != 0) // loop through ground links
     {
@@ -949,7 +931,7 @@ int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir)
                                 dir_mult = 1;
                             int ray_index;
                             int ray_kind;
-                            Vec2 ray_angle;
+                            Vec3 ray_angle;
                             Vec3 ray_pos;
                             float from_x = ledge_pos.X + (2 * dir_mult);
                             float to_x = from_x;
@@ -991,7 +973,6 @@ int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir)
 
                                             // save info on this line
                                             xpos_closest = ledge_pos.X; // save left vert's X position
-                                            line_closest = this_line;
                                             index_closest = line_index;
                                             *ledge_dir = 1;
                                         }
@@ -1004,7 +985,6 @@ int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir)
 
                                             // save info on this line
                                             xpos_closest = ledge_pos.X; // save left vert's X position
-                                            line_closest = this_line;
                                             index_closest = line_index;
                                             *ledge_dir = -1;
                                         }
@@ -1073,7 +1053,7 @@ void Fighter_PlaceOnLedge(void)
     {
         // place player on this ledge
         event_data->tip.refresh_num = -1; // setting this to -1 because the per frame code will add 1 and make it 0
-        FtCliffCatch *ft_state = &hmn_data->state_var;
+        FtCliffCatch *ft_state = (void *)&hmn_data->state_var;
         ft_state->ledge_index = line_index; // store line index
         Fighter_EnterCliffWait(hmn);
         ft_state->timer = 0; // spoof as on ledge for a frame already
@@ -1160,8 +1140,7 @@ void Fighter_PlaceOnLedge(void)
             // subtract some value, 8039c9f0
             if (ptcl->gen != 0)
             {
-                int *arr = ptcl->gen;
-                arr[0x50 / 4]--;
+                ptcl->gen->particle_num--;
             }
             // remove from generator? 8039ca14
             if (ptcl->gen != 0)
@@ -1174,7 +1153,7 @@ void Fighter_PlaceOnLedge(void)
             *ptcls = ptcl->next;
 
             // free alloc, 8039ca54
-            HSD_ObjFree(0x804d0f60, ptcl);
+            HSD_ObjFree((void *)0x804d0f60, ptcl);
 
             // decrement ptcl total
             u16 ptclnum = *stc_ptclnum;
@@ -1260,20 +1239,17 @@ int RebirthWait_IASA(GOBJ *fighter)
 {
 
     FighterData *fighter_data = fighter->userdata;
-
-    if (Fighter_IASACheck_JumpAerial(fighter))
-    {
-    }
-    else
+    if (!Fighter_IASACheck_JumpAerial(fighter))
     {
         ftCommonData *ftcommon = *stc_ftcommon;
 
         // check for lstick movement
         float stick_x = fabs(fighter_data->input.lstick.X);
         float stick_y = fighter_data->input.lstick.Y;
-        if ((stick_x > 0.2875) && (fighter_data->input.timer_lstick_tilt_x < 2) ||
-            (stick_y < (ftcommon->lstick_rebirthfall * -1)) && (fighter_data->input.timer_lstick_tilt_y < 4))
-        {
+        if (
+            (stick_x > 0.2875f && fighter_data->input.timer_lstick_tilt_x < 2)
+            || (stick_y < -ftcommon->lstick_rebirthfall && fighter_data->input.timer_lstick_tilt_y < 4)
+        ) {
             Fighter_EnterFall(fighter);
             return 1;
         }
@@ -1329,9 +1305,9 @@ void Tips_Think(LedgedashData *event_data, FighterData *hmn_data)
         event_vars->Tip_Destroy();
 
         // determine how many frames early
-        float *anim_ptr = Fighter_GetAnimData(hmn_data, hmn_data->action_id);
-        float frame_total = anim_ptr[0x8 / 4];
-        float frames_early = frame_total - hmn_data->state.frame;
+        Figatree *anim = Fighter_GetAnimData(hmn_data, hmn_data->action_id);
+        float frame_num = anim->frame_num;
+        float frames_early = frame_num - hmn_data->state.frame;
         event_vars->Tip_Display(3 * 60, "Misinput:\nFell %d frames early.", (int)frames_early + 1);
     }
 
@@ -1387,12 +1363,6 @@ int Update_CheckPause(void)
     HSD_Update *update = stc_hsd_update;
     int isChange = 0;
 
-    GOBJ *hmn = Fighter_GetGObj(0);
-    FighterData *hmn_data = hmn->userdata;
-
-    // get their pad
-    HSD_Pad *pad = PadGet(hmn_data->pad_index, PADGET_MASTER);
-
     // menu paused
     if (Ldsh_FrameAdvance.val == 1)
     {
@@ -1428,7 +1398,7 @@ int Update_CheckAdvance(void)
     // get their advance input
     static int stc_advance_btns[] = {HSD_TRIGGER_L, HSD_TRIGGER_Z, HSD_BUTTON_X, HSD_BUTTON_Y, HSD_TRIGGER_R};
     Memcard *memcard = stc_memcard;
-    int btn_idx = memcard->TM_LabFrameAdvanceButton;
+    u32 btn_idx = memcard->TM_LabFrameAdvanceButton;
     if (btn_idx >= countof(stc_advance_btns))
         btn_idx = 0;
     int advance_btn = stc_advance_btns[btn_idx];

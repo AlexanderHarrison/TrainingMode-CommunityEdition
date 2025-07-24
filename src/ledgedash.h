@@ -49,7 +49,7 @@ struct LedgedashData
 
 struct LedgedashAssets
 {
-    JOBJ *hud;
+    JOBJDesc *hud;
     void **hudmatanim; // pointer to array
 };
 
@@ -67,7 +67,7 @@ struct LdshHitlogData
     LdshHitboxData hitlog[LDSH_HITBOXNUM];
 };
 
-typedef enum LDSH_ACTION
+enum ldsh_action
 {
     LDACT_NONE,
     LDACT_CLIFFWAIT,
@@ -79,16 +79,28 @@ typedef enum LDSH_ACTION
     LDACT_GALINT,
 };
 
-void Event_Exit();
-void Event_Update();
+void Event_Exit(GOBJ *menu);
+void Event_Update(void);
 void Tips_Toggle(GOBJ *menu_gobj, int value);
+void Tips_Think(LedgedashData *event_data, FighterData *hmn_data);
 void Ledgedash_ToggleStartPosition(GOBJ *menu_gobj, int value);
 void Ledgedash_HUDCamThink(GOBJ *gobj);
 void Ledgedash_ChangeCamMode(GOBJ *gobj, int value);
-GOBJ *Ledgedash_HitLogInit();
+GOBJ *Ledgedash_HitLogInit(void);
 void Ledgedash_HitLogGX(GOBJ *gobj, int pass);
+void Ledgedash_FtInit(LedgedashData *event_data);
+void Ledgedash_UpdateCamera(void);
+void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn);
+void Ledgedash_InitVariables(LedgedashData *event_data);
+void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn);
+void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data);
+void Ledgedash_HUDInit(LedgedashData *event_data);
 void RebirthWait_Phys(GOBJ *fighter);
 int RebirthWait_IASA(GOBJ *fighter);
 int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir);
 int Update_CheckPause(void);
 int Update_CheckAdvance(void);
+int Fighter_IsFallBlocked(FighterData *hmn_data);
+void Fighter_UpdateCamera(GOBJ *fighter);
+void Fighter_UpdatePosition(GOBJ *fighter);
+void Fighter_PlaceOnLedge(void);

@@ -6,9 +6,19 @@
 #include "structs.h"
 #include "datatypes.h"
 
+#include <stdarg.h>
+
 typedef s64 OSTime;
 
 char *strrchr(const char *, int);
+char *strchr(const char *s, int c);
+int strncmp(const char *s1, const char *s2, int n);
+int strcpy(const char *s1, const char *s2);
+
+void memcpy(void *dest, void *source, int size);
+void memmove(void *dest, void *source, int size);
+void memset(void *dest, int c, int size);
+int sprintf(char *restrict str, const char *restrict format, ...);
 
 // OS Macros
 #define OSRoundUp32B(x) (((u32)(x) + 32 - 1) & ~(32 - 1))
@@ -293,8 +303,8 @@ struct CARDStat
     char fileName[CARD_FILENAME_MAX];
     u32 length;
     u32 time; // seconds since midnight 01/01/2000
-    u8 gameName[4];
-    u8 company[2];
+    char gameName[4];
+    char company[2];
 
     // read/write (Set by CARDGetStatus/CARDSetStatus)
     u8 bannerFormat;
@@ -526,12 +536,12 @@ typedef struct SIXYLookup
 } SIXYLookup;
 
 /*** Static Vars ***/
-static OSInfo *os_info = 0x80000000;
-static int *stc_fst_totalentrynum = 0x804D7284;
-static FSTEntry **stc_fst_entries = 0x804D727C; // -0x4424, indexed by entrynum (0 is always the root directory)
-static char **stc_fst_filenames = 0x804D7280;   // use FSTEntry.filename_offset to find an entrynums name
-static int *stc_si_sampling_rate = 0x804D740C;
-static SIXYLookup *stc_si_xy = 0x80402ca0;
+static OSInfo *os_info = (void *)0x80000000;
+static int *stc_fst_totalentrynum = (void *)0x804D7284;
+static FSTEntry **stc_fst_entries = (void *)0x804D727C; // -0x4424, indexed by entrynum (0 is always the root directory)
+static char **stc_fst_filenames = (void *)0x804D7280;   // use FSTEntry.filename_offset to find an entrynums name
+static int *stc_si_sampling_rate = (void *)0x804D740C;
+static SIXYLookup *stc_si_xy = (void *)0x80402ca0;
 
 /*** OS Library ***/
 int OSGetTick();
@@ -606,17 +616,8 @@ int HSD_GetHeapID();
 void HSD_SetHeapID(int heap);
 
 /** String Library **/
+int _vsprintf(char *str, int unk, const char *format, va_list arg);
 #define vsprintf(buffer, format, args) _vsprintf(buffer, -1, format, args)
-// int sprintf(char *s, const char *format, ...);
-// int _vsprintf(char *str, int unk, const char *format, va_list arg);
-// int strlen(char *str);
-// char *strchr(char *str, char c); // searches for the first occurrence of the character c (an unsigned char) in the string pointed to by the argument str.
-// int strcmp(char *str1, char *str2);
-// int strncmp(char *str1, char *str2, int size);
-// char *strcpy(char *dest, char *src);            // copies the string pointed to, by src to dest.
-// char *strncpy(char *dest, char *src, int size); // copies the string pointed to, by src to dest.
-// unsigned long int strtoul(const char *str, char **endptr, int base);
-// int tolower(char in);
 
 void Wind_StageCreate(Vec3 *pos, int duration, float radius, float lifetime, float angle, float left, float right, float top, float bottom);
 void Wind_FighterCreate(Vec3 *pos, int duration, float radius, float lifetime, float angle);

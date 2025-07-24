@@ -208,7 +208,7 @@ struct GOBJ
     GOBJ *nextOrdered;       // 0x10
     GOBJ *previousOrdered;   // 0x14
     GOBJProc *proc;          // 0x18
-    void (*gx_cb)();         // 0x1C
+    void (*gx_cb)(GOBJ* gobj, int code);         // 0x1C
     u64 cobj_links;          // 0x20. this is used to know which gobjs to render
     void *hsd_object;        // 0x28
     void *userdata;          // 0x2C
@@ -730,17 +730,17 @@ struct HSD_SObjDesc
 };
 
 /*** Static Variables ***/
-// static GOBJ ***stc_gobj_gx_lookup = R13 + (-0x3E7C);
-static GOBJ ***stc_gobj_lookup = R13 + (-0x3E74);    //
-static u8 *stc_gobj_proc_num = 0x804ce382;           // number of elements in the below array
-static GOBJProc ***stc_gobjproc_lookup = 0x804D7840; // array of gobj procs ptrs
-static GOBJProc **stc_gobjproc_cur = 0x804d7838;     // current gobj proc being processed
-static u32 *stc_gobjproc_updateidx_cur = 0x804d783c; // update index of the current gobj proc being processed. this is compared to
-static u8 *objkind_sobj = R13 + -(0x3D40);
-static u8 *objkind_cobj = R13 + -(0x3E55);
-static u8 *objkind_lobj = R13 + -(0x3E56);
-static u8 *objkind_jobj = R13 + -(0x3E57);
-static u8 *objkind_fog = R13 + -(0x3E58);
+// static GOBJ ***stc_gobj_gx_lookup = R13_OFFSET(-0x3E7C);
+static GOBJ ***stc_gobj_lookup = R13_OFFSET(-0x3E74);    //
+static u8 *stc_gobj_proc_num = (void *)0x804ce382;           // number of elements in the below array
+static GOBJProc ***stc_gobjproc_lookup = (void *)0x804D7840; // array of gobj procs ptrs
+static GOBJProc **stc_gobjproc_cur = (void *)0x804d7838;     // current gobj proc being processed
+static u32 *stc_gobjproc_updateidx_cur = (void *)0x804d783c; // update index of the current gobj proc being processed. this is compared to
+static u8 *objkind_sobj = R13_OFFSET(-0x3D40);
+static u8 *objkind_cobj = R13_OFFSET(-0x3E55);
+static u8 *objkind_lobj = R13_OFFSET(-0x3E56);
+static u8 *objkind_jobj = R13_OFFSET(-0x3E57);
+static u8 *objkind_fog = R13_OFFSET(-0x3E58);
 
 /*** Functions ***/
 int JOBJ_GetWorldPosition(JOBJ *source, Vec3 *add, Vec3 *dest);

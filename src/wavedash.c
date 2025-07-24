@@ -1,5 +1,4 @@
 #include "wavedash.h"
-static char nullString[] = " ";
 
 enum options {
     OPT_TARGET,
@@ -12,8 +11,8 @@ enum options {
 };
 
 // Main Menu
-static char **WdOptions_Target[] = {"Off", "On"};
-static char **WdOptions_HUD[] = {"On", "Off"};
+static const char *WdOptions_Target[] = {"Off", "On"};
+static const char *WdOptions_HUD[] = {"On", "Off"};
 static EventOption WdOptions_Main[] = {
     // Target
     {
@@ -56,14 +55,13 @@ static EventOption WdOptions_Main[] = {
 static EventMenu WdMenu_Main = {
     .name = "Wavedash Training",
     .option_num = sizeof(WdOptions_Main) / sizeof(EventOption),
-    .options = &WdOptions_Main,
+    .options = WdOptions_Main,
 };
 
 // Init Function
 void Event_Init(GOBJ *gobj)
 {
     WavedashData *event_data = gobj->userdata;
-    EventDesc *event_desc = event_data->event_desc;
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
 
@@ -88,7 +86,7 @@ void Event_Think(GOBJ *event)
 
     Wavedash_Think(event_data, hmn_data);
 }
-void Event_Exit()
+void Event_Exit(GOBJ *menu)
 {
     // end game
     stc_match->state = 3;
@@ -103,7 +101,7 @@ void Wavedash_Init(WavedashData *event_data)
 
     // create hud cobj
     GOBJ *hudcam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, 0x803f94d0);
+    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
     COBJDesc *cam_desc = dmgScnMdls[1][0];
     COBJ *hud_cobj = COBJ_LoadDesc(cam_desc);
     // init camera
@@ -158,7 +156,6 @@ void Wavedash_Init(WavedashData *event_data)
     // init timer
     event_data->timer = -1;
     event_data->since_wavedash = 255;
-    return 0;
 }
 void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
 {
@@ -264,9 +261,19 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
             }
 
             // look for failed WD
-            else if ((event_data->is_early_airdodge == 1) && (((hmn_data->state_id == ASID_JUMPF) || (hmn_data->state_id == ASID_JUMPB)) && (hmn_data->TM.state_frame >= 10)) ||
-                     ((hmn_data->state_id == ASID_ESCAPEAIR) && (hmn_data->TM.state_frame >= 10) && (hmn_data->TM.state_prev[1] == ASID_KNEEBEND)))
-            {
+            else if (
+                (
+                    (event_data->is_early_airdodge == 1)
+                    && (
+                        (hmn_data->state_id == ASID_JUMPF)
+                        || (hmn_data->state_id == ASID_JUMPB)
+                    ) && (hmn_data->TM.state_frame >= 10)
+                ) || (
+                    (hmn_data->state_id == ASID_ESCAPEAIR) 
+                    && (hmn_data->TM.state_frame >= 10) 
+                    && (hmn_data->TM.state_prev[1] == ASID_KNEEBEND)
+                )
+            ) {
                 is_finished = 1;
                 mat_anim = event_data->assets->hudmatanim[1];
                 SFX_PlayCommon(3);
@@ -274,7 +281,7 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
                 // restore position
                 int ray_index;
                 int ray_kind;
-                Vec2 ray_angle;
+                Vec3 ray_angle;
                 Vec3 ray_pos;
                 float from_x = event_data->restore.pos.X;
                 float to_x = from_x;
@@ -757,7 +764,7 @@ int Target_CheckArea(WavedashData *event_data, int line, Vec3 *pos, float x_offs
 }
 
 // Tips
-Tips_Think(WavedashData *event_data, FighterData *hmn_data)
+void Tips_Think(WavedashData *event_data, FighterData *hmn_data)
 {
 
     // only if enabled

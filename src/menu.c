@@ -1,8 +1,6 @@
 #include "events.h"
 #include <stdarg.h>
 
-static char nullString[] = " ";
-
 GOBJ *EventMenu_Init(EventMenu *start_menu)
 {
     // Ensure this event has a menu
@@ -10,7 +8,7 @@ GOBJ *EventMenu_Init(EventMenu *start_menu)
         return 0;
 
     // Create a cobj for the event menu
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, 0x803f94d0);
+    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
     COBJDesc *cam_desc = dmgScnMdls[1][0];
     COBJ *cam_cobj = COBJ_LoadDesc(cam_desc);
     GOBJ *cam_gobj = GObj_Create(19, 20, 0);
@@ -74,8 +72,6 @@ void EventMenu_Update(GOBJ *gobj)
             // humans only
             if (Fighter_GetSlotType(i) == 0)
             {
-                GOBJ *fighter = Fighter_GetGObj(i);
-                FighterData *fighter_data = fighter->userdata;
                 int controller_index = Fighter_GetControllerPort(i);
 
                 HSD_Pad *pad = PadGet(controller_index, PADGET_MASTER);
@@ -239,7 +235,6 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *currMenu) {
     s32 scroll = currMenu->scroll;
     EventOption *currOption = &currMenu->options[cursor + scroll];
     s32 option_num = currMenu->option_num;
-    s32 cursor_min = 0;
     s32 cursor_max = ((option_num > MENU_MAXOPTION) ? MENU_MAXOPTION : option_num) - 1;
 
     // get option variables
@@ -320,7 +315,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *currMenu) {
     // check for left
     else if (((inputs & HSD_BUTTON_LEFT) != 0) || ((inputs & HSD_BUTTON_DPAD_LEFT) != 0))
     {
-        if ((currOption->kind == OPTKIND_STRING) || (currOption->kind == OPTKIND_INT) || (currOption->kind == OPTKIND_FLOAT))
+        if ((currOption->kind == OPTKIND_STRING) || (currOption->kind == OPTKIND_INT))
         {
             val -= 1;
             if (val >= value_min)
@@ -344,7 +339,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *currMenu) {
     else if (((inputs & HSD_BUTTON_RIGHT) != 0) || ((inputs & HSD_BUTTON_DPAD_RIGHT) != 0))
     {
         // check for valid option kind
-        if ((currOption->kind == OPTKIND_STRING) || (currOption->kind == OPTKIND_INT) || (currOption->kind == OPTKIND_FLOAT))
+        if ((currOption->kind == OPTKIND_STRING) || (currOption->kind == OPTKIND_INT))
         {
             val += 1;
             if (val < value_max)
@@ -522,7 +517,6 @@ void EventMenu_PopupThink(GOBJ *gobj, EventMenu *currMenu)
     s32 scroll = menuData->popup_scroll;
     EventOption *currOption = &currMenu->options[currMenu->cursor + currMenu->scroll];
     s32 value_num = currOption->value_num;
-    s32 cursor_min = 0;
     s32 cursor_max = value_num;
     if (cursor_max > MENU_POPMAXOPTION)
     {
@@ -674,7 +668,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
         // attach to root jobj
         JOBJ_AddChild(gobj->hsd_object, jobj_border);
         // move it into position
-        JOBJ_GetChild(jobj_border, &corners, 2, 3, 4, 5, -1);
+        JOBJ_GetChild(jobj_border, corners, 2, 3, 4, 5, -1);
         // Modify scale and position
         jobj_border->trans.Z = ROWBOX_Z;
         jobj_border->scale.X = 1;
@@ -723,7 +717,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     // attach to root jobj
     JOBJ_AddChild(gobj->hsd_object, jobj_highlight);
     // move it into position
-    JOBJ_GetChild(jobj_highlight, &corners, 2, 3, 4, 5, -1);
+    JOBJ_GetChild(jobj_highlight, corners, 2, 3, 4, 5, -1);
     // Modify scale and position
     jobj_highlight->trans.Z = MENUHIGHLIGHT_Z;
     jobj_highlight->scale.X = MENUHIGHLIGHT_SCALE;
@@ -750,7 +744,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
         // attach to root jobj
         JOBJ_AddChild(gobj->hsd_object, scroll_jobj);
         // move it into position
-        JOBJ_GetChild(scroll_jobj, &corners, 2, 3, -1);
+        JOBJ_GetChild(scroll_jobj, corners, 2, 3, -1);
         // scale scrollbar accordingly
         scroll_jobj->scale.X = MENUSCROLL_SCALE;
         scroll_jobj->scale.Y = MENUSCROLL_SCALEY;
@@ -788,7 +782,6 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     Text *text;
     int subtext;
     int canvasIndex = menuData->canvas_menu;
-    s32 cursor = menu->cursor;
 
     // free text if it exists
     if (menuData->text_name != 0)
@@ -829,7 +822,7 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     // output menu title
     float optionX = MENU_TITLEXPOS;
     float optionY = MENU_TITLEYPOS;
-    subtext = Text_AddSubtext(text, optionX, optionY, &nullString);
+    subtext = Text_AddSubtext(text, optionX, optionY, " ");
     Text_SetScale(text, subtext, MENU_TITLESCALE, MENU_TITLESCALE);
 
     /**************************
@@ -867,7 +860,7 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
         // output option name
         float optionX = MENU_OPTIONNAMEXPOS;
         float optionY = MENU_OPTIONNAMEYPOS + (i * MENU_TEXTYOFFSET);
-        subtext = Text_AddSubtext(text, optionX, optionY, &nullString);
+        subtext = Text_AddSubtext(text, optionX, optionY, " ");
     }
 
     /********************
@@ -893,7 +886,7 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
         // output option value
         float optionX = MENU_OPTIONVALXPOS;
         float optionY = MENU_OPTIONVALYPOS + (i * MENU_TEXTYOFFSET);
-        subtext = Text_AddSubtext(text, optionX, optionY, &nullString);
+        subtext = Text_AddSubtext(text, optionX, optionY, " ");
     }
 }
 
@@ -966,7 +959,6 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
     line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
 
     // copy each line to an individual char array
-    char *msg_cursor = &msg;
     for (int i = 0; i < line_num; i++)
     {
 
@@ -1002,7 +994,6 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
         EventOption *currOption = &menu->options[scroll + i];
 
         // output option name
-        int optionVal = currOption->val;
         char *str = currOption->name ? currOption->name : "";
         Text_SetText(text, i, str);
 
@@ -1055,7 +1046,7 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
         else if (currOption->kind == OPTKIND_INT)
         {
             // output option value
-            Text_SetText(text, i, currOption->values, optionVal);
+            Text_SetText(text, i, currOption->format, optionVal);
 
             // show box
             JOBJ_ClearFlags(menuData->row_joints[i][0], JOBJ_HIDDEN);
@@ -1064,7 +1055,7 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
         // if this option is a menu or function
         else if ((currOption->kind == OPTKIND_MENU) || (currOption->kind == OPTKIND_FUNC))
         {
-            Text_SetText(text, i, &nullString);
+            Text_SetText(text, i, " ");
 
             // show arrow
             //JOBJ_ClearFlags(menuData->row_joints[i][1], JOBJ_HIDDEN);
@@ -1158,7 +1149,6 @@ void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu)
     // init variables
     MenuData *menuData = gobj->userdata; // userdata
     s32 cursor = menu->cursor;
-    EventOption *option = &menu->options[cursor];
 
     // create options background
     evMenu *menuAssets = event_vars->menu_assets;
@@ -1171,7 +1161,7 @@ void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu)
 
     // Get each corner's joints
     JOBJ *corners[4];
-    JOBJ_GetChild(popup_joint, &corners, 2, 3, 4, 5, -1);
+    JOBJ_GetChild(popup_joint, corners, 2, 3, 4, 5, -1);
 
     // Modify scale and position
     popup_joint->scale.X = POPUP_SCALE;
@@ -1211,7 +1201,7 @@ void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu)
     // attach to root jobj
     JOBJ_AddChild(popup_gobj->hsd_object, jobj_highlight);
     // move it into position
-    JOBJ_GetChild(jobj_highlight, &corners, 2, 3, 4, 5, -1);
+    JOBJ_GetChild(jobj_highlight, corners, 2, 3, 4, 5, -1);
     // Modify scale and position
     jobj_highlight->trans.Z = POPUPHIGHLIGHT_Z;
     jobj_highlight->scale.X = 1;
@@ -1238,7 +1228,6 @@ void EventMenu_CreatePopupText(GOBJ *gobj, EventMenu *menu)
     MenuData *menuData = gobj->userdata;
     s32 cursor = menu->cursor;
     EventOption *option = &menu->options[cursor];
-    int subtext;
     int canvasIndex = menuData->canvas_popup;
     s32 value_num = option->value_num;
     if (value_num > MENU_POPMAXOPTION)
@@ -1268,7 +1257,7 @@ void EventMenu_CreatePopupText(GOBJ *gobj, EventMenu *menu)
         // output option value
         float optionX = POPUP_OPTIONVALXPOS;
         float optionY = baseYPos + (i * POPUP_TEXTYOFFSET);
-        subtext = Text_AddSubtext(text, optionX, optionY, &nullString);
+        Text_AddSubtext(text, optionX, optionY, " ");
     }
 }
 

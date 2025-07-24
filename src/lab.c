@@ -3,7 +3,6 @@
 #include <stddef.h>
 
 // Static Variables
-static char nullString[] = " ";
 static DIDraw didraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
@@ -19,8 +18,7 @@ static u8 snap_status;
 static u8 export_status;
 static Arch_LabData *stc_lab_data;
 static char *tm_filename = "TMREC_%02d%02d%04d_%02d%02d%02d";
-static char stc_save_name[32] = "Training Mode Input Recording   ";
-static DevText *stc_devtext;
+static char stc_save_name[32] = "TM Input Recording";
 static u8 stc_hmn_controller;             // making this static so importing recording doesnt overwrite
 static u8 stc_cpu_controller;             // making this static so importing recording doesnt overwrite
 static u8 stc_null_controller;            // making this static so importing recording doesnt overwrite
@@ -40,11 +38,9 @@ static u8 stc_custom_osd_state_num = 0;
 static int stc_custom_osd_states[OPTCUSTOMOSD_MAX_ADDED]; // contains the custom osd action states
 
 // Static Export Variables
-static RecordingSave *stc_rec_save;
 static u32 stc_transfer_buf_size;
 static u8 *stc_transfer_buf;
 static MemcardSave memcard_save;
-static int chunk_num;
 static int save_pre_tick;
 static char *slots_names[] = {"A", "B"};
 
@@ -65,7 +61,6 @@ static bool did_player_miss_lcancel[2] = {false, false};
 RecInputData *Lab_GetAlteringRecording(void) {
     int ply = LabOptions_SlotManagement[OPTSLOT_PLAYER].val;
     int slot = LabOptions_SlotManagement[OPTSLOT_SRC].val;
-    int frame_idx = LabOptions_AlterInputs[OPTINPUT_FRAME].val - 1;
     RecInputData **rec_list = ply == PLAYER_HMN ? rec_data.hmn_inputs : rec_data.cpu_inputs;
     return rec_list[slot];
 }
@@ -178,10 +173,9 @@ void Lab_CustomOSDsThink(void) {
 
     for (int i = 0; i < stc_custom_osd_state_num; ++i) {
         int state_id = stc_custom_osd_states[i];
-        EventOption *option = &LabOptions_CustomOSDs[i + OPTCUSTOMOSD_FIRST_CUSTOM];
 
         if (hmn_data->state_id == state_id) {
-            char *state_buf[128];
+            char state_buf[128];
             int found = GetCurrentStateName(hmn, state_buf);
             if (!found) strcpy(state_buf, "Unknown");
 
@@ -327,8 +321,6 @@ void Lab_FinishMoveCPU(GOBJ *menu_gobj) {
     LabOptions_CPU[OPTCPU_SET_POS] = LabOptions_CPU_MoveCPU;
 
     GOBJ *hmn = Fighter_GetGObj(0);
-    GOBJ *cpu = Fighter_GetGObj(1);
-    FighterData *cpu_data = cpu->userdata;
     FighterData *hmn_data = hmn->userdata;
 
     hmn_data->pad_index = stc_hmn_controller;
@@ -336,7 +328,6 @@ void Lab_FinishMoveCPU(GOBJ *menu_gobj) {
 
 void Lab_FreezeCPU(GOBJ *menu_gobj) {
     GOBJ *cpu = Fighter_GetGObj(1);
-    FighterData *cpu_data = cpu->userdata;
     FrameSpeedChange(cpu, 0.f);
 }
 
@@ -414,7 +405,7 @@ static int MenuLookup_GetupOption[4] = {
 };
 
 static void ReboundTechChances(EventOption tech_menu[4], int menu_lookup[], int slot_idx_changed) {
-    u16 *chances[4];
+    s16 *chances[4];
     int enabled_slots = 0;
 
     for (int i = 0; i < 4; i++) {
@@ -436,7 +427,7 @@ void Lab_ChangeRollAwayChance    (GOBJ *menu_gobj, int _new_val) { ReboundTechCh
 void Lab_ChangeRollTowardChance  (GOBJ *menu_gobj, int _new_val) { ReboundTechChances(LabOptions_Tech, MenuLookup_GetupOption, 2); }
 void Lab_ChangeGetupAttackChance (GOBJ *menu_gobj, int _new_val) { ReboundTechChances(LabOptions_Tech, MenuLookup_GetupOption, 3); }
 
-static int EnabledSlotChances(EventOption slot_menu[REC_SLOTS], u16 *chances[REC_SLOTS]) {
+static int EnabledSlotChances(EventOption slot_menu[REC_SLOTS], s16 *chances[REC_SLOTS]) {
     int enabled_slots = 0;
     for (int i = 0; i < REC_SLOTS; i++) {
         int slot_menu_idx = OPTSLOTCHANCE_1 + i;
@@ -451,7 +442,7 @@ static int EnabledSlotChances(EventOption slot_menu[REC_SLOTS], u16 *chances[REC
 }
 
 static void ReboundSlotChances(EventOption slot_menu[REC_SLOTS], int slot_idx_changed) {
-    u16 *chances[REC_SLOTS];
+    s16 *chances[REC_SLOTS];
     int chance_count = EnabledSlotChances(slot_menu, chances);
     ReboundChances(chances, chance_count, slot_idx_changed);
 }
@@ -592,7 +583,7 @@ void Lab_ChangeHUD(GOBJ *menu_gobj, int value)
         *hideHUD = 0;
 }
 
-void Lab_Exit(int value)
+void Lab_Exit(GOBJ *menu)
 {
     // end game
     stc_match->state = 3;
@@ -618,7 +609,7 @@ GOBJ *InfoDisplay_Init(int ply)
     GObj_AddGXLink(idGOBJ, GXLink_Common, GXLINK_INFDISP, GXPRI_INFDISP);
     // Save pointers to corners
     JOBJ *corners[4];
-    JOBJ_GetChild(menu, &corners, 2, 3, 4, 5, -1);
+    JOBJ_GetChild(menu, corners, 2, 3, 4, 5, -1);
     idData->botLeftEdge = corners[0];
     idData->botRightEdge = corners[1];
 
@@ -646,7 +637,7 @@ GOBJ *InfoDisplay_Init(int ply)
     // Create subtexts for each row
     for (int i = 0; i < 8; i++)
     {
-        Text_AddSubtext(text, 0, (INFDISPTEXT_YOFFSET * i), &nullString);
+        Text_AddSubtext(text, 0, (INFDISPTEXT_YOFFSET * i), " ");
     }
     idData->text = text;
 
@@ -1208,6 +1199,8 @@ static int CheckOverlay(GOBJ *character, OverlayGroup overlay)
 
         case (OVERLAY_SHIELD_STUN):
             return InShieldStun(state);
+        default:
+            assert("unhandled overlay");
     }
 
     char * err = HSD_MemAlloc(64);
@@ -1366,7 +1359,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
         int rec_idx;
         if (recSlot == RECSLOT_RANDOM) {
             if (stc_rndm_counter_slot == -1)
-                stc_rndm_counter_slot = Record_GetRandomSlot(&rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
+                stc_rndm_counter_slot = Record_GetRandomSlot(rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
             rec_idx = stc_rndm_counter_slot;
         } else {
             rec_idx = recSlot-1;
@@ -1392,7 +1385,6 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
         return false;
     }
 
-    int cpu_state = cpu_data->state_id;
     s16 cpu_frame = cpu_data->state.frame;
     if (cpu_frame == -1)
         cpu_frame = 0;
@@ -1678,7 +1670,6 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
     }
 
     case (CPUSTATE_GRABBED):
-    CPULOGIC_GRABBED:
     {
         // if no longer being grabbed, exit
         if (CPU_IsGrabbed(cpu, hmn) == 0)
@@ -1966,6 +1957,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
                     case 0: goto TDI_IN;
                     case 1: goto TDI_OUT;
                     case 2: goto TDI_NONE;
+                    default: goto TDI_IN;
                 }
             }
 
@@ -2117,7 +2109,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
     CPULOGIC_NONE:
     {
         int state = cpu_data->state_id;
-        if (ASID_DAMAGEFLYHI <= state && state <= ASID_DAMAGEFLYROLL || state == ASID_DAMAGEFALL)
+        if ((ASID_DAMAGEFLYHI <= state && state <= ASID_DAMAGEFLYROLL) || state == ASID_DAMAGEFALL)
             goto CPULOGIC_FORCE_TECH;
         else
             goto CPUSTATE_ENTERSTART;
@@ -2215,7 +2207,6 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
     }
 
     case (CPUSTATE_GETUP):
-    CPULOGIC_GETUP:
     {
 
         // if im in downwait, perform getup logic
@@ -2924,7 +2915,7 @@ void DIDraw_Update()
                         color = &groundColor;
                     else if ((ecb.envFlags & ECB_CEIL) != 0)
                         color = &ceilColor;
-                    else if ((ecb.envFlags & ECB_WALLLEFT | ECB_WALLRIGHT) != 0)
+                    else if ((ecb.envFlags & (ECB_WALLLEFT | ECB_WALLRIGHT)) != 0)
                         color = &wallColor;
                     else
                         color = &airColor;
@@ -2986,7 +2977,7 @@ void DIDraw_GX()
             {
                 DIDraw *didraw = &didraws[i];
                 // if it exists
-                if (didraw->num != 0)
+                if (didraw->num[j] != 0)
                 {
                     int vertex_num = didraw->num[j];
                     Vec2 *vertices = didraw->vertices[j];
@@ -3084,14 +3075,7 @@ void CustomTDI_Apply(GOBJ *cpu, GOBJ *hmn, CustomTDI *di)
 void Lab_SelectCustomTDI(GOBJ *menu_gobj)
 {
     MenuData *menu_data = menu_gobj->userdata;
-    EventMenu *curr_menu = menu_data->currMenu;
     evMenu *menuAssets = event_vars->menu_assets;
-    GOBJ *event_gobj = event_vars->event_gobj;
-    LabData *event_data = event_gobj->userdata;
-    Arch_LabData *LabAssets = stc_lab_data;
-
-    // set menu state to wait
-    //curr_menu->state = EMSTATE_WAIT;
 
     // create bg gobj
     GOBJ *tdi_gobj = GObj_Create(0, 0, 0);
@@ -3134,16 +3118,16 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     text_curr->viewport_scale.Y = MENU_CANVASSCALE;
     text_curr->trans.Z = MENU_TEXTZ;
     // create hit num
-    Text_AddSubtext(text_curr, -50, 185, &nullString);
+    Text_AddSubtext(text_curr, -50, 185, " ");
     // create lstick coords
     for (int i = 0; i < 2; i++)
     {
-        Text_AddSubtext(text_curr, -400, (80 + i * 40), &nullString);
+        Text_AddSubtext(text_curr, -400, (80 + i * 40), " ");
     }
     // create cstick coords
     for (int i = 0; i < 2; i++)
     {
-        Text_AddSubtext(text_curr, 250, (80 + i * 40), &nullString);
+        Text_AddSubtext(text_curr, 250, (80 + i * 40), " ");
     }
 
     // create prev sticks
@@ -3174,7 +3158,7 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
         JOBJ_AddChild(tdi_gobj->hsd_object, prevstick_joint);
 
         // create text
-        Text_AddSubtext(text_curr, (-460 + (i * ((55 * 19.6) / TDI_DISPNUM))), -100, &nullString);
+        Text_AddSubtext(text_curr, (-460 + (i * ((55 * 19.6) / TDI_DISPNUM))), -100, " ");
     }
 
     // create description text
@@ -3195,12 +3179,11 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     popup_joint->dobj->mobj->mat->diffuse = gx_color;
 */
 }
-void CustomTDI_Update(GOBJ *gobj)
+int CustomTDI_Update(GOBJ *gobj)
 {
     // get data
     TDIData *tdi_data = gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
-    LabData *event_data = event_vars->event_gobj->userdata;
 
     // get pausing players inputs
     HSD_Pad *pad = PadGet(menu_data->controller_index, PADGET_MASTER);
@@ -3240,7 +3223,7 @@ void CustomTDI_Update(GOBJ *gobj)
     if ((inputs & HSD_BUTTON_B) != 0)
     {
         CustomTDI_Destroy(gobj);
-        return;
+        return 1;
     }
 
     // update curr lstick
@@ -3294,19 +3277,20 @@ void CustomTDI_Update(GOBJ *gobj)
             JOBJ_SetFlags(lstick_prev, JOBJ_HIDDEN);
             JOBJ_SetFlags(cstick_prev, JOBJ_HIDDEN);
 
-            Text_SetText(text_curr, i + 5, nullString);
+            Text_SetText(text_curr, i + 5, " ");
         }
     }
 
     // update jobj
     JOBJ_SetMtxDirtySub(gobj->hsd_object);
+    
+    return 1;
 }
 void CustomTDI_Destroy(GOBJ *gobj)
 {
     // get data
     TDIData *tdi_data = gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
-    LabData *event_data = event_vars->event_gobj->userdata;
 
     // set TDI to custom
     if (stc_tdi_val_num > 0) {
@@ -3330,6 +3314,27 @@ void CustomTDI_Destroy(GOBJ *gobj)
     // play sfx
     SFX_PlayCommon(0);
 }
+
+static DOBJ *JOBJ_GetDObjChild(JOBJ *joint, int dobj_index)
+{
+
+    int count = 0;
+    DOBJ *dobj = joint->dobj;
+
+    while (count < dobj_index)
+    {
+        if (dobj->next == 0)
+            assert("dobj not found!");
+
+        else
+            dobj = dobj->next;
+
+        count++;
+    }
+
+    return dobj;
+}
+
 void Inputs_Think(GOBJ *gobj)
 {
     Controller *controllers = gobj->userdata;
@@ -3562,7 +3567,7 @@ GOBJ *Record_Init()
 
     // create cobj
     GOBJ *cam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, 0x803f94d0);
+    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
     COBJDesc *cam_desc = dmgScnMdls[1][0];
     COBJ *rec_cobj = COBJ_LoadDesc(cam_desc);
     // init camera
@@ -3582,7 +3587,7 @@ GOBJ *Record_Init()
 
     // save left and right seek bounds
     JOBJ *seek_bound[2];
-    JOBJ_GetChild(playback, &seek_bound, REC_LEFTBOUNDJOINT, REC_RIGHTBOUNDJOINT, -1);
+    JOBJ_GetChild(playback, seek_bound, REC_LEFTBOUNDJOINT, REC_RIGHTBOUNDJOINT, -1);
     Vec3 seek_bound_pos;
     JOBJ_GetWorldPosition(seek_bound[0], 0, &seek_bound_pos);
     rec_data.seek_left = seek_bound_pos.X;
@@ -3604,14 +3609,14 @@ GOBJ *Record_Init()
 
     // Get text positions
     JOBJ *text_joint[2];
-    JOBJ_GetChild(playback, &text_joint, REC_LEFTTEXTJOINT, REC_RIGHTTEXTJOINT, -1);
+    JOBJ_GetChild(playback, text_joint, REC_LEFTTEXTJOINT, REC_RIGHTTEXTJOINT, -1);
     Vec3 text_left, text_right;
     JOBJ_GetWorldPosition(text_joint[0], 0, &text_left);
     JOBJ_GetWorldPosition(text_joint[1], 0, &text_right);
 
     // Create subtexts for each side
-    Text_AddSubtext(text, (text_left.X * 25), -(text_left.Y * 25), &nullString);
-    Text_AddSubtext(text, (text_right.X * 25), -(text_right.Y) * 25, &nullString);
+    Text_AddSubtext(text, (text_left.X * 25), -(text_left.Y * 25), " ");
+    Text_AddSubtext(text, (text_right.X * 25), -(text_right.Y) * 25, " ");
     rec_data.text = text;
 
     // alloc rec_state
@@ -3620,7 +3625,7 @@ GOBJ *Record_Init()
     rec_state->is_exist = 0;
 
     // disable menu options
-    for (int i = 0; i < sizeof(LabOptions_Record) / sizeof(EventOption); i++)
+    for (u32 i = 0; i < countof(LabOptions_Record); i++)
     {
         if (i != OPTREC_SAVE_LOAD)
             LabOptions_Record[i].disable = 1;
@@ -3701,7 +3706,7 @@ void Record_GX(GOBJ *gobj, int pass)
 
             // update seek bar frames
             Text_SetText(text, 0, "%d", curr_frame + 1);
-            Text_SetText(text, 1, &nullString);
+            Text_SetText(text, 1, " ");
 
             // update color
             GXColor text_color;
@@ -3789,10 +3794,6 @@ void Record_Think(GOBJ *rec_gobj)
     if (cpu_inputs->num > hmn_inputs->num)
         input_num = cpu_inputs->num;
 
-    // get curr frame (the current position in the recording)
-    int curr_frame = Record_GetCurrFrame();
-    int end_frame = Record_GetEndFrame();
-
     // update inputs ---------------------------------------
 
     int adjusted_hmn_mode = hmn_mode;
@@ -3815,9 +3816,9 @@ void Record_Think(GOBJ *rec_gobj)
 
         // reroll
         if (LabOptions_Record[OPTREC_HMNSLOT].val == 0)
-            rec_data.hmn_rndm_slot = Record_GetRandomSlot(&rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
+            rec_data.hmn_rndm_slot = Record_GetRandomSlot(rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
         if (LabOptions_Record[OPTREC_CPUSLOT].val == 0)
-            rec_data.cpu_rndm_slot = Record_GetRandomSlot(&rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
+            rec_data.cpu_rndm_slot = Record_GetRandomSlot(rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
     }
 
     // autorestore check -----------------------------------
@@ -3936,7 +3937,6 @@ void Record_Update(int ply, RecInputData *input_data, RecInputData *rerecord_inp
     {
         rec_start = input_data->start_frame - rec_state->frame;
     }
-    int end_frame = rec_start + input_data->num;
 
     // Get HSD Pad
     HSD_Pad *pad = PadGet(fighter_data->pad_index, PADGET_ENGINE);
@@ -4146,7 +4146,7 @@ void Record_DeleteState(GOBJ *menu_gobj)
 {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
-    for (int i = 0; i < sizeof(LabOptions_Record) / sizeof(EventOption); i++)
+    for (u32 i = 0; i < countof(LabOptions_Record); i++)
     {
         if (i == OPTREC_SAVE_LOAD) {
             LabOptions_Record[i] = Record_Save;
@@ -4184,7 +4184,7 @@ void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
         if (Record_HMN_IsRecording())
             LabOptions_Record[OPTREC_HMNSLOT].val = 1;
         else
-            rec_data.hmn_rndm_slot = Record_GetRandomSlot(&rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
+            rec_data.hmn_rndm_slot = Record_GetRandomSlot(rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
     }
     
     // copy back rerecorded slot
@@ -4206,7 +4206,7 @@ void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
         if (Record_CPU_IsRecording())
             LabOptions_Record[OPTREC_CPUSLOT].val = 1;
         else
-            rec_data.cpu_rndm_slot = Record_GetRandomSlot(&rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
+            rec_data.cpu_rndm_slot = Record_GetRandomSlot(rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
     }
     
     // copy back rerecorded slot
@@ -4293,7 +4293,7 @@ void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
 }
 int Record_GetRandomSlot(RecInputData **input_data, EventOption slot_menu[])
 {
-    u16 *chances[REC_SLOTS];
+    s16 *chances[REC_SLOTS];
     int chance_count = EnabledSlotChances(slot_menu, chances);
     if (chance_count == 0) return 0;
 
@@ -4346,11 +4346,11 @@ int Record_PastLastInput(int ply)
 
     return curr_frame > inputs->num;
 }
-int Record_GetCurrFrame()
+int Record_GetCurrFrame(void)
 {
     return (event_vars->game_timer - 1) - rec_state->frame;
 }
-int Record_GetEndFrame()
+int Record_GetEndFrame(void)
 {
     int hmn_slot = Record_GetSlot(0);
     int cpu_slot = Record_GetSlot(1);
@@ -4389,7 +4389,7 @@ void Record_OnSuccessfulSave(int deleteRecordings)
     LabOptions_Record[OPTREC_SAVE_LOAD] = Record_Load;
 
     // enable other options
-    for (int i = 0; i < sizeof(LabOptions_Record) / sizeof(EventOption); i++)
+    for (u32 i = 0; i < countof(LabOptions_Record); i++)
     {
         if (i == OPTREC_MIRRORED_PLAYBACK ||
             (i == OPTREC_HMNMODE && LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val == 1) ||
@@ -4469,7 +4469,7 @@ void Record_MemcardLoad(int slot, int file_no)
                             if (strncmp("TMREC", card_stat.fileName, 5) == 0)
                             {
                                 file_found = 1;
-                                memcpy(&filename, card_stat.fileName, sizeof(filename)); // copy filename to load after this
+                                memcpy(filename, card_stat.fileName, sizeof(filename)); // copy filename to load after this
                                 file_size = card_stat.length;
                             }
                         }
@@ -4492,7 +4492,7 @@ void Record_MemcardLoad(int slot, int file_no)
         memcard_save.x4 = 3;
         memcard_save.size = file_size;
         memcard_save.xc = -1;
-        Memcard_ReqSaveLoad(slot, filename, &memcard_save, &stc_memcard_info->file_name, 0, 0, 0);
+        Memcard_ReqSaveLoad(slot, filename, &memcard_save, stc_memcard_info->file_name, 0, 0, 0);
 
         // wait to load
         int memcard_status = Memcard_CheckStatus();
@@ -4506,7 +4506,7 @@ void Record_MemcardLoad(int slot, int file_no)
         {
 
             // enable other options
-            for (int i = 1; i < sizeof(LabOptions_Record) / sizeof(EventOption); i++)
+            for (u32 i = 1; i < countof(LabOptions_Record); i++)
             {
                 LabOptions_Record[i].disable = 0;
             }
@@ -4516,14 +4516,13 @@ void Record_MemcardLoad(int slot, int file_no)
 
             // begin unpacking
             u8 *transfer_buf = memcard_save.data;
-            ExportHeader *header = transfer_buf;
+            ExportHeader *header = (ExportHeader *)transfer_buf;
             u8 *compressed_recording = transfer_buf + header->lookup.ofst_recording;
-            RGB565 *img = transfer_buf + header->lookup.ofst_screenshot;
-            ExportMenuSettings *menu_settings = transfer_buf + header->lookup.ofst_menusettings;
+            ExportMenuSettings *menu_settings = (ExportMenuSettings *)(transfer_buf + header->lookup.ofst_menusettings);
 
             // decompress
             RecordingSave *loaded_recsave = calloc(sizeof(RecordingSave) * 1.06);
-            lz77Decompress(compressed_recording, loaded_recsave);
+            lz77Decompress(compressed_recording, (u8 *)loaded_recsave);
 
             // copy buffer to savestate
             memcpy(rec_state, &loaded_recsave->savestate, sizeof(Savestate_v1));
@@ -4585,10 +4584,10 @@ void Record_LoadSavestate(Savestate_v1 *savestate) {
     event_vars->loaded_mirrored = mirror;
 
     if (Record_HMN_IsPlayback() && Record_HMN_IsRandomSlot())
-        rec_data.hmn_rndm_slot = Record_GetRandomSlot(&rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
+        rec_data.hmn_rndm_slot = Record_GetRandomSlot(rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
 
     if (Record_CPU_IsPlayback() && Record_CPU_IsRandomSlot())
-        rec_data.cpu_rndm_slot = Record_GetRandomSlot(&rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
+        rec_data.cpu_rndm_slot = Record_GetRandomSlot(rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
     
     event_vars->game_timer = rec_state->frame;
     rec_data.restore_timer = 0;
@@ -4690,11 +4689,11 @@ void Savestates_Update()
                     // re-roll random slot
                     if (LabOptions_Record[OPTREC_HMNSLOT].val == 0)
                     {
-                        rec_data.hmn_rndm_slot = Record_GetRandomSlot(&rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
+                        rec_data.hmn_rndm_slot = Record_GetRandomSlot(rec_data.hmn_inputs, LabOptions_SlotChancesHMN);
                     }
                     if (LabOptions_Record[OPTREC_CPUSLOT].val == 0)
                     {
-                        rec_data.cpu_rndm_slot = Record_GetRandomSlot(&rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
+                        rec_data.cpu_rndm_slot = Record_GetRandomSlot(rec_data.cpu_inputs, LabOptions_SlotChancesCPU);
                     }
                 }
             }
@@ -4748,8 +4747,6 @@ void ImageScale(RGB565 *out_img, RGB565 *in_img, int OutWidth, int OutHeight, in
 void Export_Init(GOBJ *menu_gobj)
 {
     MenuData *menu_data = menu_gobj->userdata;
-    EventMenu *curr_menu = menu_data->currMenu;
-    evMenu *menuAssets = event_vars->menu_assets;
 
     // create gobj
     GOBJ *export_gobj = GObj_Create(0, 0, 0);
@@ -4790,7 +4787,7 @@ void Export_Init(GOBJ *menu_gobj)
 
     // compress all recording data
     u8 *recording_buffer = calloc(sizeof(RecordingSave));
-    int compress_size = Export_Compress(recording_buffer, temp_rec_save, sizeof(RecordingSave));
+    int compress_size = Export_Compress(recording_buffer, (u8 *)temp_rec_save, sizeof(RecordingSave));
     HSD_Free(temp_rec_save); // free original data buffer
 
     // resize screenshot
@@ -4811,7 +4808,7 @@ void Export_Init(GOBJ *menu_gobj)
     stc_transfer_buf = calloc(stc_transfer_buf_size);
 
     // init header
-    ExportHeader *header = stc_transfer_buf;
+    ExportHeader *header = (ExportHeader *)stc_transfer_buf;
     header->metadata.version = REC_VERS;
     header->metadata.image_width = RESIZE_WIDTH;
     header->metadata.image_height = RESIZE_HEIGHT;
@@ -4836,7 +4833,7 @@ void Export_Init(GOBJ *menu_gobj)
     // image
     memcpy(stc_transfer_buf + header->lookup.ofst_screenshot, new_img, img_size);
     // menu settings
-    ExportMenuSettings *menu_settings = stc_transfer_buf + header->lookup.ofst_menusettings;
+    ExportMenuSettings *menu_settings = (ExportMenuSettings *)(stc_transfer_buf + header->lookup.ofst_menusettings);
     menu_settings->hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
     menu_settings->hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
     menu_settings->cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
@@ -5092,7 +5089,7 @@ int Export_SelCardThink(GOBJ *export_gobj)
 
             SFX_PlayCommon(1);
 
-            return;
+            return 0;
         }
 
         else
@@ -5107,7 +5104,7 @@ int Export_SelCardThink(GOBJ *export_gobj)
         // play sfx
         SFX_PlayCommon(0);
 
-        return;
+        return 0;
     }
 
     // update selection
@@ -5194,7 +5191,7 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     Export_EnterNameUpdateKeyboard(export_gobj);
 
     // create file details
-    ExportHeader *header = stc_transfer_buf;
+    ExportHeader *header = (ExportHeader *)stc_transfer_buf;
     char *stage_name = stage_names[header->metadata.stage_internal];
     char *hmn_name = Fighter_GetName(header->metadata.hmn);
     char *cpu_name = Fighter_GetName(header->metadata.cpu);
@@ -5524,8 +5521,6 @@ void Export_ConfirmInit(GOBJ *export_gobj)
     export_data->menu_index = EXMENU_CONFIRM;
     export_data->confirm_state = EXPOP_CONFIRM;
     export_data->confirm_cursor = 0;
-
-    return 0;
 }
 int Export_ConfirmThink(GOBJ *export_gobj)
 {
@@ -5700,7 +5695,7 @@ void Export_EnterNameUpdateKeyboard(GOBJ *export_gobj)
             char letter[2];
             letter[0] = keyboard_letters[i][j];
             letter[1] = '\0';
-            Text_SetText(text_keyboard, this_subtext, &letter);
+            Text_SetText(text_keyboard, this_subtext, letter);
 
             // update letter color
             static GXColor white = {255, 255, 255, 255};
@@ -5734,7 +5729,7 @@ int Export_Process(GOBJ *export_gobj)
         save_pre_tick = OSGetTick();
 
         // create filename string
-        ExportHeader *header = stc_transfer_buf;
+        ExportHeader *header = (ExportHeader *)stc_transfer_buf;
         char filename[32];
         sprintf(filename, tm_filename, header->metadata.month, header->metadata.day, header->metadata.year, header->metadata.hour, header->metadata.minute, header->metadata.second); // generate filename based on date, time, fighters, and stage
 
@@ -5773,10 +5768,10 @@ int Export_Process(GOBJ *export_gobj)
                                     if (strncmp(os_info->gameName, card_stat.gameName, sizeof(os_info->gameName)) == 0)
                                     {
                                         // check file name
-                                        if (strncmp(&filename, card_stat.fileName, sizeof(filename)) == 0)
+                                        if (strncmp(filename, card_stat.fileName, sizeof(filename)) == 0)
                                         {
                                             // delete
-                                            CARDDeleteAsync(slot, &filename, Memcard_RemovedCallback);
+                                            CARDDeleteAsync(slot, filename, Memcard_RemovedCallback);
                                             stc_memcard_work->is_done = 0;
                                             Memcard_Wait();
                                         }
@@ -5799,7 +5794,7 @@ int Export_Process(GOBJ *export_gobj)
         memcard_save.x4 = 3;
         memcard_save.size = stc_transfer_buf_size;
         memcard_save.xc = -1;
-        Memcard_ReqSaveCreate(slot, &filename, &memcard_save, stc_memcard_unk, stc_memcard_info->file_name, stc_lab_data->save_banner, stc_lab_data->save_icon, 0);
+        Memcard_ReqSaveCreate(slot, filename, &memcard_save, stc_memcard_unk, stc_memcard_info->file_name, stc_lab_data->save_banner, stc_lab_data->save_icon, 0);
 
         // change status
         export_status = EXSTAT_SAVEWAIT;
@@ -5836,10 +5831,6 @@ int Export_Process(GOBJ *export_gobj)
         finished = 1;
 
         Text_Destroy(text);
-
-        // done saving, output time
-        int save_post_tick = OSGetTick();
-        int save_time = OSTicksToMilliseconds(save_post_tick - save_pre_tick);
         break;
     }
     }
@@ -5848,11 +5839,7 @@ int Export_Process(GOBJ *export_gobj)
 }
 int Export_Compress(u8 *dest, u8 *source, u32 size)
 {
-
-    int pre_tick = OSGetTick();
     int compress_size = lz77Compress(source, size, dest, 8);
-    int post_tick = OSGetTick();
-    int time_dif = OSTicksToMilliseconds(post_tick - pre_tick);
     return compress_size;
 }
 
@@ -5975,8 +5962,6 @@ void Event_PostThink(GOBJ *gobj)
 // Init Function
 void Event_Init(GOBJ *gobj)
 {
-    LabData *eventData = gobj->userdata;
-    EventDesc *eventInfo = eventData->eventInfo;
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
     GOBJ *cpu = Fighter_GetGObj(1);
@@ -6158,12 +6143,6 @@ void Event_Init(GOBJ *gobj)
 // Update Function
 void Event_Update()
 {
-    GOBJ *hmn = Fighter_GetGObj(0);
-    FighterData *hmn_data = hmn->userdata;
-    HSD_Pad *pad = PadGet(hmn_data->pad_index, PADGET_MASTER);
-    GOBJ *cpu = Fighter_GetGObj(1);
-    FighterData *cpu_data = cpu->userdata;
-
     if (Pause_CheckStatus(1) != 2) {
         float speed = LabOptions_GameSpeeds[LabOptions_General[OPTGEN_SPEED].val];
         HSD_SetSpeedEasy(speed);
@@ -6382,7 +6361,7 @@ void Event_Think_LabState_Normal(GOBJ *event) {
                     if (!info.disable) {
                         stc_playback_cancelled_cpu = true;
                         eventData->cpu_state = CPUSTATE_COUNTER;
-                    } else if (!InHitstunAnim(cpu) || HitstunEnded(cpu)) {
+                    } else if (!InHitstunAnim(cpu_data->state_id) || HitstunEnded(cpu)) {
                         eventData->cpu_countertimer++;
                     }
                 }
@@ -6456,7 +6435,7 @@ void Event_Think_LabState_Normal(GOBJ *event) {
         // if slot newly created
 
         if (rec_data.hmn_inputs[i]->num != 0 && LabOptions_SlotChancesHMN[slot_menu_idx].disable) {
-            u16 *chances[REC_SLOTS];
+            s16 *chances[REC_SLOTS];
             int chance_count = EnabledSlotChances(LabOptions_SlotChancesHMN, chances);
 
             LabOptions_SlotChancesHMN[slot_menu_idx].disable = 0;
@@ -6470,7 +6449,7 @@ void Event_Think_LabState_Normal(GOBJ *event) {
         }
 
         if (rec_data.cpu_inputs[i]->num != 0 && LabOptions_SlotChancesCPU[slot_menu_idx].disable) {
-            u16 *chances[REC_SLOTS];
+            s16 *chances[REC_SLOTS];
             int chance_count = EnabledSlotChances(LabOptions_SlotChancesCPU, chances);
 
             LabOptions_SlotChancesCPU[slot_menu_idx].disable = 0;
@@ -6578,8 +6557,8 @@ void Event_Think(GOBJ *event)
         if (IsTechAnim(cpu_data->state_id))
         {
             // get distinguishable frame from lookup table
-            int char_id = cpu_data->kind;
-            if (char_id >= sizeof(tech_frame_distinguishable)/sizeof(*tech_frame_distinguishable))
+            u32 char_id = cpu_data->kind;
+            if (char_id >= countof(tech_frame_distinguishable))
                 assert("invalid character kind causing read out of bounds");
 
             int frame_distinguishable = tech_frame_distinguishable[char_id];
@@ -6730,11 +6709,11 @@ static int IsTechAnim(int state) {
 }
 
 // Clean up percentages so the total is 100, evenly distributing the change.
-static void DistributeChances(u16 *chances[], unsigned int chance_count) {
+static void DistributeChances(s16 *chances[], unsigned int chance_count) {
     if (chance_count == 0) return;
 
     int sum = 0;
-    for (int t = 0; t < chance_count; ++t)
+    for (u32 t = 0; t < chance_count; ++t)
         sum += *chances[t];
 
     int delta = 100 - sum;
@@ -6749,7 +6728,7 @@ static void DistributeChances(u16 *chances[], unsigned int chance_count) {
     // When we start on the largest/smallest option then they will all be 25 as expected.
     int option = 0;
     int min = 999;
-    for (int t = 0; t < chance_count; ++t) {
+    for (u32 t = 0; t < chance_count; ++t) {
         int check = (int)*chances[t] * change;
         if (check < min) {
             min = check;
@@ -6761,7 +6740,7 @@ static void DistributeChances(u16 *chances[], unsigned int chance_count) {
     // Algorithm is pretty garbage, but it should be quick enough.
     while (delta)
     {
-        u16 *opt_val = chances[option];
+        s16 *opt_val = chances[option];
         int prev_chance = (int)*opt_val;
         int new_chance = prev_chance + change;
 
@@ -6776,11 +6755,11 @@ static void DistributeChances(u16 *chances[], unsigned int chance_count) {
 
 // Clean up percentages so the total is always 100.
 // The next percentage is modified.
-static void ReboundChances(u16 *chances[], unsigned int chance_count, int just_changed_option) {
+static void ReboundChances(s16 *chances[], unsigned int chance_count, int just_changed_option) {
     if (chance_count == 0) return;
 
     int sum = 0;
-    for (int t = 0; t < chance_count; ++t)
+    for (u32 t = 0; t < chance_count; ++t)
         sum += *chances[t];
 
     int delta = 100 - sum;
@@ -6789,7 +6768,7 @@ static void ReboundChances(u16 *chances[], unsigned int chance_count, int just_c
     {
         int rebound_option = (just_changed_option + 1) % chance_count;
 
-        u16 *opt_val = chances[rebound_option];
+        s16 *opt_val = chances[rebound_option];
         int prev_chance = (int)*opt_val;
 
         int new_chance = prev_chance + delta;
@@ -6811,21 +6790,21 @@ static void ReboundChances(u16 *chances[], unsigned int chance_count, int just_c
 static float GetAngleOutOfDeadzone(float angle, int lastSDIWasCardinal)
 {
     // get out of deadzone if last sdi was cardinal
-    if (angle > M_1DEGREE * 73.5 || angle < M_1DEGREE * 106.5 && lastSDIWasCardinal)
+    if (angle > M_1DEGREE * 73.5f || (angle < M_1DEGREE * 106.5f && lastSDIWasCardinal))
     {
-        angle = M_1DEGREE * 73;
+        angle = M_1DEGREE * 73.f;
     }
-    else if (angle > M_1DEGREE * 163.5 || angle < M_1DEGREE * 196.5 && lastSDIWasCardinal)
+    else if (angle > M_1DEGREE * 163.5f || (angle < M_1DEGREE * 196.5f && lastSDIWasCardinal))
     {
-        angle = M_1DEGREE * 163;
+        angle = M_1DEGREE * 163.f;
     }
-    else if (angle > M_1DEGREE * 253.5 || angle < M_1DEGREE * 296.5 && lastSDIWasCardinal)
+    else if (angle > M_1DEGREE * 253.5f || (angle < M_1DEGREE * 296.5f && lastSDIWasCardinal))
     {
-        angle = M_1DEGREE * 253;
+        angle = M_1DEGREE * 253.f;
     }
-    else if (angle > M_1DEGREE * 343.5 || angle < M_1DEGREE * 16.5 && lastSDIWasCardinal)
+    else if (angle > M_1DEGREE * 343.5f || (angle < M_1DEGREE * 16.5f && lastSDIWasCardinal))
     {
-        angle = M_1DEGREE * 343;
+        angle = M_1DEGREE * 343.f;
     }
     return angle;
 }

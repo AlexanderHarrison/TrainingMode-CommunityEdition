@@ -2464,7 +2464,7 @@ struct FighterData
         void (*OnGrabFighter_Self)(GOBJ *fighter);              // 0x2190
         void (*x2194)(GOBJ *fighter);                           // 0x2194, i think this is on grabbed items
         void (*OnGrabFighter_Victim)(GOBJ *victim, GOBJ *self); // 0x2198
-        void (*IASA)(GOBJ *fighter);                            // 0x219C
+        int  (*IASA)(GOBJ *fighter);                            // 0x219C
         void (*Anim)(GOBJ *fighter);                            // 0x21A0
         void (*Phys)(GOBJ *fighter);                            // 0x21a4
         void (*Coll)(GOBJ *fighter);                            // 0x21a8
@@ -3158,13 +3158,13 @@ struct FtScriptIK
 */
 
 /** Static Variables **/
-static ftCommonBone ***stc_ftbone = (R13 + -0x515C);
-static ftCommonData **stc_ftcommon = (R13 + -0x514C);
-static ColAnimDesc **stc_plco_colanimdesc = 0x804D653C;
-static GXColor **stc_shieldcolors = (R13 + -0x5194);
-static FtDmgVibrateDesc **stc_dmg_vibrate_desc = (R13 + -0x5170);
-static int *stc_ft_hitlog = (R13 + -0x5148); // used as semi-local variables remembering if a solid hit occured @ 8006cbc4
-static int *stc_ft_tiplog = (R13 + -0x5144); // used as semi-local variables remembering if a tip hit occured @ 8006cbc4
+static ftCommonBone ***stc_ftbone = R13_OFFSET(-0x515C);
+static ftCommonData **stc_ftcommon = R13_OFFSET(-0x514C);
+static ColAnimDesc **stc_plco_colanimdesc = (void *)0x804D653C;
+static GXColor **stc_shieldcolors = R13_OFFSET(-0x5194);
+static FtDmgVibrateDesc **stc_dmg_vibrate_desc = R13_OFFSET(-0x5170);
+static int *stc_ft_hitlog = R13_OFFSET(-0x5148); // used as semi-local variables remembering if a solid hit occured @ 8006cbc4
+static int *stc_ft_tiplog = R13_OFFSET(-0x5144); // used as semi-local variables remembering if a tip hit occured @ 8006cbc4
 
 /*** Functions ***/
 GOBJ *Fighter_Create(PlayerData *pd);

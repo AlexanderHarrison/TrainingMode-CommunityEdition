@@ -50,16 +50,16 @@ void DevelopText_Deactivate(void *unk);
 void DevelopText_AddString(DevText *text, ...);
 void DevelopText_EraseAllText(DevText *text);
 void DevelopText_ResetCursorXY(DevText *text, int x, int y);
-void DevelopText_StoreTextColor(DevText *text, u8 *RGBA);
-void DevelopText_StoreBGColor(DevText *text, u8 *RGBA);
+void DevelopText_StoreTextColor(DevText *text, GXColor *RGBA);
+void DevelopText_StoreBGColor(DevText *text, GXColor *RGBA);
 void DevelopText_ShowText(DevText *text);
 void DevelopText_HideText(DevText *text);
 void DevelopText_ShowBG(DevText *text);
 void DevelopText_HideBG(DevText *text);
 void DevelopText_StoreTextScale(DevText *text, float x, float y);
-void Develop_DrawSphere(float size, Vec3 *pos1, Vec2 *pos2, GXColor *diffuse, GXColor *ambient);
+void Develop_DrawSphere(float size, Vec3 *pos1, Vec3 *pos2, GXColor *diffuse, GXColor *ambient);
 void Develop_UpdateMatchHotkeys();
 
-static int *stc_dblevel = R13 + (-0x6C98);
+static int *stc_dblevel = R13_OFFSET(-0x6C98);
 
 #endif

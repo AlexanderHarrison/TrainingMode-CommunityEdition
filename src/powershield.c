@@ -4,7 +4,7 @@
 #define CPU_LEFT_STAGE_POS_X 70.f
 #define CPU_LEFT_DIRECTION -1.f
 
-void Exit(int value);
+void Exit(GOBJ *menu);
 void ChangeFireSpeedOption(GOBJ *event_menu, int value);
 void ChangeDirection(GOBJ *event_menu, int value);
 void ChangeRandomFireDelayMin(GOBJ *event_menu, int value);
@@ -39,9 +39,9 @@ enum falco_direction {
     DIRECTION_LEFT,
 };
 
-static char *Options_FireSpeed[] = { "Random", "Slow", "Medium", "Fast" };
-static char *Options_LaserHeight[] = { "Random", "Very Low", "Low", "Mid", "High" };
-static char *Options_Direction[] = { "Right", "Left" };
+static const char *Options_FireSpeed[] = { "Random", "Slow", "Medium", "Fast" };
+static const char *Options_LaserHeight[] = { "Random", "Very Low", "Low", "Mid", "High" };
+static const char *Options_Direction[] = { "Right", "Left" };
 
 static EventOption Options_Main[] = {
     {
@@ -58,7 +58,7 @@ static EventOption Options_Main[] = {
         .val = 0,
         .name = "Min Fire Delay",
         .desc = "Adjust the minimum number of frames between lasers",
-        .values = "%d",
+        .format = "%d",
         .OnChange = ChangeRandomFireDelayMin,
         .disable = false,
     },
@@ -68,7 +68,7 @@ static EventOption Options_Main[] = {
         .val = 20,
         .name = "Max Fire Delay",
         .desc = "Adjust the maximum number of frames between lasers",
-        .values = "%d",
+        .format = "%d",
         .OnChange = ChangeRandomFireDelayMax,
         .disable = false,
     },
@@ -98,7 +98,7 @@ static EventOption Options_Main[] = {
 static EventMenu Menu_Main = {
     .name = "Powershield Training",
     .option_num = sizeof(Options_Main) / sizeof(EventOption),
-    .options = &Options_Main,
+    .options = Options_Main,
 };
 
 static int falco_wait_delay = -1;
@@ -124,7 +124,7 @@ void Event_Think(GOBJ *menu) {
     }
     if (new_direction != -1) {
         Options_Main[OPT_DIRECTION].val = new_direction;
-        ChangeDirection(Options_Main, new_direction);
+        ChangeDirection(menu, new_direction);
     }
 
     int state = falco_data->state_id;
@@ -202,7 +202,7 @@ void Event_Think(GOBJ *menu) {
     }
 }
 
-void Exit(int value) {
+void Exit(GOBJ *menu) {
     stc_match->state = 3;
     Match_EndVS();
 }

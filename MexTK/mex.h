@@ -1,6 +1,10 @@
 #ifndef MEX_H
 #define MEX_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 #include "include/structs.h"
 #include "include/datatypes.h"
 
@@ -26,5 +30,7 @@
 #include "include/scene.h"
 #include "include/stage.h"
 #include "include/text.h"
+
+#pragma GCC diagnostic pop
 
 #endif

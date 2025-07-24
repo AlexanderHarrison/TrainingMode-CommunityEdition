@@ -622,7 +622,7 @@ static Vec3 stc_msg_queue_pos_sides[] = {
     {22.f, -13.f, 0},
     {0, 0, 0},
     {0, 0, 0},
-    {0, -5.15f}
+    {0, -5.15f, 0}
 };
 
 static Vec2 stc_msg_queue_offsets_horizontal[] = {
@@ -776,7 +776,7 @@ void EventLoad(void)
 
     // append extension
     static char *extension = "TM/%s.dat";
-    char *buffer[20];
+    char buffer[20];
     sprintf(buffer, extension, event_desc->eventFile);
 
     // load this events file
@@ -787,12 +787,12 @@ void EventLoad(void)
     int pri = event_desc->callbackPriority;
     void *cb = evFunction->Event_Think;
     GOBJ *gobj = GObj_Create(0, 7, 0);
-    int *userdata = calloc(EVENT_DATASIZE);
+    void *userdata = calloc(EVENT_DATASIZE);
     GObj_AddUserData(gobj, 4, HSD_Free, userdata);
     GObj_AddProc(gobj, cb, pri);
 
     // store pointer to the event's data
-    userdata[0] = event_desc;
+    *(EventDesc **)userdata = event_desc;
 
     // Create a gobj to track match time
     stc_event_vars.game_timer = 0;
@@ -829,6 +829,7 @@ void EventLoad(void)
 
 void EventUpdate(void)
 {
+    // get event info
     GOBJ *menu_gobj = stc_event_vars.menu_gobj;
     if (menu_gobj)
         EventMenu_Update(menu_gobj);
@@ -917,45 +918,44 @@ void OnStartMelee(void)
 /// Miscellaneous Functions ///
 ///////////////////////////////
 
-int GOBJToID(GOBJ *gobj)
+GOBJ *GOBJToID(GOBJ *gobj)
 {
     // ensure valid pointer
     if (gobj == 0)
-        return -1;
+        return (GOBJ *)-1;
 
     // ensure its a fighter
     if (gobj->entity_class != 4)
-        return -1;
+        return (GOBJ *)-1;
 
     // access the data
     FighterData *ft_data = gobj->userdata;
     u8 ply = ft_data->ply;
     u8 ms = ft_data->flags.ms;
 
-    return ((ply << 4) | ms);
+    return (GOBJ *)((ply << 4) | ms);
 }
-int FtDataToID(FighterData *fighter_data)
+FighterData *FtDataToID(FighterData *fighter_data)
 {
     // ensure valid pointer
     if (fighter_data == 0)
-        return -1;
+        return (FighterData *)-1;
 
     // ensure its a fighter
     if (fighter_data->fighter == 0)
-        return -1;
+        return (FighterData *)-1;
 
     // get ply and ms
     u8 ply = fighter_data->ply;
     u8 ms = fighter_data->flags.ms;
 
-    return ((ply << 4) | ms);
+    return (FighterData *)((ply << 4) | ms);
 }
-int BoneToID(FighterData *fighter_data, JOBJ *bone)
+JOBJ *BoneToID(FighterData *fighter_data, JOBJ *bone)
 {
-
     // ensure bone exists
     if (bone == 0)
-        return -1;
+        return (JOBJ *)-1;
 
     int bone_id = -1;
 
@@ -973,13 +973,15 @@ int BoneToID(FighterData *fighter_data, JOBJ *bone)
     if (bone_id == -1)
         TMLOG("no bone found %x\n", bone);
 
-    return bone_id;
+    return (JOBJ *)bone_id;
 }
-GOBJ *IDToGOBJ(int id)
+GOBJ *IDToGOBJ(GOBJ *id_as_ptr)
 {
+    int id = (int)id_as_ptr;
+
     // ensure valid pointer
     if (id == -1)
-        return 0;
+        return (GOBJ *)0;
 
     // get ply and ms
     u8 ply = (id >> 4) & 0xF;
@@ -990,8 +992,10 @@ GOBJ *IDToGOBJ(int id)
 
     return gobj;
 }
-FighterData *IDToFtData(int id)
+FighterData *IDToFtData(FighterData *id_as_ptr)
 {
+    int id = (int)id_as_ptr;
+
     // ensure valid pointer
     if (id == -1)
         return 0;
@@ -1006,8 +1010,10 @@ FighterData *IDToFtData(int id)
 
     return fighter_data;
 }
-JOBJ *IDToBone(FighterData *fighter_data, int id)
+JOBJ *IDToBone(FighterData *fighter_data, JOBJ *id_as_ptr)
 {
+    int id = (int)id_as_ptr;
+
     // ensure valid pointer
     if (id == -1)
         return 0;
@@ -1206,7 +1212,7 @@ GOBJ *Message_Display(int msg_kind, int queue_num, int msg_color, char *format, 
     va_start(args, format);
     vsprintf(buffer, format, args);
     va_end(args);
-    char *msg = &buffer;
+    char *msg = buffer;
 
     // count newlines
     int line_num = 1;
@@ -1232,7 +1238,6 @@ GOBJ *Message_Display(int msg_kind, int queue_num, int msg_color, char *format, 
     line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
 
     // copy each line to an individual char array
-    char *msg_cursor = &msg;
     for (int i = 0; i < line_num; i++)
     {
 
@@ -1269,7 +1274,7 @@ void Message_Manager(GOBJ *mngr_gobj)
     // Iterate through each queue
     for (int i = 0; i < MSGQUEUE_NUM; i++)
     {
-        GOBJ **msg_queue = &mgr_data->msg_queue[i];
+        GOBJ **msg_queue = mgr_data->msg_queue[i];
 
         // anim update (time based logic)
         for (int j = (MSGQUEUE_SIZE - 2); j >= 0; j--) // iterate through backwards (because deletions)
@@ -1280,8 +1285,6 @@ void Message_Manager(GOBJ *mngr_gobj)
             if (this_msg_gobj != 0)
             {
                 MsgData *this_msg_data = this_msg_gobj->userdata;
-                Text *this_msg_text = this_msg_data->text;
-                JOBJ *this_msg_jobj = this_msg_gobj->hsd_object;
 
                 // check if the message moved this frame
                 if (this_msg_data->orig_index != j)
@@ -1483,7 +1486,7 @@ void Message_Add(GOBJ *msg_gobj, int queue_num)
 
     MsgData *msg_data = msg_gobj->userdata;
     MsgMngrData *mgr_data = stc_msgmgr->userdata;
-    GOBJ **msg_queue = &mgr_data->msg_queue[queue_num];
+    GOBJ **msg_queue = mgr_data->msg_queue[queue_num];
 
     // ensure this queue exists
     if (queue_num >= MSGQUEUE_NUM)
@@ -1567,8 +1570,6 @@ void Tip_Think(GOBJ *gobj)
 {
 
     GOBJ *tip_gobj = stc_tipmgr.gobj;
-
-    stc_event_vars.menu_assets->tip_jobj;
 
     // update tip
     if (tip_gobj != 0)
@@ -1701,7 +1702,7 @@ int Tip_Display(int lifetime, char *fmt, ...)
     va_start(args, fmt);
     vsprintf(buffer, fmt, args);
     va_end(args);
-    char *msg = &buffer;
+    char *msg = buffer;
 
     // count newlines
     int line_num = 1;
@@ -1727,7 +1728,6 @@ int Tip_Display(int lifetime, char *fmt, ...)
     line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
 
     // copy each line to an individual char array
-    char *msg_cursor = &msg;
     for (int i = 0; i < line_num; i++)
     {
 

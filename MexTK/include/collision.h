@@ -266,6 +266,7 @@ void Coll_CopyPosToECBs(CollData *coll_data, Vec3 *pos);
 void Coll_ECBCurrToPrev(CollData *coll_data);
 void Coll_InitECB(CollData *coll_data);
 void Coll_SetECBScale(CollData *coll_data, float scale1, float scale2, float scale3, float scale4);
+int Coll_CheckLedge(CollData *coll_data);
 float Coll_GetCurrGroundsFrictionMult(CollData *);
 int ECB_CollGround_PassLedge(CollData *ecb, ECBSize *bones); // returns is touching ground bool
 int ECB_CollGround3(CollData *ecb);
@@ -281,19 +282,21 @@ void GrColl_GetGroundLineEndLeft(int floor_index, Vec3 *pos);                   
 void GrColl_GetGroundLineEndRight(int floor_index, Vec3 *pos);                                                                                                                                   // returns the rightmost grounded coordinate of the inputted line index within its group
 void GrColl_GetGroundLineEndLeft_AllGroups(int floor_index, Vec3 *pos);                                                                                                                          // returns the leftmost grounded coordinate of the inputted line index regardless of the group
 void GrColl_GetGroundLineEndRight_AllGroups(int floor_index, Vec3 *pos);                                                                                                                         // returns the rightmost grounded coordinate of the inputted line index regardless of the group
-int GrColl_RaycastGround(Vec3 *coll_pos, int *line_index, int *line_kind, Vec3 *unk1, Vec3 *unk2, Vec3 *unk3, Vec3 *unk4, void *cb, float fromX, float fromY, float toX, float toY, float unk5); // make unk5
+int GrColl_RaycastGround(Vec3 *coll_pos, int *line_index, int *line_kind, Vec3 *unk1, int unk2, int unk3, int unk4, void *cb, float fromX, float fromY, float toX, float toY, float unk5); // make unk5
+int GrColl_RaycastUnk(Vec3 *coll_pos, int *line_index, int *line_kind, Vec3 *direction, void *cb, void *unk2, float from_x, float from_y, float to_x, float to_y);                                   // unk = 0, unk2 = -1;
+int GrColl_RaycastAll(Vec3 *coll_pos, int *line_index, int *line_kind, Vec3 *direction, void *cb, void *unk2, float from_x, float from_y, float to_x, float to_y);
 int GrColl_CrawlGround(int line_index, Vec3 *pos, int *return_line, Vec3 *return_pos, int *return_flags, Vec3 *return_slope, float x_offset, float y_offset);                                    // returns bool for if position on line series exists
 int GrColl_GetPosDifference(int line_index, Vec3 *pos, Vec3 *return_pos);
 int GrColl_GetLineInfo(int line_index, Vec3 *r4, void *r5, int *flags, Vec3 *return_slope);
 void GrColl_GetLineSlope(int line_index, Vec3 *return_slope);
 int GrColl_CheckIfLineEnabled(int line_index);
 
-static int *stc_colltest = R13 + (-0x51F4);
-static CollGroup **stc_firstcollgroup = R13 + (-0x51DC);
-static CollGroup **stc_collgroup = R13 + (-0x51E0);
-static CollLine **stc_collline = R13 + (-0x51E4);
-static CollVert **stc_collvert = R13 + (-0x51E8);
-static CollDataStage **stc_colldata = R13 + (-0x51EC);
-static CollLineConnection **stc_first_line_connect = 0x80458e88; // array of 9
+static int *stc_colltest = R13_OFFSET(-0x51F4);
+static CollGroup **stc_firstcollgroup = R13_OFFSET(-0x51DC);
+static CollGroup **stc_collgroup = R13_OFFSET(-0x51E0);
+static CollLine **stc_collline = R13_OFFSET(-0x51E4);
+static CollVert **stc_collvert = R13_OFFSET(-0x51E8);
+static CollDataStage **stc_colldata = R13_OFFSET(-0x51EC);
+static CollLineConnection **stc_first_line_connect = (void *)0x80458e88; // array of 9
 
 #endif

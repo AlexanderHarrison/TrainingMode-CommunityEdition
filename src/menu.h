@@ -15,7 +15,7 @@ typedef struct evMenu
     JOBJDesc *playback;
     JOBJDesc *message;
     COBJDesc *hud_cobjdesc;
-    JOBJ *tip_jobj;
+    JOBJDesc *tip_jobj;
     void **tip_jointanim; // pointer to array
 } evMenu;
 
@@ -29,10 +29,13 @@ typedef struct EventOption
     u16 value_num;                                  // number of values
     s16 val;                                        // value of this option
     s16 val_prev;                                   // previous value of this option
-    EventMenu *menu;                                // pointer to the menu that pressing A opens
     char *name;                                     // pointer to the name of this option
     char *desc;                                     // pointer to the description string for this option
-    void **values;                                  // pointer to an array of strings
+    union {
+        EventMenu *menu;                            // pointer to submenu for OPTKIND_MENU
+        const char **values;                        // options for OPTKIND_STRING
+        const char *format;                         // format string for OPTKIND_INT
+    };
     void (*OnChange)(GOBJ *menu_gobj, int value);   // function that runs when option is changed
     void (*OnSelect)(GOBJ *menu_gobj);              // function that runs when option is selected
 } EventOption;
@@ -85,7 +88,7 @@ typedef struct MenuData
     JOBJ *scroll_bot;
     GOBJ *custom_gobj;                               // onSelect gobj
     int (*custom_gobj_think)(GOBJ *custom_gobj);     // per frame function. Returns bool indicating if the program should check to unpause
-    void *(*custom_gobj_destroy)(GOBJ *custom_gobj); // on destroy function
+    void (*custom_gobj_destroy)(GOBJ *custom_gobj);  // on destroy function
 } MenuData;
 
 
@@ -93,13 +96,27 @@ GOBJ *EventMenu_Init(EventMenu *start_menu);
 void EventMenu_Think(GOBJ *eventMenu, int pass);
 void EventMenu_COBJThink(GOBJ *gobj);
 void EventMenu_Draw(GOBJ *eventMenu);
+void EventMenu_Update(GOBJ *gobj);
+void EventMenu_DestroyPopup(GOBJ *gobj);
+void EventMenu_UpdatePopupText(GOBJ *gobj, EventOption *option);
+void EventMenu_CreatePopupText(GOBJ *gobj, EventMenu *menu);
+void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu);
+void EventMenu_DestroyMenu(GOBJ *gobj);
+void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu);
+void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu);
+void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu);
+void EventMenu_PopupThink(GOBJ *gobj, EventMenu *currMenu);
+void EventMenu_MenuThink(GOBJ *gobj, EventMenu *currMenu);
+void EventMenu_TextGX(GOBJ *gobj, int pass);
+void EventMenu_MenuGX(GOBJ *gobj, int pass);
+void EventMenu_Update(GOBJ *gobj);
+GOBJ *EventMenu_Init(EventMenu *start_menu);
 
 // EventOption kind definitions
 enum option_kind {
     OPTKIND_MENU,
     OPTKIND_STRING,
     OPTKIND_INT,
-    OPTKIND_FLOAT,
     OPTKIND_FUNC,
 };
 

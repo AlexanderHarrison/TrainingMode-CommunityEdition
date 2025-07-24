@@ -291,41 +291,41 @@ struct SSSMinorData
 };
 
 /*** Variables ***/
-static MnSlChrData *stc_css_data = 0x803F0A48;         // 0x803f0a48
-static VSMinorData **stc_css_minorscene = 0x804D6CB0;  // -0x49F0
-static u8 *stc_css_regtagnum = 0x804D6CF8;             // -0x49A8, number of registered tags
-static s8 *stc_css_name_ply = 0x804D6CF9;              // -0x49A7, index of the player using the name entry menu
-static HSD_Archive **stc_css_archive = 0x804D6CD0;     // -0x49D0
-static HSD_Archive **stc_css_menuarchive = 0x804D6CD4; // -0x49CC, ptr to MnMaExt archive
-static u8 *stc_css_custom_rules = 0x804D6CF4;          // -0x49AC
-static GOBJ **stc_css_menugobj = 0x804D6CBC;           // -0x49E4
-static JOBJ **stc_css_menumodel = 0x804D6CC0;          // -0x49E0
-static JOBJ **stc_css_trainingmodel = 0x804D6CC4;      // -0x49DC
-static JOBJ **stc_css_highscoremodel = 0x804D6CC8;     // -0x49D8
-static JOBJ **stc_css_cameramodel = 0x804D6CCC;        // -0x49D4
-static CSSCursor **stc_css_cursors = 0x804A0BC0;       // 0x804a0bc0
-static CSSPuck **stc_css_pucks = 0x804A0BD0;           // 0x804a0bd0
+static MnSlChrData *stc_css_data = (void *)0x803F0A48;         // 0x803f0a48
+static VSMinorData **stc_css_minorscene = (void *)0x804D6CB0;  // -0x49F0
+static u8 *stc_css_regtagnum = (void *)0x804D6CF8;             // -0x49A8, number of registered tags
+static s8 *stc_css_name_ply = (void *)0x804D6CF9;              // -0x49A7, index of the player using the name entry menu
+static HSD_Archive **stc_css_archive = (void *)0x804D6CD0;     // -0x49D0
+static HSD_Archive **stc_css_menuarchive = (void *)0x804D6CD4; // -0x49CC, ptr to MnMaExt archive
+static u8 *stc_css_custom_rules = (void *)0x804D6CF4;          // -0x49AC
+static GOBJ **stc_css_menugobj = (void *)0x804D6CBC;           // -0x49E4
+static JOBJ **stc_css_menumodel = (void *)0x804D6CC0;          // -0x49E0
+static JOBJ **stc_css_trainingmodel = (void *)0x804D6CC4;      // -0x49DC
+static JOBJ **stc_css_highscoremodel = (void *)0x804D6CC8;     // -0x49D8
+static JOBJ **stc_css_cameramodel = (void *)0x804D6CCC;        // -0x49D4
+static CSSCursor **stc_css_cursors = (void *)0x804A0BC0;       // 0x804a0bc0
+static CSSPuck **stc_css_pucks = (void *)0x804A0BD0;           // 0x804a0bd0
 
-static s8 *stc_css_hmnport = 0x804D6CF0;                      // -0x49B0
-static s8 *stc_css_cpuport = 0x804D6CF1;                      // -0x49AF
-static u8 *stc_css_delay = 0x804D6CF2;                        // -0x49AE
-static u8 *stc_css_exitkind = 0x804D6CF6;                     // -0x49AA
-static u8 *stc_css_maxply = 0x804D6CF5;                       // -0x49AB
-static u8 *stc_css_is_ready_timer = 0x804D6CF7;               // -0x49A9
-static u8 *stc_css_singeplyport = 0x804D6CF0;                 // -0x4DE0
-static u8 *stc_menu_singeplyport = 0x804D6598;                // -0x4DB8
-static Text **stc_css_ply1_combo_text = 0x804D6CDC;           // -0x49C4
-static Text **stc_css_ply2_combo_text = 0x804D6CE0;           // -0x49C0
-static Text **stc_css_ply3_combo_text = 0x804D6CE4;           // -0x49BC
-static Text **stc_css_ply4_combo_text = 0x804D6CE8;           // -0x49B8
-static int *stc_css_bgtimer = 0x804D6CEC;                     // -0x49B4
-static u8 *stc_css_hasreleasedb = 0x804D6CF3;                 // -0x49AD
-static MnSelectChrDataTable **stc_css_datatable = 0x804D6CB4; // -0x49EC
-static JOBJSet **stc_css_jobjsets = 0x804D6CD8;               // -0x49C8
-static COBJDesc **stc_css_cobjdesc = 0x804D6BC4;              // -0x4ADC
-static GOBJ **stc_css_camgobj = 0x804D6CB8;                   // -0x49E8
-static HSD_Pad *stc_css_pad = 0x804C20BC;                     // 0x804c20bc
-static u8 *stc_css_unkarr = 0x804D50C8;                       // 0x804d50c8
+static s8 *stc_css_hmnport = (void *)0x804D6CF0;                      // -0x49B0
+static s8 *stc_css_cpuport = (void *)0x804D6CF1;                      // -0x49AF
+static u8 *stc_css_delay = (void *)0x804D6CF2;                        // -0x49AE
+static u8 *stc_css_exitkind = (void *)0x804D6CF6;                     // -0x49AA
+static u8 *stc_css_maxply = (void *)0x804D6CF5;                       // -0x49AB
+static u8 *stc_css_is_ready_timer = (void *)0x804D6CF7;               // -0x49A9
+static u8 *stc_css_singeplyport = (void *)0x804D6CF0;                 // -0x4DE0
+static u8 *stc_menu_singeplyport = (void *)0x804D6598;                // -0x4DB8
+static Text **stc_css_ply1_combo_text = (void *)0x804D6CDC;           // -0x49C4
+static Text **stc_css_ply2_combo_text = (void *)0x804D6CE0;           // -0x49C0
+static Text **stc_css_ply3_combo_text = (void *)0x804D6CE4;           // -0x49BC
+static Text **stc_css_ply4_combo_text = (void *)0x804D6CE8;           // -0x49B8
+static int *stc_css_bgtimer = (void *)0x804D6CEC;                     // -0x49B4
+static u8 *stc_css_hasreleasedb = (void *)0x804D6CF3;                 // -0x49AD
+static MnSelectChrDataTable **stc_css_datatable = (void *)0x804D6CB4; // -0x49EC
+static JOBJSet **stc_css_jobjsets = (void *)0x804D6CD8;               // -0x49C8
+static COBJDesc **stc_css_cobjdesc = (void *)0x804D6BC4;              // -0x4ADC
+static GOBJ **stc_css_camgobj = (void *)0x804D6CB8;                   // -0x49E8
+static HSD_Pad *stc_css_pad = (void *)0x804C20BC;                     // 0x804c20bc
+static u8 *stc_css_unkarr = (void *)0x804D50C8;                       // 0x804d50c8
 
 /*** Functions ***/
 void MainMenu_CamRotateThink(GOBJ *gobj);

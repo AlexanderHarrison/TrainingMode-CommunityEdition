@@ -1,6 +1,10 @@
 #include "../MexTK/mex.h"
 #include "events.h"
 
+// unfortunately there are static in this header that only used in labCSS or lab
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
 // Labbing event
 // Custom TDI definitions
 #define TDI_HITNUM 10
@@ -94,7 +98,7 @@ typedef struct ButtonLookup
     u8 jobj;
     u8 dobj;
 } ButtonLookup;
-typedef enum buttons_enum
+enum buttons_enum
 {
     BTN_A,
     BTN_B,
@@ -109,7 +113,7 @@ typedef enum buttons_enum
     BTN_R,
     BTN_Z,
     BTN_NUM,
-} buttons_enum;
+};
 static ButtonLookup button_lookup[] = {
     {1, 0},  // A
     {2, 0},  // B
@@ -151,8 +155,7 @@ static int button_bits[] = {
     HSD_TRIGGER_L,         // L
     HSD_TRIGGER_R,         // R
     HSD_TRIGGER_Z,         // Z
-};
-// GX
+ };// GX
 #define INPUT_GXLINK 12
 #define INPUT_GXPRI 80
 // params
@@ -444,6 +447,9 @@ void Lab_ChangeSlot4ChanceCPU (GOBJ *menu_gobj, int _new_val);
 void Lab_ChangeSlot5ChanceCPU (GOBJ *menu_gobj, int _new_val);
 void Lab_ChangeSlot6ChanceCPU (GOBJ *menu_gobj, int _new_val);
 void DIDraw_GX();
+int Record_GetEndFrame(void);
+int Record_GetCurrFrame(void);
+int Record_GetSlot(int ply);
 bool Record_CPU_IsRecording(void);
 bool Record_HMN_IsRecording(void);
 bool Record_HMN_IsPlayback(void);
@@ -482,13 +488,28 @@ FighterData *Record_IDToFtData(int id);
 JOBJ *Record_IDToBone(FighterData *fighter_data, int id);
 void Snap_CObjThink(GOBJ *gobj);
 void Record_StartExport(GOBJ *menu_gobj);
+void Record_OnSuccessfulSave(int deleteRecordings);
 void Export_Init(GOBJ *menu_gobj);
 int Export_Think(GOBJ *export_gobj);
 void Export_Destroy(GOBJ *export_gobj);
 void Export_SelCardInit(GOBJ *export_gobj);
 int Export_SelCardThink(GOBJ *export_gobj);
 int Export_Compress(u8 *dest, u8 *source, u32 size);
-void Lab_Exit(int value);
+void Export_EnterNameUpdateKeyboard(GOBJ *export_gobj);
+void Export_ConfirmExit(GOBJ *export_gobj);
+int Export_Process(GOBJ *export_gobj);
+void Export_ConfirmInit(GOBJ *export_gobj);
+void Export_EnterNameExit(GOBJ *export_gobj);
+int Export_EnterNameThink(GOBJ *export_gobj);
+void Export_EnterNameInit(GOBJ *export_gobj);
+void Export_SelCardExit(GOBJ *export_gobj);
+int Export_SelCardThink(GOBJ *export_gobj);
+void Export_SelCardInit(GOBJ *export_gobj);
+void Export_Destroy(GOBJ *export_gobj);
+int Export_Think(GOBJ *export_gobj);
+void Export_ConfirmInit(GOBJ *export_gobj);
+int Export_ConfirmThink(GOBJ *export_gobj);
+void Lab_Exit(GOBJ *menu);
 void InfoDisplay_Update(GOBJ *menu_gobj, EventOption menu[], GOBJ *fighter, GOBJ *below);
 
 // info display
@@ -557,16 +578,16 @@ static char *stage_names[] = {
 };
 
 // CSS Import
-s8 *onload_fileno = R13 + (-0x4670);
-s8 *onload_slot = R13 + (-0x466F);
+s8 *onload_fileno = R13_OFFSET(-0x4670);
+s8 *onload_slot = R13_OFFSET(-0x466F);
 #define IMPORT_FILESPERPAGE 10
-typedef enum ImportMenuStates
+enum ImportMenuStates
 {
     IMP_SELCARD,
     IMP_SELFILE,
     IMP_CONFIRM,
 };
-typedef enum ImportConfirmKind
+enum ImportConfirmKind
 {
     CFRM_LOAD,
     CFRM_OLD,
@@ -577,7 +598,7 @@ typedef enum ImportConfirmKind
 };
 typedef struct FileInfo
 {
-    char **file_name; // pointer to file name array
+    char *file_name; // pointer to file name array
     int file_size;    // number of files on card
     int file_no;      // index of this file on the card
 } FileInfo;
@@ -634,3 +655,5 @@ GOBJ *Menu_Create();
 void Menu_Think(GOBJ *menu_gobj);
 #define MENUCAM_GXLINK 5
 #define SIS_ID 0
+
+#pragma GCC diagnostic pop

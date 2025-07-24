@@ -138,25 +138,25 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
                         memcpy(&ft_data->cb, &fighter_data->cb, sizeof(fighter_data->cb)); // copy hitbox
 
                         // convert hitbox pointers
-                        for (int k = 0; k < countof(fighter_data->hitbox); k++)
+                        for (u32 k = 0; k < countof(fighter_data->hitbox); k++)
                         {
                             ft_data->hitbox[k].bone = BoneToID(fighter_data, ft_data->hitbox[k].bone);
-                            for (int l = 0; l < countof(fighter_data->hitbox->victims); l++) // pointers to hitbox victims
+                            for (u32 l = 0; l < countof(fighter_data->hitbox->victims); l++) // pointers to hitbox victims
                             {
                                 ft_data->hitbox[k].victims[l].data = FtDataToID(ft_data->hitbox[k].victims[l].data);
                             }
                         }
-                        for (int k = 0; k < countof(fighter_data->throw_hitbox); k++)
+                        for (u32 k = 0; k < countof(fighter_data->throw_hitbox); k++)
                         {
                             ft_data->throw_hitbox[k].bone = BoneToID(fighter_data, ft_data->throw_hitbox[k].bone);
-                            for (int l = 0; l < countof(fighter_data->throw_hitbox->victims); l++) // pointers to hitbox victims
+                            for (u32 l = 0; l < countof(fighter_data->throw_hitbox->victims); l++) // pointers to hitbox victims
                             {
                                 ft_data->throw_hitbox[k].victims[l].data = FtDataToID(ft_data->throw_hitbox[k].victims[l].data);
                             }
                         }
 
                         ft_data->thrown_hitbox.bone = BoneToID(fighter_data, ft_data->thrown_hitbox.bone);
-                        for (int k = 0; k < countof(fighter_data->thrown_hitbox.victims); k++) // pointers to hitbox victims
+                        for (u32 k = 0; k < countof(fighter_data->thrown_hitbox.victims); k++) // pointers to hitbox victims
                         {
 
                             ft_data->thrown_hitbox.victims[k].data = FtDataToID(ft_data->thrown_hitbox.victims[k].data);
@@ -303,7 +303,6 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 
                     // restore coll data
                     CollData *thiscoll = &fighter_data->coll_data;
-                    CollData *savedcoll = &ft_data->coll_data;
                     GOBJ *gobj = thiscoll->gobj;                                                            // 0x0
                     JOBJ *joint_1 = thiscoll->joint_1;                                                      // 0x108
                     JOBJ *joint_2 = thiscoll->joint_2;                                                      // 0x10c
@@ -349,7 +348,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
                             {GRKIND_BATTLE, 0, 5}, // edges
                             {GRKIND_FD, 0, 2}, // edges
                         };
-                        for (int i = 0; i < countof(platform_ground_indices); i++)
+                        for (u32 i = 0; i < countof(platform_ground_indices); i++)
                         {
                             if (platform_ground_indices[i].stage_internal_id == stage_internal_id)
                             {
@@ -373,24 +372,24 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 
                     // convert pointers
 
-                    for (int k = 0; k < countof(fighter_data->hitbox); k++)
+                    for (u32 k = 0; k < countof(fighter_data->hitbox); k++)
                     {
                         fighter_data->hitbox[k].bone = IDToBone(fighter_data, ft_data->hitbox[k].bone);
-                        for (int l = 0; l < countof(fighter_data->hitbox->victims); l++) // pointers to hitbox victims
+                        for (u32 l = 0; l < countof(fighter_data->hitbox->victims); l++) // pointers to hitbox victims
                         {
                             fighter_data->hitbox[k].victims[l].data = IDToFtData(ft_data->hitbox[k].victims[l].data);
                         }
                     }
-                    for (int k = 0; k < countof(fighter_data->throw_hitbox); k++)
+                    for (u32 k = 0; k < countof(fighter_data->throw_hitbox); k++)
                     {
                         fighter_data->throw_hitbox[k].bone = IDToBone(fighter_data, ft_data->throw_hitbox[k].bone);
-                        for (int l = 0; l < countof(fighter_data->throw_hitbox->victims); l++) // pointers to hitbox victims
+                        for (u32 l = 0; l < countof(fighter_data->throw_hitbox->victims); l++) // pointers to hitbox victims
                         {
                             fighter_data->throw_hitbox[k].victims[l].data = IDToFtData(ft_data->throw_hitbox[k].victims[l].data);
                         }
                     }
                     fighter_data->thrown_hitbox.bone = IDToBone(fighter_data, ft_data->thrown_hitbox.bone);
-                    for (int k = 0; k < countof(fighter_data->thrown_hitbox.victims); k++) // pointers to hitbox victims
+                    for (u32 k = 0; k < countof(fighter_data->thrown_hitbox.victims); k++) // pointers to hitbox victims
                     {
                         fighter_data->thrown_hitbox.victims[k].data = IDToFtData(ft_data->thrown_hitbox.victims[k].data);
                     }
@@ -482,7 +481,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 
                     // restore camera subject
                     CmSubject *thiscam = fighter_data->camera_subject;
-                    CmSubject *savedcam = &ft_data->camera_subject;
+                    CmSubject *savedcam = (CmSubject *)&ft_data->camera_subject;
                     void *alloc = thiscam->alloc;
                     CmSubject *next = thiscam->next;
                     memcpy(thiscam, savedcam, sizeof(ft_data->camera_subject));
@@ -550,7 +549,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
                 FtSaveStateData_v1 *primarychar_data = &ft_state->data[0];
                 FighterData *subchar_fighter_data = queue[1].fighter_data;
 
-                for (int j = 0; j < countof(subchar_fighter_data->cpu.leader_log); j++) 
+                for (u32 j = 0; j < countof(subchar_fighter_data->cpu.leader_log); j++) 
                 {
                     // set the pos target to the primary character's position to avoid a force target at 0,0,0
                     // set the facing direction to the primary character's facing direction to avoid the facing direction being incorrect on the first frame
@@ -617,8 +616,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
                 // subtract some value, 8039c9f0
                 if (ptcl->gen != 0)
                 {
-                    int *arr = ptcl->gen;
-                    arr[0x50 / 4]--;
+                    ptcl->gen->particle_num--;
                 }
                 // remove from generator? 8039ca14
                 if (ptcl->gen != 0)
@@ -631,7 +629,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
                 *ptcls = ptcl->next;
 
                 // free alloc, 8039ca54
-                HSD_ObjFree(0x804d0f60, ptcl);
+                HSD_ObjFree((void *)0x804d0f60, ptcl);
 
                 // decrement ptcl total
                 u16 ptclnum = *stc_ptclnum;
