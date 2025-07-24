@@ -208,7 +208,7 @@ struct GOBJ
     GOBJ *nextOrdered;       // 0x10
     GOBJ *previousOrdered;   // 0x14
     GOBJProc *proc;          // 0x18
-    void (*gx_cb)();         // 0x1C
+    void (*gx_cb)(GOBJ* gobj, int code);         // 0x1C
     u64 cobj_links;          // 0x20. this is used to know which gobjs to render
     void *hsd_object;        // 0x28
     void *userdata;          // 0x2C
