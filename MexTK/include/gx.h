@@ -569,8 +569,8 @@ struct VIUnknown
     int idx;
 };
 
-static volatile GXPipe *gx_pipe = 0xCC008000;
-static VIUnknown *_p = 0x804c0980;
+static volatile GXPipe *gx_pipe = (void *)0xCC008000;
+static VIUnknown *_p = (void *)0x804c0980;
 
 void GXSetColor(GXColor *color);
 void GXSetZMode(GXBool compare_enable, GXCompare func, GXBool update_enable);

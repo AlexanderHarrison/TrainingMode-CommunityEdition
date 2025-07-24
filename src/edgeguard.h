@@ -1,8 +1,8 @@
 #include "../MexTK/mex.h"
 #include "events.h"
 
-static void Exit(int value);
-static void Reset();
+static void Exit(GOBJ *menu);
+static void Reset(void);
 
 static void Think_Spacies(void);
 static void Think_Sheik(void);
@@ -97,7 +97,7 @@ static EventOption Options_Main[] = {
         .value_num = 999,
         .name = "Player Percent",
         .desc = "Adjust the player's percent.",
-        .values = "%d%%",
+        .format = "%d%%",
         .OnChange = ChangePlayerPercent,
     },
     {
@@ -125,7 +125,7 @@ static EventOption Options_Main[] = {
 static EventMenu Menu_Main = {
     .name = "Edgeguard",
     .option_num = sizeof(Options_Main) / sizeof(EventOption),
-    .options = &Options_Main,
+    .options = Options_Main,
 };
 
 // Custom Hit Strength ---------------------------------
@@ -148,7 +148,7 @@ static EventOption Options_CustomHitStrength[] = {
         .val = CUSTOMKB_INIT_MAGMIN,
         .name = "Knockback Min",
         .desc = "Adjust the minimum of how far the CPU will fly.",
-        .values = "%d",
+        .format = "%d",
         .OnChange = ChangeCustomKB_MagMin,
     },
     {
@@ -157,7 +157,7 @@ static EventOption Options_CustomHitStrength[] = {
         .val = CUSTOMKB_INIT_MAGMAX,
         .name = "Knockback Max",
         .desc = "Adjust the maximum of how far the CPU will fly.",
-        .values = "%d",
+        .format = "%d",
         .OnChange = ChangeCustomKB_MagMax,
     },
     
@@ -167,7 +167,7 @@ static EventOption Options_CustomHitStrength[] = {
         .val = CUSTOMKB_INIT_ANGMIN,
         .name = "Angle Min",
         .desc = "Adjust the minimum angle the CPU will fly.",
-        .values = "%d",
+        .format = "%d",
         .OnChange = ChangeCustomKB_AngMin,
     },
     {
@@ -176,7 +176,7 @@ static EventOption Options_CustomHitStrength[] = {
         .val = CUSTOMKB_INIT_ANGMAX,
         .name = "Angle Max",
         .desc = "Adjust the maximum angle the CPU will fly.",
-        .values = "%d",
+        .format = "%d",
         .OnChange = ChangeCustomKB_AngMax,
     },
     
@@ -186,7 +186,7 @@ static EventOption Options_CustomHitStrength[] = {
         .val = CUSTOMKB_INIT_DMGMIN,
         .name = "Percent Min",
         .desc = "Adjust the CPU's minimum percent.",
-        .values = "%d%",
+        .format = "%d%",
         .OnChange = ChangeCustomKB_DmgMin,
     },
     {
@@ -195,7 +195,7 @@ static EventOption Options_CustomHitStrength[] = {
         .val = CUSTOMKB_INIT_DMGMAX,
         .name = "Percent Max",
         .desc = "Adjust the CPU's maximum percent.",
-        .values = "%d%",
+        .format = "%d%",
         .OnChange = ChangeCustomKB_DmgMax,
     },
 };
@@ -203,7 +203,7 @@ static EventOption Options_CustomHitStrength[] = {
 static EventMenu Menu_CustomHitStrength = {
     .name = "Custom Hit Strength",
     .option_num = sizeof(Options_CustomHitStrength) / sizeof(EventOption),
-    .options = &Options_CustomHitStrength,
+    .options = Options_CustomHitStrength,
 };
 
 // Fox -------------------------------------------------
@@ -265,7 +265,7 @@ static EventOption Options_Fox[] = {
 static EventMenu Menu_Fox = {
     .name = "Fox Recovery",
     .option_num = sizeof(Options_Fox) / sizeof(EventOption),
-    .options = &Options_Fox,
+    .options = Options_Fox,
 };
 
 // Falco -------------------------------------------------
@@ -318,7 +318,7 @@ static EventOption Options_Falco[] = {
 static EventMenu Menu_Falco = {
     .name = "Falco Recovery",
     .option_num = sizeof(Options_Falco) / sizeof(EventOption),
-    .options = &Options_Falco,
+    .options = Options_Falco,
 };
 
 // Sheik -------------------------------------------------
@@ -385,7 +385,7 @@ static EventOption Options_Sheik[] = {
 static EventMenu Menu_Sheik = {
     .name = "Sheik Recovery",
     .option_num = sizeof(Options_Sheik) / sizeof(EventOption),
-    .options = &Options_Sheik,
+    .options = Options_Sheik,
 };
 
 // Captain Falcon --------------------------------------
@@ -443,7 +443,7 @@ static EventOption Options_Falcon[] = {
 static EventMenu Menu_Falcon = {
     .name = "Falcon Recovery",
     .option_num = sizeof(Options_Falcon) / sizeof(EventOption),
-    .options = &Options_Falcon,
+    .options = Options_Falcon,
 };
 
 // Marth --------------------------------------
@@ -492,7 +492,7 @@ static EventOption Options_Marth[] = {
 static EventMenu Menu_Marth = {
     .name = "Marth Recovery",
     .option_num = sizeof(Options_Marth) / sizeof(EventOption),
-    .options = &Options_Marth,
+    .options = Options_Marth,
 };
 
 // Info lookup -----------------------------------------

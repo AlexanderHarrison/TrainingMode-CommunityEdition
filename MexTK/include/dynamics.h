@@ -90,8 +90,8 @@ struct DynamicForce
     DynamicForce *next;    // 0x34
 };
 
-static DynamicForce **stc_dynamic_force = 0x804d63b0;            // -0x52f0
-static DynamicForce **stc_dynamic_force_next_alloc = 0x804d63ac; // -0x52f4
+static DynamicForce **stc_dynamic_force = (void *)0x804d63b0;            // -0x52f0
+static DynamicForce **stc_dynamic_force_next_alloc = (void *)0x804d63ac; // -0x52f4
 
 void Dynamics_InitBones(JOBJ *joint, DynamicBoneset *boneset, int bone_num);
 void Dynamics_InitParams(void *dyn_desc_params, DynamicBoneset *boneset);

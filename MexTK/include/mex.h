@@ -40,7 +40,7 @@ typedef enum SSMKind
 
 struct PRIM
 {
-    void *data;
+    volatile void *data;
 };
 
 struct Stc_icns
@@ -272,7 +272,7 @@ typedef struct MexData
     void *misc;
 } MexData;
 
-static MEXFunctionLookup **stc_mexfunction_lookup = 0x804dfad8;
+static MEXFunctionLookup **stc_mexfunction_lookup = (void *)0x804dfad8;
 
 /*** Functions ***/
 HSD_Archive *MEX_LoadRelArchive(char *file, void *functions, char *symbol);
@@ -284,7 +284,7 @@ void bp();
 PRIM *PRIM_NEW(int vert_count, int params1, int params2);
 void PRIM_CLOSE();
 
-static void MEX_InitRELDAT(HSD_Archive *archive, char *symbol_name, int *return_func_array)
+static void MEX_InitRELDAT(HSD_Archive *archive, char *symbol_name, void **return_func_array)
 {
     MEXFunction *mex_function = Archive_GetPublicAddress(archive, symbol_name);
 
@@ -295,7 +295,7 @@ static void MEX_InitRELDAT(HSD_Archive *archive, char *symbol_name, int *return_
     for (int i = 0; i < mex_function->func_reloc_table_num; i++)
     {
         MEXFunctionTable *this_func = &mex_function->func_reloc_table[i];
-        return_func_array[i] = &mex_function->code[this_func->code_offset];
+        return_func_array[i] = (void *)&mex_function->code[this_func->code_offset];
     }
 }
 

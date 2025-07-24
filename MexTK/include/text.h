@@ -81,7 +81,7 @@ struct Text
 
 /*** Functions ***/
 
-int Text_CreateCanvas(int sis_id, int no_create_cam_gobj, int gobj_entityclass, int gobj_plink, int gobj_ppriority, int gxlink, int gxpri, int cobj_gxpri); // the optional gobj and cobj_gxlink are used to create a cobj as well. set gobj
+int Text_CreateCanvas(int sis_id, GOBJ *cam_gobj, int gobj_entityclass, int gobj_plink, int gobj_ppriority, int gxlink, int gxpri, int cobj_gxpri); // the optional gobj and cobj_gxlink are used to create a cobj as well. set gobj
 Text *Text_CreateText(int sis_id, int canvasID);
 Text *Text_CreateText2(int sis_id, int canvasID, float pos_x, float pos_y, float pos_z, float limit_x, float limit_y);
 void Text_Destroy(Text *text);
@@ -89,7 +89,7 @@ int Text_AddSubtext(Text *text, float xPos, float yPos, char *string, ...);
 void Text_SetScale(Text *text, int subtext, float x, float y);
 void Text_SetColor(Text *text, int subtext, GXColor *color);
 void Text_SetPosition(Text *text, int subtext, float x, float y);
-void Text_SetText(Text *text, int subtext, char *string, ...);
+void Text_SetText(Text *text, int subtext, const char *string, ...);
 u8 *Text_Alloc(int size);
 void Text_DestroyAlloc(u8 *alloc);
 void Text_DestroyAllAlloc(Text *text);
@@ -103,19 +103,19 @@ void Text_InitSisHeap();
 
 /*** Variables ***/
 // Text data
-static int *stc_textheap_size = (int *)(R13 + (-0x3d38));
-static TextCanvas **stc_textheap_start = (TextCanvas **)(R13 + (-0x3d34));
-static TextCanvas **stc_textheap_next = (TextCanvas **)(R13 + (-0x3d30));
-static TextCanvas **stc_textheap_first = (TextCanvas **)(R13 + (-0x3d2c));
+static int *stc_textheap_size = (int *)(R13_OFFSET(-0x3d38));
+static TextCanvas **stc_textheap_start = (TextCanvas **)(R13_OFFSET(-0x3d34));
+static TextCanvas **stc_textheap_next = (TextCanvas **)(R13_OFFSET(-0x3d30));
+static TextCanvas **stc_textheap_first = (TextCanvas **)(R13_OFFSET(-0x3d2c));
 
 // Text object
-static Text **stc_text_first = (TextCanvas **)(R13 + (-0x3d28));
+static Text **stc_text_first = (Text **)(R13_OFFSET(-0x3d28));
 
 // Text canvas
-static TextCanvas **stc_textcanvas_first = (TextCanvas **)(R13 + (-0x3d24));
+static TextCanvas **stc_textcanvas_first = (TextCanvas **)(R13_OFFSET(-0x3d24));
 
 // Sis Library
 static HSD_Archive **stc_sis_archives = (HSD_Archive **)0x804d1110; // array of sis file archive pointers
-static SISData **stc_sis_data = (void **)0x804d1124;                // array of currently loaded sis data, indexed by sis_id
+static SISData **stc_sis_data = (void *)0x804d1124;                 // array of currently loaded sis data, indexed by sis_id
 
 #endif

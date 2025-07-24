@@ -26,7 +26,7 @@ struct PtclDesc
         int x0;
         int x4;
         int flags; // 0x8
-    } *gen[]
+    } *gen[];
 };
 
 struct TexGDesc
@@ -238,10 +238,10 @@ ptclGen *psKillGenerator(ptclGen *gen, ptclGen *unk);
 ptclGen *psKillGeneratorEZ(ptclGen *gen);
 void psInitDataBanks(int bank_no, void *ptcl, void *texg, int r6, int r7);
 
-static u16 *stc_ptclnum = R13 + (-0x3DBE);      // number of pctls alive
-static Particle **stc_ptcl = 0x804d0908;        // last created ptcl
-static ptclGen **stc_ptclgen = R13 + (-0x3DA4); // last created gen
-static ptclGen **stc_ptclgencurr = R13 + (-0x3DA8);
-static u16 *stc_ptclgennum = R13 + (-0x3DC0);
+static u16 *stc_ptclnum = R13_OFFSET(-0x3DBE);      // number of pctls alive
+static Particle **stc_ptcl = (void *)0x804d0908;        // last created ptcl
+static ptclGen **stc_ptclgen = R13_OFFSET(-0x3DA4); // last created gen
+static ptclGen **stc_ptclgencurr = R13_OFFSET(-0x3DA8);
+static u16 *stc_ptclgennum = R13_OFFSET(-0x3DC0);
 
 #endif

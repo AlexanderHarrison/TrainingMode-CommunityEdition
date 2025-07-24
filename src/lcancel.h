@@ -44,9 +44,9 @@ struct LCancelData
     } tip;
 };
 
-typedef struct LCancelAssets
+struct LCancelAssets
 {
-    JOBJ *hud;
+    JOBJDesc *hud;
     void **hudmatanim; // pointer to array
 };
 
@@ -58,14 +58,18 @@ typedef struct LCancelAssets
 // Maximum number of frames before a miss is considered "No Press", using zero-based indexing.
 #define MAX_L_PRESS_TIMING 29
 
-static void *item_callbacks[];
 void Tips_Toggle(GOBJ *menu_gobj, int value);
+void Tips_Think(LCancelData *event_data, FighterData *hmn_data);
+void LCancel_Think(LCancelData *event_data, FighterData *hmn_data);
 void LCancel_HUDCamThink(GOBJ *gobj);
+void LCancel_Init(LCancelData *event_data);
 void Barrel_Think(LCancelData *event_data);
 void Barrel_Toggle(GOBJ *menu_gobj, int value);
 GOBJ *Barrel_Spawn(int pos_kind);
-void Barrel_Null();
-void Event_Exit();
+int Barrel_OnHurt(GOBJ *barrel_gobj);
+int Barrel_OnDestroy(GOBJ *barrel_gobj);
+void Barrel_Null(void);
+void Event_Exit(GOBJ *menu);
 bool IsAerialLandingState(int state_id);
 bool IsEdgeCancelState(int state_id);
 bool IsAutoCancelLanding(FighterData *hmn_data);

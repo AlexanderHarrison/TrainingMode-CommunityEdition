@@ -140,7 +140,7 @@ typedef struct EventVars
     int (*Savestate_Save_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to save state
     int (*Savestate_Load_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to load state
     GOBJ *(*Message_Display)(int msg_kind, int queue_num, int msg_color, char *format, ...); // function pointer to display message
-    int *(*Tip_Display)(int lifetime, char *fmt, ...);
+    int (*Tip_Display)(int lifetime, char *fmt, ...);
     void (*Tip_Destroy)(void);      // function pointer to destroy tip
     Savestate_v1 *savestate;       // points to the events main savestate
 
@@ -162,16 +162,17 @@ EventDesc *GetEventDesc(int page, int event);
 void EventInit(int page, int eventID, MatchInit *matchData);
 void EventLoad(void);
 int Text_AddSubtextManual(Text *text, char *string, int posx, int posy, int scalex, int scaley);
-int GOBJToID(GOBJ *gobj);
-int FtDataToID(FighterData *fighter_data);
-int BoneToID(FighterData *fighter_data, JOBJ *bone);
-GOBJ *IDToGOBJ(int id);
-FighterData *IDToFtData(int id);
-JOBJ *IDToBone(FighterData *fighter_data, int id);
+GOBJ *GOBJToID(GOBJ *gobj);
+FighterData *FtDataToID(FighterData *fighter_data);
+JOBJ *BoneToID(FighterData *fighter_data, JOBJ *bone);
+GOBJ *IDToGOBJ(GOBJ *id_as_ptr);
+FighterData *IDToFtData(FighterData *id_as_ptr);
+JOBJ *IDToBone(FighterData *fighter_data, JOBJ *id_as_ptr);
 void EventUpdate(void);
 void Event_IncTimer(GOBJ *gobj);
 void Test_Think(GOBJ *gobj);
 void Hazards_Disable(void);
+void TM_CreateWatermark(void);
 
 // GX Link args
 #define GXLINK_MENUMODEL 12
@@ -267,6 +268,7 @@ typedef struct TipMgr
 int Tip_Display(int lifetime, char *fmt, ...);
 void Tip_Destroy(void); // 0 = immediately destroy, 1 = force exit
 void Tip_Think(GOBJ *gobj);
+void Tip_Init(void);
 
 #define TIP_TXTJOINT 2
 

@@ -3314,6 +3314,27 @@ void CustomTDI_Destroy(GOBJ *gobj)
     // play sfx
     SFX_PlayCommon(0);
 }
+
+static DOBJ *JOBJ_GetDObjChild(JOBJ *joint, int dobj_index)
+{
+
+    int count = 0;
+    DOBJ *dobj = joint->dobj;
+
+    while (count < dobj_index)
+    {
+        if (dobj->next == 0)
+            assert("dobj not found!");
+
+        else
+            dobj = dobj->next;
+
+        count++;
+    }
+
+    return dobj;
+}
+
 void Inputs_Think(GOBJ *gobj)
 {
     Controller *controllers = gobj->userdata;

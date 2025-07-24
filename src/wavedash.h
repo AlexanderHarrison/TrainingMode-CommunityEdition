@@ -71,9 +71,9 @@ struct WavedashData
 
 struct WavedashAssets
 {
-    JOBJ *hud;
+    JOBJDesc *hud;
     void **hudmatanim; // pointer to array
-    JOBJ *target_jobj;
+    JOBJDesc *target_jobj;
     void **target_jointanim;
     void **target_matanim;
 };
@@ -94,9 +94,15 @@ struct TargetData
     CmSubject *cam;
 };
 
+void Tips_Think(WavedashData *event_data, FighterData *hmn_data);
 float Target_GetWdashDistance(FighterData *hmn_data, float mag);
 GOBJ *Target_Spawn(WavedashData *event_data, FighterData *fighter_data);
 int Target_CheckArea(WavedashData *event_data, int line, Vec3 *pos, float x_offset, int *ret_line, Vec3 *ret_pos, Vec3 *ret_slope);
 void Target_Think(GOBJ *target_gobj);
+void Target_ChangeState(GOBJ *target_gobj, int state);
+void Target_Manager(WavedashData *event_data, FighterData *hmn_data);
+void Target_Init(WavedashData *event_data, FighterData *hmn_data);
 void Wavedash_HUDCamThink(GOBJ *gobj);
-void Event_Exit();
+void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data);
+void Wavedash_Init(WavedashData *event_data);
+void Event_Exit(GOBJ *menu);
