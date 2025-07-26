@@ -54,9 +54,6 @@ enum reset_pos
 // Main Menu
 static const char *LdshOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced"};
 static const char *LdshOptions_Start[] = {"Ledge", "Falling", "Stage", "Respawn Platform"};
-static const char *LdshOptions_HUD[] = {"On", "Off"};
-static const char *LdshOptions_Inv[] = {"Off", "On"};
-static const char *LdshOptions_Overlays[] = {"Off", "On"};
 static float LdshOptions_GameSpeeds[] = {1.f, 5.f/6.f, 2.f/3.f, 1.f/2.f, 1.f/4.f};
 static const char *LdshOptions_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"};
 static const char *LdshOptions_Reset[] = {"None", "Same Side", "Swap", "Swap on Success", "Random"};
@@ -82,18 +79,16 @@ static EventOption LdshOptions_Main[] = {
         .values = LdshOptions_Reset,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "HUD",
         .desc = "Toggle visibility of the HUD.",
-        .values = LdshOptions_HUD,
+        .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Tips",
         .desc = "Toggle the onscreen display of tips.",
-        .values = LdshOptions_HUD,
+        .val = 1,
         .OnChange = Tips_Toggle,
     },
     {
@@ -105,11 +100,9 @@ static EventOption LdshOptions_Main[] = {
         .OnChange = Ledgedash_ChangeCamMode,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_Inv) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Keep Ledge Invincibility",
         .desc = "Keep maximum invincibility while on the ledge\nto practice the ledgedash inputs.",
-        .values = LdshOptions_Inv,
     },
     {
         .kind = OPTKIND_STRING,
@@ -119,11 +112,9 @@ static EventOption LdshOptions_Main[] = {
         .values = LdshOptions_GameSpeedText,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_Overlays) / sizeof(*LdshOptions_Overlays),
+        .kind = OPTKIND_TOGGLE,
         .name = "Color Overlays",
         .desc = "Show which state you are in with a color overlay.",
-        .values = LdshOptions_Overlays,
     },
     {
         .kind = OPTKIND_STRING,
@@ -146,13 +137,10 @@ static EventOption LdshOptions_Main[] = {
     },
 };
 
-static const char *LdshOptions_FrameAdvance[] = {"Off", "On"};
 static EventOption Ldsh_FrameAdvance = {
-    .kind = OPTKIND_STRING,
-    .value_num = sizeof(LdshOptions_FrameAdvance) / 4,
+    .kind = OPTKIND_TOGGLE,
     .name = "Frame Advance",
     .desc = "Enable frame advance. Press to advance one\nframe. Hold to advance at normal speed.",
-    .values = LdshOptions_FrameAdvance,
 };
 
 static Shortcut Ldsh_Shortcuts[] = {

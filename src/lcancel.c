@@ -12,7 +12,6 @@ enum lcancel_option
     OPTLC_COUNT
 };
 static const char *LcOptions_Barrel[] = {"Off", "Stationary", "Move"};
-static const char *LcOptions_OffOn[] = {"Off", "On"};
 static EventOption LcOptions_Main[OPTLC_COUNT] = {
     // Target
     {
@@ -24,21 +23,17 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
     },
     // HUD
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LcOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "HUD",
         .desc = "Toggle visibility of the HUD.",
-        .values = LcOptions_OffOn,
     },
     // Tips
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LcOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "Tips",
         .desc = "Toggle the onscreen display of tips.",
-        .values = LcOptions_OffOn,
         .OnChange = Tips_Toggle,
     },
     // Help

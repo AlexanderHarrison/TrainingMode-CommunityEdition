@@ -112,6 +112,7 @@ enum option_kind {
     OPTKIND_INT,
     OPTKIND_FUNC,
     OPTKIND_INFO,
+    OPTKIND_TOGGLE,
 };
 
 // GX Link args
@@ -171,10 +172,7 @@ enum option_kind {
 #define MENUHIGHLIGHT_Y 10.8 //10.3
 #define MENUHIGHLIGHT_Z 0.01
 #define MENUHIGHLIGHT_YOFFSET ROWBOX_YOFFSET
-#define MENUHIGHLIGHT_COLOR \
-    {                       \
-        255, 211, 0, 255    \
-    }
+#define MENUHIGHLIGHT_COLOR { 255, 211, 0, 255 }
 // menu scroll
 #define MENUSCROLL_SCALE 2                         // OPT_SCALE
 #define MENUSCROLL_SCALEY 1.105 * MENUSCROLL_SCALE // OPT_SCALE
@@ -184,10 +182,7 @@ enum option_kind {
 #define MENUSCROLL_PEROPTION 1
 #define MENUSCROLL_MINLENGTH -1
 #define MENUSCROLL_MAXLENGTH -10
-#define MENUSCROLL_COLOR \
-    {                    \
-        255, 211, 0, 255 \
-    }
+#define MENUSCROLL_COLOR { 255, 211, 0, 255 }
 
 // row jobj
 #define ROWBOX_HEIGHT 2.3
@@ -196,10 +191,8 @@ enum option_kind {
 #define ROWBOX_Y 10.8 //10.3
 #define ROWBOX_Z 0
 #define ROWBOX_YOFFSET -2.5
-#define ROWBOX_COLOR       \
-    {                      \
-        104, 105, 129, 100 \
-    }
+#define ROWBOX_COLOR { 25, 25, 45, 255 }
+#define ROWBOX_ONCOLOR { 25, 225, 25, 255 }
 // arrow jobj
 #define TICKBOX_SCALE 1.8
 #define TICKBOX_X 11.7

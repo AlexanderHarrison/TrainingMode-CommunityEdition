@@ -21,8 +21,6 @@ static EventMenu Menu_CustomHitStrength;
 
 // Common values -------------------------------------------------
 
-static const char *OffOn[2] = {"Off", "On"};
-
 typedef struct KBValues {
     float mag_min, mag_max;
     float ang_min, ang_max;
@@ -219,47 +217,35 @@ enum options_spacies {
 
 static EventOption Options_Fox[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firefox Low",
         .desc = "Allow Fox to aim his up special to the ledge.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firefox Mid",
         .desc = "Allow Fox to aim his up special to the stage.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firefox High",
         .desc = "Allow Fox to aim his up special high.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
         .desc = "Allow Fox to double jump.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Illusion",
         .desc = "Allow Fox to side special.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
         .desc = "Allow Fox to fast fall.",
-        .values = OffOn,
-        .value_num = 2,
     },
 };
 static EventMenu Menu_Fox = {
@@ -272,47 +258,35 @@ static EventMenu Menu_Fox = {
 
 static EventOption Options_Falco[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firebird Low",
         .desc = "Allow Falco to aim his up special to the ledge.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firebird Mid",
         .desc = "Allow Falco to aim his up special to the stage.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firebird High",
         .desc = "Allow Falco to aim his up special high.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
         .desc = "Allow Falco to double jump.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Phantasm",
         .desc = "Allow Falco to side special.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
         .desc = "Allow Falco to fast fall.",
-        .values = OffOn,
-        .value_num = 2,
     },
 };
 static EventMenu Menu_Falco = {
@@ -336,49 +310,37 @@ enum options_sheik {
 
 static EventOption Options_Sheik[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Vanish to Ledge",
         .desc = "Allow Sheik to vanish to ledge and the\ntip of the stage.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Vanish to Stage",
         .desc = "Allow Sheik to vanish deep into stage.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Vanish High",
         .desc = "Allow Sheik to vanish above the ledge\nand to platforms.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
         .desc = "Allow Sheik to double jump.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fair",
         .desc = "Allow Sheik to fair the player.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Amsah Tech",
         .desc = "Allow Sheik to Amsah Tech.",
-        .values = OffOn,
-        .value_num = 2,
     },
 };
 
@@ -402,41 +364,31 @@ enum options_falcon {
 
 static EventOption Options_Falcon[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Falcon Dive",
         .desc = "Allow Falcon to Up B.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Drift Back",
         .desc = "Allow Falcon to drift backwards.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
         .desc = "Allow Falcon to double jump.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
         .desc = "Allow Falcon to fast fall.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Falcon Kick",
         .desc = "Allow Falcon to Down B.",
-        .values = OffOn,
-        .value_num = 2,
     },
 };
 
@@ -458,34 +410,26 @@ enum options_marth {
 
 static EventOption Options_Marth[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Dolphin Slash Early",
         .desc = "Allow Marth to Up B above the ledge.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
         .desc = "Allow Marth to double jump.",
-        .values = OffOn,
-        .value_num = 2,
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Dancing Blade",
         .desc = "Allow Marth to use SideB to recover and\ndelay his timing.",
-        .values = OffOn,
-        .value_num = 2,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fair",
         .desc = "Allow Marth to fair the player.",
-        .values = OffOn,
-        .value_num = 2,
     },
 };
 

@@ -109,14 +109,19 @@ void EventMenu_Update(GOBJ *gobj)
                     assert("Shortcut is missing its option");
                 EventOption *option = shortcut->option;
 
-                option->val_prev = option->val;
-                option->val = (option->val + 1) % option->value_num; // TODO this is bugged when min isn't 0
-                if (!option->OnChange) // TODO handle other shortcuts
-                    option->OnChange(event_vars->menu_gobj, option->val);
-                SFX_PlayCommon(2);
+                if (option->kind == OPTKIND_TOGGLE) {
+                    option->val_prev = option->val;
+                    option->val = !option->val;
+                    if (!option->OnChange)
+                        option->OnChange(event_vars->menu_gobj, option->val);
+                    SFX_PlayCommon(2);
 
-                menu_data->mode = MenuMode_Shortcut;
-                EventMenu_UpdateText(gobj, curr_menu);
+                    menu_data->mode = MenuMode_Shortcut;
+                    EventMenu_UpdateText(gobj, curr_menu);
+                }
+                else if (option->kind == OPTKIND_MENU) {
+                    //TODO
+                }
                 break;
             }
         }
@@ -215,6 +220,32 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             SFX_PlayCommon(2);
         }
     }
+    // check to go back a menu
+    else if (inputs & HSD_BUTTON_B && curr_menu->prev)
+    {
+        // reset cursor so it starts at top on reentry
+        curr_menu->scroll = 0;
+        curr_menu->cursor = 0;
+
+        curr_menu = curr_menu->prev;
+        menu_data->curr_menu = curr_menu;
+
+        // recreate everything
+        EventMenu_UpdateText(gobj, curr_menu);
+        SFX_PlayCommon(0);
+    }
+    else if (curr_option->kind == OPTKIND_TOGGLE &&
+            inputs & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT
+                | HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT
+                | HSD_BUTTON_A)) {
+        curr_option->val_prev = curr_option->val;
+        curr_option->val = !curr_option->val;
+        if (curr_option->OnChange)
+            curr_option->OnChange(gobj, curr_option->val);
+
+        EventMenu_UpdateText(gobj, curr_menu);
+        SFX_PlayCommon(2);
+    }
     else if (inputs & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT))
     {
         if ((curr_option->kind == OPTKIND_STRING) || (curr_option->kind == OPTKIND_INT))
@@ -278,20 +309,6 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             SFX_PlayCommon(1);
         }
     }
-    // check to go back a menu
-    else if (inputs & HSD_BUTTON_B && curr_menu->prev)
-    {
-        // reset cursor so it starts at top on reentry
-        curr_menu->scroll = 0;
-        curr_menu->cursor = 0;
-
-        curr_menu = curr_menu->prev;
-        menu_data->curr_menu = curr_menu;
-
-        // recreate everything
-        EventMenu_UpdateText(gobj, curr_menu);
-        SFX_PlayCommon(0);
-    }
 }
 
 void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
@@ -309,21 +326,21 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     // JOBJ array for getting the corner joints
     JOBJ *corners[4];
 
-    // create a border and arrow for every row
+    // create a rowbox and arrow for every row
     s32 option_num = min(menu->option_num, MENU_MAXOPTION);
     for (int i = 0; i < option_num; i++)
     {
         // create a border jobj
-        JOBJ *jobj_border = JOBJ_LoadJoint(menu_assets->popup);
+        JOBJ *jobj_rowbox = JOBJ_LoadJoint(menu_assets->popup);
         // attach to root jobj
-        JOBJ_AddChild(gobj->hsd_object, jobj_border);
+        JOBJ_AddChild(gobj->hsd_object, jobj_rowbox);
         // move it into position
-        JOBJ_GetChild(jobj_border, corners, 2, 3, 4, 5, -1);
+        JOBJ_GetChild(jobj_rowbox, corners, 2, 3, 4, 5, -1);
         // Modify scale and position
-        jobj_border->trans.Z = ROWBOX_Z;
-        jobj_border->scale.X = 1;
-        jobj_border->scale.Y = 1;
-        jobj_border->scale.Z = 1;
+        jobj_rowbox->trans.Z = ROWBOX_Z;
+        jobj_rowbox->scale.X = 1;
+        jobj_rowbox->scale.Y = 1;
+        jobj_rowbox->scale.Z = 1;
         corners[0]->trans.X = -(ROWBOX_WIDTH / 2) + ROWBOX_X;
         corners[0]->trans.Y = (ROWBOX_HEIGHT / 2) + ROWBOX_Y + (i * ROWBOX_YOFFSET);
         corners[1]->trans.X = (ROWBOX_WIDTH / 2) + ROWBOX_X;
@@ -332,13 +349,13 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
         corners[2]->trans.Y = -(ROWBOX_HEIGHT / 2) + ROWBOX_Y + (i * ROWBOX_YOFFSET);
         corners[3]->trans.X = (ROWBOX_WIDTH / 2) + ROWBOX_X;
         corners[3]->trans.Y = -(ROWBOX_HEIGHT / 2) + ROWBOX_Y + (i * ROWBOX_YOFFSET);
-        JOBJ_SetFlags(jobj_border, JOBJ_HIDDEN);
-        DOBJ_SetFlags(jobj_border->dobj, DOBJ_HIDDEN);
-        jobj_border->dobj->next->mobj->mat->alpha = 0.6;
-        //GXColor border_color = ROWBOX_COLOR;
-        //jobj_border->dobj->next->mobj->mat->diffuse = border_color;
+        JOBJ_SetFlags(jobj_rowbox, JOBJ_HIDDEN);
+        DOBJ_SetFlags(jobj_rowbox->dobj, DOBJ_HIDDEN);
+        jobj_rowbox->dobj->next->mobj->mat->alpha = 0.6;
+        GXColor gx_color = ROWBOX_COLOR;
+        jobj_rowbox->dobj->next->mobj->mat->diffuse = gx_color;
         // store pointer
-        menu_data->row_joints[i][0] = jobj_border;
+        menu_data->row_joints[i][0] = jobj_rowbox;
 
         // create an arrow jobj
         JOBJ *jobj_arrow = JOBJ_LoadJoint(menu_assets->arrow);
@@ -382,7 +399,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     corners[3]->trans.X = (MENUHIGHLIGHT_WIDTH / 2) + MENUHIGHLIGHT_X;
     corners[3]->trans.Y = -(MENUHIGHLIGHT_HEIGHT / 2) + MENUHIGHLIGHT_Y;
     GXColor highlight = MENUHIGHLIGHT_COLOR;
-    jobj_highlight->dobj->next->mobj->mat->alpha = 0.6;
+    jobj_highlight->dobj->next->mobj->mat->alpha = 0.4;
     jobj_highlight->dobj->next->mobj->mat->diffuse = highlight;
     menu_data->highlight_menu = jobj_highlight;
 
@@ -606,30 +623,36 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
         EventOption *curr_option = &menu->options[scroll + i];
         int option_val = curr_option->val;
 
-        // hide row models
-        JOBJ_SetFlags(menu_data->row_joints[i][0], JOBJ_HIDDEN);
-        JOBJ_SetFlags(menu_data->row_joints[i][1], JOBJ_HIDDEN);
+        // Show rowbox w/ base color
+        JOBJ* rowbox = menu_data->row_joints[i][0];
+        JOBJ_ClearFlags(rowbox, JOBJ_HIDDEN);
+        GXColor rowbox_color = ROWBOX_COLOR;
+        rowbox->dobj->next->mobj->mat->diffuse = rowbox_color;
 
         if (curr_option->kind == OPTKIND_STRING)
         {
             Text_SetText(text, i, curr_option->values[option_val]);
-
-            // show box
-            JOBJ_ClearFlags(menu_data->row_joints[i][0], JOBJ_HIDDEN);
         }
         else if (curr_option->kind == OPTKIND_INT)
         {
             Text_SetText(text, i, curr_option->format, option_val);
+        }
+        else if (curr_option->kind == OPTKIND_TOGGLE)
+        {
+            if (curr_option->val == 0) {
+                Text_SetText(text, i, "Off");
+            } else if (curr_option->val == 1) {
+                Text_SetText(text, i, "On");
+                GXColor color = ROWBOX_ONCOLOR;
+                rowbox->dobj->next->mobj->mat->diffuse = color;
+            } else
+                assert("Invalid val for toggle option");
 
-            // show box
-            JOBJ_ClearFlags(menu_data->row_joints[i][0], JOBJ_HIDDEN);
         }
         else
         {
             Text_SetText(text, i, " ");
-
-            // show arrow
-            //JOBJ_ClearFlags(menu_data->row_joints[i][1], JOBJ_HIDDEN);
+            JOBJ_SetFlags(rowbox, JOBJ_HIDDEN);
         }
 
         GXColor color = curr_option->disable ? 

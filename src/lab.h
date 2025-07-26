@@ -817,7 +817,6 @@ enum lab_option
     OPTLAB_COUNT
 };
 
-static const char *LabOptions_OffOn[] = {"Off", "On"};
 static const char *LabOptions_CheckBox[] = {"", "X"};
 
 static EventOption LabOptions_Main[OPTLAB_COUNT] = {
@@ -940,11 +939,9 @@ static const char *LabOptions_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"
 
 static EventOption LabOptions_General[OPTGEN_COUNT] = {
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Frame Advance",
         .desc = "Enable frame advance. Press to advance one\nframe. Hold to advance at normal speed.",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeFrameAdvance,
     },
     {
@@ -965,11 +962,9 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
         .OnChange = Lab_ChangePlayerPercent,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Lock Player Percent",
         .desc = "Locks Player percent to current percent",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangePlayerLockPercent,
     },
     {
@@ -982,27 +977,21 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
         .OnChange = Lab_ChangeModelDisplay,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fighter Collision",
         .desc = "Toggle hitbox and hurtbox visualization.\nHurtboxes: yellow=hurt, purple=ungrabbable, blue=shield.\nHitboxes: (by priority) red, green, blue, purple.",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeHitDisplay,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Item Grab Sizes",
         .desc = "Toggle item grab range visualization.\nBlue=z-catch, light grey=grounded catch,\ndark grey=unknown",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeItemGrabDisplay,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Environment Collision",
         .desc = "Toggle environment collision visualization.\nAlso displays the players' ECB (environmental \ncollision box).",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeEnvCollDisplay,
     },
     {
@@ -1026,20 +1015,16 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
         .desc = "Set up color indicators for\n action states.",
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "HUD",
         .desc = "Toggle player percents and timer visibility.",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeHUD,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "DI Display",
         .desc = "Display knockback trajectories.\nUse frame advance to see the effects of DI\nin realtime during hitstop.",
-        .values = LabOptions_OffOn,
     },
     {
         .kind = OPTKIND_STRING,
@@ -1057,27 +1042,21 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
         .values = LabOptions_GameSpeedText,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "Move Staling",
         .desc = "Toggle the staling of moves. Attacks become \nweaker the more they are used.",
-        .values = LabOptions_OffOn,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Powershield Projectiles",
         .desc = "Projectiles will always be reflected when shielded.",
-        .values = LabOptions_OffOn,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "Disable Taunt",
         .desc = "Disable the taunt button (D-pad up)",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeTauntEnabled,
     },
     {
@@ -1543,159 +1522,119 @@ static int osd_memory_bit_position[] = {
     28, // Act OoHitstun
 };
 
-static const char *LabValues_OSDs[] = {"Off", "On"};
-
 static EventOption LabOptions_OSDs[] = {
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Wavedash",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "L-Cancel",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Act OoS Frame",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Dashback",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fighter-specific Tech",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Powershield Frame",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "SDI Inputs",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Lockout Timers",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Item Throw Interrupts",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Boost Grab",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Act OoLag",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Act OoAirborne",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Jump Cancel Timing",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fastfall Timing",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Frame Advantage",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Combo Counter",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Grab Breakout",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Ledgedash Info",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabValues_OSDs) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Act OoHitstun",
         .desc = "",
-        .values = LabValues_OSDs,
         .OnChange = Lab_ChangeOSDs,
     },
 };
@@ -1889,7 +1828,6 @@ static const char *LabValues_Tech[] = {"Random", "In Place", "Away", "Towards", 
 static const char *LabValues_Getup[] = {"Random", "Stand", "Away", "Towards", "Attack"};
 static const char *LabValues_GrabEscape[] = {"None", "Medium", "High", "Perfect"};
 static const char *LabValues_GrabRelease[] = {"Grounded", "Airborn"};
-static const char *LabValues_LockCPUPercent[] = {"Off", "On"};
 static const char *LabValues_CPUControlledBy[] = {"None", "Port 1", "Port 2", "Port 3", "Port 4"};
 
 static const EventOption LabOptions_CPU_MoveCPU = {
@@ -1916,11 +1854,9 @@ static EventOption LabOptions_CPU[OPTCPU_COUNT] = {
         .OnChange = Lab_ChangeCPUPercent,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Lock CPU Percent",
         .desc = "Locks CPU percent to current percent",
-        .values = LabValues_LockCPUPercent,
         .OnChange = Lab_ChangeCPULockPercent,
     },
     {
@@ -2032,11 +1968,9 @@ static EventOption LabOptions_CPU[OPTCPU_COUNT] = {
         .values = LabValues_ShieldDir,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Intangibility",
         .desc = "Toggle the CPU's ability to take damage.",
-        .values = LabOptions_OffOn,
         .OnChange = Lab_ChangeCPUIntang,
     },
     {
@@ -2289,11 +2223,9 @@ static EventOption LabOptions_Tech[OPTTECH_COUNT] = {
         .OnChange = Lab_ChangeGetup,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Tech Invisibility",
         .desc = "Toggle the CPU turning invisible during tech\nanimations.",
-        .values = LabOptions_OffOn,
     },
     {
         .kind = OPTKIND_INT,
@@ -2303,11 +2235,9 @@ static EventOption LabOptions_Tech[OPTTECH_COUNT] = {
         .desc = "Set the delay in frames on tech invisibility.",
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = 2,
+        .kind = OPTKIND_TOGGLE,
         .name = "Tech Sound",
         .desc = "Toggle playing a sound when tech is\ndistinguishable.",
-        .values = LabOptions_OffOn,
     },
     {
         .kind = OPTKIND_STRING,
@@ -2727,11 +2657,9 @@ static EventOption LabOptions_Record[OPTREC_COUNT] = {
         .values = LabValues_PlaybackCounterActions,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Loop Input Playback",
         .desc = "Loop the recorded inputs when they end.",
-        .values = LabOptions_OffOn,
     },
     {
         .kind = OPTKIND_STRING,
@@ -2741,11 +2669,9 @@ static EventOption LabOptions_Record[OPTREC_COUNT] = {
         .values = LabValues_AutoRestore,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Start Paused",
         .desc = "Pause the replay until your first input.",
-        .values = LabOptions_OffOn,
     },
     {
         .kind = OPTKIND_STRING,

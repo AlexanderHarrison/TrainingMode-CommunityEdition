@@ -11,32 +11,26 @@ enum options {
 };
 
 // Main Menu
-static const char *WdOptions_Target[] = {"Off", "On"};
-static const char *WdOptions_HUD[] = {"On", "Off"};
 static EventOption WdOptions_Main[] = {
     // Target
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(WdOptions_Target) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Target",
         .desc = "Highlight an area of the stage to wavedash towards.",
-        .values = WdOptions_Target,
     },
     // HUD
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(WdOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "HUD",
         .desc = "Toggle visibility of the HUD.",
-        .values = WdOptions_HUD,
+        .val = 1,
     },
     // Tips
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(WdOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Tips",
         .desc = "Toggle the onscreen display of tips.",
-        .values = WdOptions_HUD,
+        .val = 1,
     },
     // Help
     {
