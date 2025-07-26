@@ -592,22 +592,9 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
         char *str = curr_option->name ? curr_option->name : "";
         Text_SetText(text, i, str);
 
-        // output color
-        GXColor color;
-        if (curr_option->disable)
-        {
-            color.r = 128;
-            color.b = 128;
-            color.g = 128;
-            color.a = 0;
-        }
-        else
-        {
-            color.r = 255;
-            color.b = 255;
-            color.g = 255;
-            color.a = 255;
-        }
+        GXColor color = curr_option->disable ? 
+            (GXColor){ 128, 128, 128, 0 } : 
+            (GXColor){ 255, 255, 255, 255 };
         Text_SetColor(text, i, &color);
     }
 
@@ -645,21 +632,9 @@ void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
             //JOBJ_ClearFlags(menu_data->row_joints[i][1], JOBJ_HIDDEN);
         }
 
-        GXColor color;
-        if (curr_option->disable)
-        {
-            color.r = 128;
-            color.b = 128;
-            color.g = 128;
-            color.a = 0;
-        }
-        else
-        {
-            color.r = 255;
-            color.b = 255;
-            color.g = 255;
-            color.a = 255;
-        }
+        GXColor color = curr_option->disable ? 
+            (GXColor){ 128, 128, 128, 0 } : 
+            (GXColor){ 255, 255, 255, 255 };
         Text_SetColor(text, i, &color);
     }
 
