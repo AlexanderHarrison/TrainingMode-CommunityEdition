@@ -13,7 +13,6 @@ enum lcancel_option
     OPTLC_COUNT
 };
 static char **LcOptions_Barrel[] = {"Off", "Stationary", "Move"};
-static char **LcOptions_OffOn[] = {"Off", "On"};
 static EventOption LcOptions_Main[OPTLC_COUNT] = {
     // Target
     {
@@ -25,26 +24,22 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
     },
     // HUD
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LcOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "HUD",
         .desc = "Toggle visibility of the HUD.",
-        .values = LcOptions_OffOn,
     },
     // Tips
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LcOptions_OffOn) / 4,
+        .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "Tips",
         .desc = "Toggle the onscreen display of tips.",
-        .values = LcOptions_OffOn,
         .OnChange = Tips_Toggle,
     },
     // Help
     {
-        .kind = OPTKIND_FUNC,                                                                                                                                                                                       // the type of option this is; menu, string list, integers list, etc
+        .kind = OPTKIND_INFO,
         .name = "Help",                                                                                                                                                                                             // pointer to a string
         .desc = "L-canceling is performed by pressing L, R, or Z up to \n7 frames before landing from a non-special aerial\nattack. This will cut the landing lag in half, allowing \nyou to act sooner after attacking.", // string describing what this option does
     },

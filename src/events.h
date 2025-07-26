@@ -24,8 +24,6 @@
 } while (0)
 #endif
 
-#define SHORTCUT_BUTTONS (HSD_BUTTON_A | HSD_BUTTON_B | HSD_BUTTON_X | HSD_TRIGGER_Z)
-
 typedef struct EventMatchData //r8
 {
     unsigned int timer : 2;
@@ -136,7 +134,6 @@ typedef struct EventVars
     GOBJ *menu_gobj;                                                                         // event menu gobj
     void *persistent_data;                                                                   // persistent data to be accessed from both C and ASM
     int game_timer;                                                                          // amount of game frames passed
-    u8 hide_menu;                                                                            // enable this to hide the base menu. used for custom menus.
     int (*Savestate_Save_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to save state
     int (*Savestate_Load_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to load state
     GOBJ *(*Message_Display)(int msg_kind, int queue_num, int msg_color, char *format, ...); // function pointer to display message

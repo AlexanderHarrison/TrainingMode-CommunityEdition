@@ -542,7 +542,7 @@ void OSCreateAlarm(OSAlarm *alarm);
 void OSSetPeriodicAlarm(OSAlarm *alarm, OSTime start, OSTime period, void *handler);
 void OSCancelAlarm(OSAlarm *alarm);
 void OSReport(char *, ...);
-void __assert(char *file, int line, char *assert);
+void __assert(const char *file, int line, const char *msg);
 int OSCreateHeap(void *heap_lo, void *heap_hi);
 void OSDestroyHeap(int heap_id);
 void *OSAllocFromHeap(int heap_id);

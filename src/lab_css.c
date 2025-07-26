@@ -460,14 +460,11 @@ void Menu_SelCard_Think(GOBJ *menu_gobj)
         }
     }
 
-    // check for exit
     if (down & HSD_BUTTON_B)
     {
         Menu_Destroy(menu_gobj);
         SFX_PlayCommon(0);
     }
-
-    // check for A
     else if (down & HSD_BUTTON_A)
     {
         // check if valid memcard inserted
@@ -594,7 +591,6 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
     // if no files exist
     if (import_data.file_num == 0)
     {
-        // check for exit
         if (down & (HSD_BUTTON_B | HSD_BUTTON_A))
             goto EXIT;
         return;
@@ -603,20 +599,20 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
     // cursor movement
     int curr_page = import_data.page;
     int curr_cursor = import_data.cursor;
-    if (down & (HSD_BUTTON_UP | HSD_BUTTON_DPAD_UP)) // check for cursor up
+    if (down & (HSD_BUTTON_UP | HSD_BUTTON_DPAD_UP))
     {
         import_data.cursor--;
     }
-    else if (down & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT)) // check for cursor down
+    else if (down & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT))
     {
         import_data.cursor = 0;
         import_data.page--;
     }
-    else if (down & (HSD_BUTTON_DOWN | HSD_BUTTON_DPAD_DOWN)) // check for cursor down
+    else if (down & (HSD_BUTTON_DOWN | HSD_BUTTON_DPAD_DOWN))
     {
         import_data.cursor++;
     }
-    else if (down & (HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT)) // check for cursor right
+    else if (down & (HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT))
     {
         import_data.cursor = 0;
         import_data.page++;
@@ -1013,7 +1009,7 @@ void Menu_Left_Right(int down, u8* cursor)
         assert("cursor out of bounds");
 
     // cursor movement
-    if (down & (HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT)) // check for cursor right
+    if (down & (HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT))
     {
         if (*cursor == 0)
         {
@@ -1021,7 +1017,7 @@ void Menu_Left_Right(int down, u8* cursor)
             SFX_PlayCommon(2);
         }
     }
-    else if (down & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT)) // check for cursor down
+    else if (down & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT))
     {
         if (*cursor == 1)
         {

@@ -12,36 +12,30 @@ enum options {
 };
 
 // Main Menu
-static char **WdOptions_Target[] = {"Off", "On"};
-static char **WdOptions_HUD[] = {"On", "Off"};
 static EventOption WdOptions_Main[] = {
     // Target
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(WdOptions_Target) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Target",
         .desc = "Highlight an area of the stage to wavedash towards.",
-        .values = WdOptions_Target,
     },
     // HUD
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(WdOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "HUD",
         .desc = "Toggle visibility of the HUD.",
-        .values = WdOptions_HUD,
+        .val = 1,
     },
     // Tips
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(WdOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Tips",
         .desc = "Toggle the onscreen display of tips.",
-        .values = WdOptions_HUD,
+        .val = 1,
     },
     // Help
     {
-        .kind = OPTKIND_FUNC,
+        .kind = OPTKIND_INFO,
         .name = "Help",
         .desc = "A wavedash is performed by air-dodging diagonally down\nas soon you leave the ground from a jump, causing the fighter\nto slide a short distance. This technique will allow you to quickly\nadjust your position and even attack while sliding.",
     },
