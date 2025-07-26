@@ -68,6 +68,7 @@ typedef struct MenuData
     EventMenu *curr_menu;
     u16 canvas_menu;
     u16 canvas_popup;
+    u8 hide_menu;                                                                            // enable this to hide the base menu. used for custom menus.
     u8 mode;
     u8 controller_index; // index of the controller who paused
     Text *text_name;

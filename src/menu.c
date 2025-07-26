@@ -17,23 +17,20 @@ GOBJ *EventMenu_Init(EventMenu *start_menu)
     GOBJ_InitCamera(cam_gobj, CObjThink_Common, MENUCAM_GXPRI);
     cam_gobj->cobj_links = MENUCAM_COBJGXLINK;
 
-    // Create menu gobj
     GOBJ *gobj = GObj_Create(0, 0, 0);
     MenuData *menu_data = calloc(sizeof(MenuData));
     GObj_AddUserData(gobj, 4, HSD_Free, menu_data);
 
-    // Add gx_link
     GObj_AddGXLink(gobj, GXLink_Common, GXLINK_MENUMODEL, GXPRI_MENUMODEL);
 
-    // Create 2 text canvases (menu and popup)
+    // TODO remove popup canvas ussage in lab.c
     menu_data->canvas_menu = Text_CreateCanvas(2, cam_gobj, 9, 13, 0, GXLINK_MENUTEXT, GXPRI_MENUTEXT, MENUCAM_GXPRI);
     menu_data->canvas_popup = Text_CreateCanvas(2, cam_gobj, 9, 13, 0, GXLINK_MENUTEXT, GXPRI_POPUPTEXT, MENUCAM_GXPRI);
-
-    // Init curr_menu
     menu_data->curr_menu = start_menu;
 
-    // set menu as not hidden
-    event_vars->hide_menu = 0;
+    EventMenu_CreateModel(gobj, start_menu);
+    EventMenu_CreateText(gobj, start_menu);
+    menu_data->hide_menu = 1;
 
     return gobj;
 };
@@ -43,8 +40,6 @@ void EventMenu_EnterMenu(GOBJ *gobj) {
     EventMenu *curr_menu = menu_data->curr_menu;
 
     menu_data->mode = MenuMode_Paused;
-    EventMenu_CreateModel(gobj, curr_menu);
-    EventMenu_CreateText(gobj, curr_menu);
     EventMenu_UpdateText(gobj, curr_menu);
 
     // Freeze the game
@@ -58,7 +53,7 @@ void EventMenu_ExitMenu(GOBJ *gobj) {
     MenuData *menu_data = gobj->userdata;
 
     menu_data->mode = MenuMode_Normal;
-    EventMenu_DestroyMenu(gobj);
+    menu_data->hide_menu = 1;
 
     // Unfreeze the game
     Match_UnfreezeGame(1);
@@ -91,7 +86,9 @@ void EventMenu_Update(GOBJ *gobj)
     }
     if (menu_data->custom_gobj_think) {
         // We delegate to the custom_gobj if it exists. custom_gobj_think
-        // returns nonzero when it allows unpause
+        // returns nonzero when it allows unpause. While delegating we hide the
+        // menu
+        menu_data->hide_menu = 1;
         if(menu_data->custom_gobj_think(menu_data->custom_gobj) && pause_pressed)
             EventMenu_ExitMenu(gobj);
         return;
@@ -134,13 +131,15 @@ void EventMenu_Update(GOBJ *gobj)
 
 void EventMenu_MenuGX(GOBJ *gobj, int pass)
 {
-    if (event_vars->hide_menu == 0)
+    MenuData *menu_data = event_vars->menu_gobj->userdata;
+    if (!menu_data->hide_menu)
         GXLink_Common(gobj, pass);
 }
 
 void EventMenu_TextGX(GOBJ *gobj, int pass)
 {
-    if (event_vars->hide_menu == 0)
+    MenuData *menu_data = event_vars->menu_gobj->userdata;
+    if (!menu_data->hide_menu)
         Text_GX(gobj, pass);
 }
 
@@ -711,9 +710,6 @@ void EventMenu_DestroyMenu(GOBJ *gobj)
         menu_data->custom_gobj_destroy = 0;
         menu_data->custom_gobj_think = 0;
     }
-
-    // set menu as visible
-    event_vars->hide_menu = 0;
 
     // remove jobj
     GObj_FreeObject(gobj);

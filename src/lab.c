@@ -2967,9 +2967,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     Text_AddSubtext(text_curr, -460, 285, "A = Save Input  X = Delete Input  B = Return");
     Text_AddSubtext(text_curr, -460, 320, "Z = Reversible");
 
-    // hide original menu
-    event_vars->hide_menu = 1;
-
     // set pointers to custom gobj
     menu_data->custom_gobj = tdi_gobj;
     menu_data->custom_gobj_destroy = CustomTDI_Destroy;
@@ -3107,7 +3104,6 @@ void CustomTDI_Destroy(GOBJ *gobj)
     GObj_Destroy(gobj);
 
     // show menu
-    event_vars->hide_menu = 0;
     menu_data->custom_gobj = 0;
     menu_data->custom_gobj_think = 0;
     menu_data->custom_gobj_destroy = 0;
@@ -4660,7 +4656,6 @@ void Export_Init(GOBJ *menu_gobj)
     // initialize memcard menu
     Export_SelCardInit(export_gobj);
 
-    event_vars->hide_menu = 1;                       // hide original menu
     menu_data->custom_gobj = export_gobj;            // set custom gobj
     menu_data->custom_gobj_think = Export_Think;     // set think function
     menu_data->custom_gobj_destroy = Export_Destroy; // set destroy function
@@ -4719,7 +4714,6 @@ void Export_Destroy(GOBJ *export_gobj)
     GObj_Destroy(export_gobj);
 
     // show menu
-    event_vars->hide_menu = 0;
     menu_data->custom_gobj = 0;
     menu_data->custom_gobj_think = 0;
     menu_data->custom_gobj_destroy = 0;
