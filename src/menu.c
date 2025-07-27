@@ -166,9 +166,9 @@ void EventMenu_Update(GOBJ *gobj)
         ShortcutList *shortcuts = menu_data->curr_menu->shortcuts;
         for (int i = 0; i < shortcuts->count; ++i) {
             Shortcut *shortcut = shortcuts->list + i;
+            if (!shortcut || !shortcut->option || !shortcut->button_mask)
+                assert("Invalid shortcut definition");
             if (pad->down & shortcut->button_mask) {
-                if (!shortcut->option)
-                    assert("Shortcut is missing its option");
                 EventOption *option = shortcut->option;
 
                 if (option->disable) {
