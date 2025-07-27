@@ -54,6 +54,14 @@ void EventMenu_ExitMenu(GOBJ *gobj) {
     menu_data->mode = MenuMode_Normal;
     menu_data->hide_menu = 1;
 
+    // Allow the custom submenu to clean itself up before we exit
+    if (menu_data->custom_gobj_destroy) {
+        menu_data->custom_gobj_destroy(menu_data->custom_gobj);
+        menu_data->custom_gobj = 0;
+        menu_data->custom_gobj_think = 0;
+        menu_data->custom_gobj_destroy = 0;
+    }
+
     // Unfreeze the game
     Match_UnfreezeGame(1);
     Match_ShowHUD();
