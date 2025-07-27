@@ -74,7 +74,7 @@ typedef struct MenuData
     Text *text_value;
     Text *text_title;
     Text *text_desc;
-    JOBJ *row_joints[MENU_MAXOPTION][2]; // pointers to row jobjs
+    JOBJ *rowboxes[MENU_MAXOPTION];
     JOBJ *highlight_menu;                // pointer to the highlight jobj
     JOBJ *scroll_top;
     JOBJ *scroll_bot;

@@ -358,7 +358,8 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     // JOBJ array for getting the corner joints
     JOBJ *corners[4];
 
-    // create a rowbox and arrow for every row
+    // Create a rowbox for every option row. Rowboxes are the background behind
+    // the option value.
     s32 option_num = min(menu->option_num, MENU_MAXOPTION);
     for (int i = 0; i < option_num; i++)
     {
@@ -387,23 +388,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
         GXColor gx_color = ROWBOX_COLOR;
         jobj_rowbox->dobj->next->mobj->mat->diffuse = gx_color;
         // store pointer
-        menu_data->row_joints[i][0] = jobj_rowbox;
-
-        // create an arrow jobj
-        JOBJ *jobj_arrow = JOBJ_LoadJoint(menu_assets->arrow);
-        // attach to root jobj
-        JOBJ_AddChild(gobj->hsd_object, jobj_arrow);
-        // move it into position
-        jobj_arrow->trans.X = TICKBOX_X;
-        jobj_arrow->trans.Y = TICKBOX_Y + (i * ROWBOX_YOFFSET);
-        jobj_arrow->trans.Z = ROWBOX_Z;
-        jobj_arrow->scale.X = TICKBOX_SCALE;
-        jobj_arrow->scale.Y = TICKBOX_SCALE;
-        jobj_arrow->scale.Z = TICKBOX_SCALE;
-
-        JOBJ_SetFlags(jobj_arrow, JOBJ_HIDDEN);
-        // store pointer
-        menu_data->row_joints[i][1] = jobj_arrow;
+        menu_data->rowboxes[i] = jobj_rowbox;
     }
 
     // create a highlight jobj
@@ -655,7 +640,7 @@ void EventMenu_UpdateText(GOBJ *gobj)
         int option_val = curr_option->val;
 
         // Show rowbox w/ base color
-        JOBJ* rowbox = menu_data->row_joints[i][0];
+        JOBJ* rowbox = menu_data->rowboxes[i];
         JOBJ_ClearFlags(rowbox, JOBJ_HIDDEN);
         GXColor rowbox_color = ROWBOX_COLOR;
         rowbox->dobj->next->mobj->mat->diffuse = rowbox_color;
