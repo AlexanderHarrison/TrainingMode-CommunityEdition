@@ -1,6 +1,4 @@
 #include "events.h"
-#include <assert.h>
-#include <stdarg.h>
 
 GOBJ *EventMenu_Init(EventMenu *start_menu)
 {
