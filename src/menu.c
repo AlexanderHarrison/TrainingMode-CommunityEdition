@@ -37,10 +37,9 @@ GOBJ *EventMenu_Init(EventMenu *start_menu)
 
 void EventMenu_EnterMenu(GOBJ *gobj) {
     MenuData *menu_data = gobj->userdata;
-    EventMenu *curr_menu = menu_data->curr_menu;
 
     menu_data->mode = MenuMode_Paused;
-    EventMenu_UpdateText(gobj, curr_menu);
+    EventMenu_UpdateText(gobj);
 
     // Freeze the game
     Match_FreezeGame(1);
@@ -59,6 +58,36 @@ void EventMenu_ExitMenu(GOBJ *gobj) {
     Match_UnfreezeGame(1);
     Match_ShowHUD();
     Match_AdjustSoundOnPause(0);
+}
+
+void EventMenu_PrevMenu(GOBJ *gobj) {
+    MenuData *menu_data = gobj->userdata;
+    EventMenu *curr_menu = menu_data->curr_menu;
+
+    if (!curr_menu->prev)
+        assert("No previous menu");
+
+    // reset cursor so it starts at top on reentry
+    curr_menu->scroll = 0;
+    curr_menu->cursor = 0;
+
+    curr_menu = curr_menu->prev;
+    menu_data->curr_menu = curr_menu;
+
+    EventMenu_UpdateText(gobj);
+}
+
+void EventMenu_NextMenu(GOBJ *gobj, EventMenu* next_menu) {
+    MenuData *menu_data = gobj->userdata;
+
+    if (!next_menu)
+        assert("Missing next menu");
+
+    // update curr_menu
+    next_menu->prev = menu_data->curr_menu;
+    menu_data->curr_menu = next_menu;
+
+    EventMenu_UpdateText(gobj);
 }
 
 void EventMenu_Update(GOBJ *gobj)
@@ -104,29 +133,46 @@ void EventMenu_Update(GOBJ *gobj)
         ShortcutList *shortcuts = menu_data->curr_menu->shortcuts;
         for (int i = 0; i < shortcuts->count; ++i) {
             Shortcut *shortcut = shortcuts->list + i;
-            if (pad->down & shortcut->buttons_mask) {
+            if (pad->down & shortcut->button_mask) {
                 if (!shortcut->option)
                     assert("Shortcut is missing its option");
                 EventOption *option = shortcut->option;
 
+                if (option->disable) {
+                    SFX_PlayCommon(4);
+                    continue;
+                }
+
                 if (option->kind == OPTKIND_TOGGLE) {
                     option->val_prev = option->val;
                     option->val = !option->val;
-                    if (!option->OnChange)
+                    if (option->OnChange)
                         option->OnChange(event_vars->menu_gobj, option->val);
                     SFX_PlayCommon(2);
 
                     menu_data->mode = MenuMode_Shortcut;
-                    EventMenu_UpdateText(gobj, curr_menu);
+                    EventMenu_UpdateText(gobj);
                 }
                 else if (option->kind == OPTKIND_MENU) {
-                    //TODO
+                    if (menu_data->curr_menu == option->menu)
+                        continue;
+                    // rewind to top level menu before going to the next menu
+                    while (menu_data->curr_menu->prev) {
+                        EventMenu_PrevMenu(gobj);
+                    }
+                    EventMenu_NextMenu(gobj, option->menu);
+                    SFX_PlayCommon(1);
+                    EventMenu_UpdateText(gobj);
                 }
+                else {
+                    assert("Invalid shortcut option kind");
+                }
+
                 break;
             }
         }
     }
-    if (menu_data->mode == MenuMode_Shortcut && pad->held == 0) {
+    else if (menu_data->mode == MenuMode_Shortcut && pad->held == 0) {
         // SC mode unpauses when inputs are released to prevent misinputs
         EventMenu_ExitMenu(gobj);
     } else if (menu_data->mode == MenuMode_Paused) {
@@ -180,15 +226,15 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             cursor += cursor_next;
 
             // cursor overflowed, correct it
-            if (cursor > MENU_MAXOPTION) {
-                scroll += (cursor - MENU_MAXOPTION);
-                cursor = MENU_MAXOPTION;
+            if (cursor >= MENU_MAXOPTION) {
+                scroll += (cursor - MENU_MAXOPTION + 1);
+                cursor = MENU_MAXOPTION - 1;
             }
 
             curr_menu->cursor = cursor;
             curr_menu->scroll = scroll;
 
-            EventMenu_UpdateText(gobj, curr_menu);
+            EventMenu_UpdateText(gobj);
             SFX_PlayCommon(2);
         }
     }
@@ -216,22 +262,14 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             curr_menu->cursor = cursor;
             curr_menu->scroll = scroll;
 
-            EventMenu_UpdateText(gobj, curr_menu);
+            EventMenu_UpdateText(gobj);
             SFX_PlayCommon(2);
         }
     }
     // check to go back a menu
     else if (inputs & HSD_BUTTON_B && curr_menu->prev)
     {
-        // reset cursor so it starts at top on reentry
-        curr_menu->scroll = 0;
-        curr_menu->cursor = 0;
-
-        curr_menu = curr_menu->prev;
-        menu_data->curr_menu = curr_menu;
-
-        // recreate everything
-        EventMenu_UpdateText(gobj, curr_menu);
+        EventMenu_PrevMenu(gobj);
         SFX_PlayCommon(0);
     }
     else if (curr_option->kind == OPTKIND_TOGGLE &&
@@ -243,7 +281,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
         if (curr_option->OnChange)
             curr_option->OnChange(gobj, curr_option->val);
 
-        EventMenu_UpdateText(gobj, curr_menu);
+        EventMenu_UpdateText(gobj);
         SFX_PlayCommon(2);
     }
     else if (inputs & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT))
@@ -258,7 +296,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
                 if (curr_option->OnChange)
                     curr_option->OnChange(gobj, curr_option->val);
 
-                EventMenu_UpdateText(gobj, curr_menu);
+                EventMenu_UpdateText(gobj);
                 SFX_PlayCommon(2);
             }
         }
@@ -276,7 +314,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
                 if (curr_option->OnChange)
                     curr_option->OnChange(gobj, curr_option->val);
 
-                EventMenu_UpdateText(gobj, curr_menu);
+                EventMenu_UpdateText(gobj);
                 SFX_PlayCommon(2);
             }
         }
@@ -285,17 +323,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     {
         if (curr_option->kind == OPTKIND_MENU)
         {
-            // Enter submenu
-            EventMenu *next_menu = curr_option->menu;
-            if (!next_menu)
-                assert("Missing submenu");
-
-            // update curr_menu
-            next_menu->prev = curr_menu;
-            menu_data->curr_menu = next_menu;
-            curr_menu = next_menu;
-
-            EventMenu_UpdateText(gobj, curr_menu);
+            EventMenu_NextMenu(gobj, curr_option->menu);
             SFX_PlayCommon(1);
         }
         else if (curr_option->kind == OPTKIND_FUNC)
@@ -305,7 +333,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
                 assert("Missing menu function");
             curr_option->OnSelect(gobj);
 
-            EventMenu_UpdateText(gobj, curr_menu);
+            EventMenu_UpdateText(gobj);
             SFX_PlayCommon(1);
         }
     }
@@ -368,9 +396,6 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
         jobj_arrow->scale.X = TICKBOX_SCALE;
         jobj_arrow->scale.Y = TICKBOX_SCALE;
         jobj_arrow->scale.Z = TICKBOX_SCALE;
-        // change color
-        //GXColor gx_color = {30, 40, 50, 255};
-        //jobj_arrow->dobj->next->mobj->mat->diffuse = gx_color;
 
         JOBJ_SetFlags(jobj_arrow, JOBJ_HIDDEN);
         // store pointer
@@ -522,9 +547,11 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     }
 }
 
-void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu)
+void EventMenu_UpdateText(GOBJ *gobj)
 {
     MenuData *menu_data = gobj->userdata;
+    EventMenu *menu = menu_data->curr_menu;
+
     s32 cursor = menu->cursor;
     s32 scroll = menu->scroll;
     s32 option_num = min(menu->option_num, MENU_MAXOPTION);

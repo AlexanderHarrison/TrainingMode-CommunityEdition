@@ -145,7 +145,7 @@ static EventOption Ldsh_FrameAdvance = {
 
 static Shortcut Ldsh_Shortcuts[] = {
     {
-        .buttons_mask = HSD_BUTTON_A,
+        .button_mask = HSD_BUTTON_A,
         .option = &Ldsh_FrameAdvance,
     }
 };

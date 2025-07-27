@@ -1643,6 +1643,7 @@ static EventMenu LabMenu_OSDs = {
     .name = "OSDs",
     .option_num = sizeof(LabOptions_OSDs) / sizeof(EventOption),
     .options = LabOptions_OSDs,
+    .shortcuts = &Lab_ShortcutList,
 };
 
 // CPU MENU --------------------------------------------------------------
@@ -3159,9 +3160,29 @@ static EventMenu LabMenu_OverlaysCPU = {
 
 static Shortcut Lab_Shortcuts[] = {
     {
-        .buttons_mask = HSD_BUTTON_A,
+        .button_mask = HSD_BUTTON_A,
         .option = &LabOptions_General[OPTGEN_FRAME],
-    }
+    },
+    {
+        .button_mask = HSD_BUTTON_X,
+        .option = &LabOptions_General[OPTGEN_COLL],
+    },
+    {
+        .button_mask = HSD_BUTTON_DPAD_LEFT,
+        .option = &LabOptions_CPU[OPTCPU_TECHOPTIONS],
+    },
+    {
+        .button_mask = HSD_BUTTON_DPAD_RIGHT,
+        .option = &LabOptions_Record[OPTREC_SLOTMANAGEMENT],
+    },
+    {
+        .button_mask = HSD_BUTTON_DPAD_UP,
+        .option = &LabOptions_General[OPTGEN_OSDS],
+    },
+    {
+        .button_mask = HSD_BUTTON_DPAD_DOWN,
+        .option = &LabOptions_Main[OPTLAB_RECORD_OPTIONS],
+    },
 };
 
 static ShortcutList Lab_ShortcutList = {

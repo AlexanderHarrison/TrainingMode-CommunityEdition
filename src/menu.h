@@ -3,7 +3,6 @@
 
 #define MENU_MAXOPTION 9
 #define MENU_POPMAXOPTION 5
-#define SHORTCUT_BUTTONS (HSD_BUTTON_A | HSD_BUTTON_B | HSD_BUTTON_X | HSD_TRIGGER_Z)
 
 // Custom File Structs
 typedef struct evMenu
@@ -41,7 +40,7 @@ typedef struct EventOption
     void (*OnSelect)(GOBJ *menu_gobj);              // function that runs when option is selected
 } EventOption;
 typedef struct Shortcut {
-    int buttons_mask;
+    int button_mask;
     EventOption *option;
 } Shortcut;
 typedef struct ShortcutList {
@@ -95,7 +94,7 @@ void EventMenu_UpdatePopupText(GOBJ *gobj, EventOption *option);
 void EventMenu_CreatePopupText(GOBJ *gobj, EventMenu *menu);
 void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu);
 void EventMenu_DestroyMenu(GOBJ *gobj);
-void EventMenu_UpdateText(GOBJ *gobj, EventMenu *menu);
+void EventMenu_UpdateText(GOBJ *gobj);
 void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu);
 void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu);
 void EventMenu_PopupThink(GOBJ *gobj, EventMenu *currMenu);
