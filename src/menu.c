@@ -83,7 +83,8 @@ void EventMenu_NextMenu(GOBJ *gobj, EventMenu* next_menu) {
     if (!next_menu)
         assert("Missing next menu");
 
-    // update curr_menu
+    // Propogate shortcuts forward from the base menu. Kinda hacky for now.
+    next_menu->shortcuts = menu_data->curr_menu->shortcuts;
     next_menu->prev = menu_data->curr_menu;
     menu_data->curr_menu = next_menu;
 
