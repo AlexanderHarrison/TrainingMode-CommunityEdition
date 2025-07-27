@@ -3147,7 +3147,7 @@ static Shortcut Lab_Shortcuts[] = {
     },
     {
         .button_mask = HSD_BUTTON_X,
-        .option = &LabOptions_General[OPTGEN_COLL],
+        .option = &LabOptions_General[OPTGEN_MODEL],
     },
     {
         .button_mask = HSD_BUTTON_DPAD_LEFT,

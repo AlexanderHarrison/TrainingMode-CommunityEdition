@@ -91,6 +91,30 @@ void EventMenu_NextMenu(GOBJ *gobj, EventMenu* next_menu) {
     EventMenu_UpdateText(gobj);
 }
 
+void EventMenu_ChangeOptionVal(GOBJ *gobj, EventOption* option, int val) {
+    switch(option->kind) {
+        case OPTKIND_STRING:
+        case OPTKIND_INT:
+            if (val < option->value_min || val - option->value_min > option->value_num)
+                assert("Illegal option value");
+            break;
+        case OPTKIND_TOGGLE:
+            if (val != 0 && val != 1)
+                assert("Illegal option value");
+            break;
+        default:
+            assert("Option kind has no value");
+            break;
+    }
+
+    option->val_prev = option->val;
+    option->val = val;
+    if (option->OnChange)
+        option->OnChange(event_vars->menu_gobj, val);
+
+    EventMenu_UpdateText(gobj);
+}
+
 void EventMenu_Update(GOBJ *gobj)
 {
     MenuData *menu_data = gobj->userdata;
@@ -145,14 +169,15 @@ void EventMenu_Update(GOBJ *gobj)
                 }
 
                 if (option->kind == OPTKIND_TOGGLE) {
-                    option->val_prev = option->val;
-                    option->val = !option->val;
-                    if (option->OnChange)
-                        option->OnChange(event_vars->menu_gobj, option->val);
-                    SFX_PlayCommon(2);
-
+                    EventMenu_ChangeOptionVal(gobj, option, !option->val);
+                    SFX_PlayCommon(option->val ? 2 : 0);
                     menu_data->mode = MenuMode_Shortcut;
-                    EventMenu_UpdateText(gobj);
+                }
+                else if (option->kind == OPTKIND_STRING || option->kind == OPTKIND_INT) {
+                    int val = (option->val + 1 - option->value_min) % option->value_num + option->value_min;
+                    EventMenu_ChangeOptionVal(gobj, option, val);
+                    SFX_PlayCommon(2);
+                    menu_data->mode = MenuMode_Shortcut;
                 }
                 else if (option->kind == OPTKIND_MENU) {
                     if (menu_data->curr_menu == option->menu)
@@ -277,47 +302,25 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             inputs & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT
                 | HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT
                 | HSD_BUTTON_A)) {
-        curr_option->val_prev = curr_option->val;
-        curr_option->val = !curr_option->val;
-        if (curr_option->OnChange)
-            curr_option->OnChange(gobj, curr_option->val);
-
-        EventMenu_UpdateText(gobj);
+        EventMenu_ChangeOptionVal(gobj, curr_option, !curr_option->val);
         SFX_PlayCommon(2);
     }
     else if (inputs & (HSD_BUTTON_LEFT | HSD_BUTTON_DPAD_LEFT))
     {
-        if ((curr_option->kind == OPTKIND_STRING) || (curr_option->kind == OPTKIND_INT))
+        if ((curr_option->kind == OPTKIND_STRING || curr_option->kind == OPTKIND_INT)
+                && curr_option->val > curr_option->value_min)
         {
-            if (curr_option->val > curr_option->value_min)
-            {
-                curr_option->val_prev = curr_option->val;
-                curr_option->val -= 1;
-
-                if (curr_option->OnChange)
-                    curr_option->OnChange(gobj, curr_option->val);
-
-                EventMenu_UpdateText(gobj);
-                SFX_PlayCommon(2);
-            }
+            EventMenu_ChangeOptionVal(gobj, curr_option, curr_option->val - 1);
+            SFX_PlayCommon(2);
         }
     }
     else if (inputs & (HSD_BUTTON_RIGHT | HSD_BUTTON_DPAD_RIGHT))
     {
-        if ((curr_option->kind == OPTKIND_STRING) || (curr_option->kind == OPTKIND_INT))
+        if ((curr_option->kind == OPTKIND_STRING || curr_option->kind == OPTKIND_INT)
+                && curr_option->val - curr_option->value_min < curr_option->value_num - 1)
         {
-            s16 value_max = curr_option->value_min + curr_option->value_num;
-            if (curr_option->val < value_max - 1)
-            {
-                curr_option->val_prev = curr_option->val;
-                curr_option->val += 1;
-
-                if (curr_option->OnChange)
-                    curr_option->OnChange(gobj, curr_option->val);
-
-                EventMenu_UpdateText(gobj);
-                SFX_PlayCommon(2);
-            }
+            EventMenu_ChangeOptionVal(gobj, curr_option, curr_option->val + 1);
+            SFX_PlayCommon(2);
         }
     }
     else if (inputs & HSD_BUTTON_A)
