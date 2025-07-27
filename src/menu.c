@@ -713,34 +713,3 @@ void EventMenu_UpdateText(GOBJ *gobj)
     // update jobj
     JOBJ_SetMtxDirtySub(gobj->hsd_object);
 }
-
-void EventMenu_DestroyMenu(GOBJ *gobj)
-{
-    MenuData *menu_data = gobj->userdata; // userdata
-
-    Text_Destroy(menu_data->text_name);
-    menu_data->text_name = 0;
-    Text_Destroy(menu_data->text_value);
-    menu_data->text_value = 0;
-    Text_Destroy(menu_data->text_title);
-    menu_data->text_title = 0;
-    Text_Destroy(menu_data->text_desc);
-    menu_data->text_desc = 0;
-
-    // if custom menu gobj exists
-    if (menu_data->custom_gobj != 0)
-    {
-        // run on destroy function
-        if (menu_data->custom_gobj_destroy)
-            menu_data->custom_gobj_destroy(menu_data->custom_gobj);
-
-        // null pointers
-        menu_data->custom_gobj = 0;
-        menu_data->custom_gobj_destroy = 0;
-        menu_data->custom_gobj_think = 0;
-    }
-
-    // remove jobj
-    GObj_FreeObject(gobj);
-    //GObj_DestroyGXLink(gobj);
-}

@@ -85,24 +85,15 @@ typedef struct MenuData
 
 
 GOBJ *EventMenu_Init(EventMenu *start_menu);
-void EventMenu_Think(GOBJ *eventMenu, int pass);
-void EventMenu_COBJThink(GOBJ *gobj);
 void EventMenu_Draw(GOBJ *eventMenu);
 void EventMenu_Update(GOBJ *gobj);
-void EventMenu_DestroyPopup(GOBJ *gobj);
-void EventMenu_UpdatePopupText(GOBJ *gobj, EventOption *option);
-void EventMenu_CreatePopupText(GOBJ *gobj, EventMenu *menu);
-void EventMenu_CreatePopupModel(GOBJ *gobj, EventMenu *menu);
-void EventMenu_DestroyMenu(GOBJ *gobj);
 void EventMenu_UpdateText(GOBJ *gobj);
 void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu);
 void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu);
-void EventMenu_PopupThink(GOBJ *gobj, EventMenu *currMenu);
 void EventMenu_MenuThink(GOBJ *gobj, EventMenu *currMenu);
 void EventMenu_TextGX(GOBJ *gobj, int pass);
 void EventMenu_MenuGX(GOBJ *gobj, int pass);
 void EventMenu_Update(GOBJ *gobj);
-GOBJ *EventMenu_Init(EventMenu *start_menu);
 
 // EventOption kind definitions
 enum option_kind {
