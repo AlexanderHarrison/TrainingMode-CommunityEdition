@@ -101,7 +101,7 @@ void EventMenu_ChangeOptionVal(GOBJ *gobj, EventOption* option, int val) {
     switch(option->kind) {
         case OPTKIND_STRING:
         case OPTKIND_INT:
-            if (val < option->value_min || val - option->value_min > option->value_num)
+            if (val < option->value_min || val - option->value_min >= option->value_num)
                 assert("Illegal option value");
             break;
         case OPTKIND_TOGGLE:
@@ -232,7 +232,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     HSD_Pad *pad = PadGetMaster(menu_data->controller_index);
     int inputs = pad->rapidFire;
     if ((pad->held & HSD_TRIGGER_R)
-        || (pad->triggerRight >= ANALOG_TRIGGER_THRESHOLD)) {
+        || pad->triggerRight >= ANALOG_TRIGGER_THRESHOLD) {
         inputs = pad->held;
     }
 
@@ -298,7 +298,6 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             SFX_PlayCommon(2);
         }
     }
-    // check to go back a menu
     else if (inputs & HSD_BUTTON_B && curr_menu->prev)
     {
         EventMenu_PrevMenu(gobj);
@@ -377,9 +376,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
         JOBJ_GetChild(jobj_rowbox, corners, 2, 3, 4, 5, -1);
         // Modify scale and position
         jobj_rowbox->trans.Z = ROWBOX_Z;
-        jobj_rowbox->scale.X = 1;
-        jobj_rowbox->scale.Y = 1;
-        jobj_rowbox->scale.Z = 1;
+        jobj_rowbox->scale = (Vec3){ 1, 1, 1 };
         corners[0]->trans.X = -(ROWBOX_WIDTH / 2) + ROWBOX_X;
         corners[0]->trans.Y = (ROWBOX_HEIGHT / 2) + ROWBOX_Y + (i * ROWBOX_YOFFSET);
         corners[1]->trans.X = (ROWBOX_WIDTH / 2) + ROWBOX_X;
@@ -407,9 +404,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     JOBJ_GetChild(jobj_highlight, corners, 2, 3, 4, 5, -1);
     // Modify scale and position
     jobj_highlight->trans.Z = MENUHIGHLIGHT_Z;
-    jobj_highlight->scale.X = MENUHIGHLIGHT_SCALE;
-    jobj_highlight->scale.Y = MENUHIGHLIGHT_SCALE;
-    jobj_highlight->scale.Z = MENUHIGHLIGHT_SCALE;
+    jobj_highlight->scale = (Vec3)MENUHIGHLIGHT_SCALE;
     corners[0]->trans.X = -(MENUHIGHLIGHT_WIDTH / 2) + MENUHIGHLIGHT_X;
     corners[0]->trans.Y = (MENUHIGHLIGHT_HEIGHT / 2) + MENUHIGHLIGHT_Y;
     corners[1]->trans.X = (MENUHIGHLIGHT_WIDTH / 2) + MENUHIGHLIGHT_X;
