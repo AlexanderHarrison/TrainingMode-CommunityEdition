@@ -76,6 +76,7 @@ typedef struct MenuData
     Text *text_desc;
     JOBJ *rowboxes[MENU_MAXOPTION];
     JOBJ *highlight_menu;                // pointer to the highlight jobj
+    JOBJ *scrollbar;
     JOBJ *scroll_top;
     JOBJ *scroll_bot;
     GOBJ *custom_gobj;                               // onSelect gobj
@@ -169,9 +170,8 @@ enum option_kind {
 #define MENUSCROLL_X 22.5
 #define MENUSCROLL_Y 12
 #define MENUSCROLL_Z 0.01
-#define MENUSCROLL_PEROPTION 1
-#define MENUSCROLL_MINLENGTH -1
-#define MENUSCROLL_MAXLENGTH -10
+#define MENUSCROLL_MINLENGTH 1
+#define MENUSCROLL_MAXLENGTH 10
 #define MENUSCROLL_COLOR { 255, 211, 0, 255 }
 
 // row jobj

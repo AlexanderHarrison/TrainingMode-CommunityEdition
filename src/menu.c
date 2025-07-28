@@ -423,42 +423,25 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     jobj_highlight->dobj->next->mobj->mat->diffuse = highlight;
     menu_data->highlight_menu = jobj_highlight;
 
-    // check to create scroll bar
-    if (menu_data->curr_menu->option_num > MENU_MAXOPTION)
-    {
-        // create scroll bar
-        JOBJ *scroll_jobj = JOBJ_LoadJoint(menu_assets->scroll);
-        // attach to root jobj
-        JOBJ_AddChild(gobj->hsd_object, scroll_jobj);
-        // move it into position
-        JOBJ_GetChild(scroll_jobj, corners, 2, 3, -1);
-        // scale scrollbar accordingly
-        scroll_jobj->scale.X = MENUSCROLL_SCALE;
-        scroll_jobj->scale.Y = MENUSCROLL_SCALEY;
-        scroll_jobj->scale.Z = MENUSCROLL_SCALE;
-        scroll_jobj->trans.X = MENUSCROLL_X;
-        scroll_jobj->trans.Y = MENUSCROLL_Y;
-        scroll_jobj->trans.Z = MENUSCROLL_Z;
-        menu_data->scroll_top = corners[0];
-        menu_data->scroll_bot = corners[1];
-        GXColor highlight = MENUSCROLL_COLOR;
-        scroll_jobj->dobj->next->mobj->mat->alpha = 0.6;
-        scroll_jobj->dobj->next->mobj->mat->diffuse = highlight;
-
-        // calculate scrollbar size
-        int max_steps = menu_data->curr_menu->option_num - MENU_MAXOPTION;
-        float botPos = MENUSCROLL_MAXLENGTH + (max_steps * MENUSCROLL_PEROPTION);
-        if (botPos > MENUSCROLL_MINLENGTH)
-            botPos = MENUSCROLL_MINLENGTH;
-
-        // set size
-        corners[1]->trans.Y = botPos;
-    }
-    else
-    {
-        menu_data->scroll_bot = 0;
-        menu_data->scroll_top = 0;
-    }
+    // create scroll bar
+    JOBJ *scroll_jobj = JOBJ_LoadJoint(menu_assets->scroll);
+    // attach to root jobj
+    JOBJ_AddChild(gobj->hsd_object, scroll_jobj);
+    // move it into position
+    JOBJ_GetChild(scroll_jobj, corners, 2, 3, -1);
+    // scale scrollbar accordingly
+    scroll_jobj->scale.X = MENUSCROLL_SCALE;
+    scroll_jobj->scale.Y = MENUSCROLL_SCALEY;
+    scroll_jobj->scale.Z = MENUSCROLL_SCALE;
+    scroll_jobj->trans.X = MENUSCROLL_X;
+    scroll_jobj->trans.Y = MENUSCROLL_Y;
+    scroll_jobj->trans.Z = MENUSCROLL_Z;
+    menu_data->scroll_top = corners[0];
+    menu_data->scroll_bot = corners[1];
+    GXColor scroll_color = MENUSCROLL_COLOR;
+    scroll_jobj->dobj->next->mobj->mat->alpha = 0.6;
+    scroll_jobj->dobj->next->mobj->mat->diffuse = scroll_color;
+    menu_data->scrollbar = scroll_jobj;
 }
 
 void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
@@ -688,17 +671,20 @@ void EventMenu_UpdateText(GOBJ *gobj)
     highlight_joint->trans.Y = cursor * MENUHIGHLIGHT_YOFFSET;
 
     // update scrollbar position
-    if (menu_data->scroll_top != 0)
-    {
-        float curr_steps = menu_data->curr_menu->scroll;
-        float max_steps;
-        if (menu_data->curr_menu->option_num < MENU_MAXOPTION)
-            max_steps = 0;
-        else
-            max_steps = menu_data->curr_menu->option_num - MENU_MAXOPTION;
+    if (menu->option_num > MENU_MAXOPTION) {
+        if (menu->scroll > menu->option_num - MENU_MAXOPTION)
+            assert("Invalid scroll position");
+        float len = ((float) MENU_MAXOPTION / menu->option_num) * MENUSCROLL_MAXLENGTH;
+        float space = MENUSCROLL_MAXLENGTH - len;
+        float top = space * menu->scroll / (menu->option_num - MENU_MAXOPTION);
 
-        // scrollTop = -1 * ((curr_steps/max_steps) * (botY - -10))
-        menu_data->scroll_top->trans.Y = -1 * (curr_steps / max_steps) * (menu_data->scroll_bot->trans.Y - MENUSCROLL_MAXLENGTH);
+        // scroll bar grows/moves in the negative Y direction, hence the -
+        menu_data->scroll_top->trans.Y = -top;
+        menu_data->scroll_bot->trans.Y = -len;
+        JOBJ_ClearFlags(menu_data->scrollbar, JOBJ_HIDDEN);
+    }
+    else {
+        JOBJ_SetFlags(menu_data->scrollbar, JOBJ_HIDDEN);
     }
 
     // update jobj
