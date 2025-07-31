@@ -102,7 +102,7 @@ void Target_Think(GOBJ *target_gobj);
 void Target_ChangeState(GOBJ *target_gobj, int state);
 void Target_Manager(WavedashData *event_data, FighterData *hmn_data);
 void Target_Init(WavedashData *event_data, FighterData *hmn_data);
-void Wavedash_HUDCamThink(GOBJ *gobj);
 void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data);
 void Wavedash_Init(WavedashData *event_data);
+void Wavedash_ChangeShowHUD(GOBJ *menu_gobj, int show);
 void Event_Exit(GOBJ *menu);

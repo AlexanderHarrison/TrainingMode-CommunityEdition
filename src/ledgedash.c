@@ -85,6 +85,7 @@ static EventOption LdshOptions_Main[] = {
         .name = "HUD",
         .desc = {"Toggle visibility of the HUD."},
         .val = 1,
+        .OnChange = Ledgedash_ChangeShowHUD,
     },
     {
         .kind = OPTKIND_TOGGLE,
@@ -277,26 +278,15 @@ void Event_Exit(GOBJ *menu)
 // Ledgedash functions
 void Ledgedash_HUDInit(LedgedashData *event_data)
 {
-
-    // create hud cobj
-    GOBJ *hudcam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
-    COBJDesc *cam_desc = dmgScnMdls[1][0];
-    COBJ *hud_cobj = COBJ_LoadDesc(cam_desc);
-    // init camera
-    GObj_AddObject(hudcam_gobj, R13_U8(-0x3E55), hud_cobj);
-    GOBJ_InitCamera(hudcam_gobj, Ledgedash_HUDCamThink, 7);
-    hudcam_gobj->cobj_links = 1 << 18;
-
     GOBJ *hud_gobj = GObj_Create(0, 0, 0);
     event_data->hud.gobj = hud_gobj;
     // Load jobj
     JOBJ *hud_jobj = JOBJ_LoadJoint(event_data->assets->hud);
     GObj_AddObject(hud_gobj, 3, hud_jobj);
-    GObj_AddGXLink(hud_gobj, GXLink_Common, 18, 80);
+    GObj_AddGXLink(hud_gobj, GXLink_Common, GXLINK_HUD, 80);
 
     // create text canvas
-    int canvas = Text_CreateCanvas(2, hud_gobj, 14, 15, 0, 18, 81, 19);
+    int canvas = Text_CreateCanvas(2, hud_gobj, 14, 15, 0, GXLINK_HUD, 81, 19);
     event_data->hud.canvas = canvas;
 
     // init text
@@ -544,12 +534,6 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
     // update HUD anim
     JOBJ_AnimAll(hud_jobj);
 }
-void Ledgedash_HUDCamThink(GOBJ *gobj)
-{
-    // if HUD enabled and not paused
-    if (LdshOptions_Main[OPT_HUD].val == 0 && Pause_CheckStatus(1) != 2)
-        CObjThink_Common(gobj);
-}
 
 void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
 {
@@ -767,6 +751,11 @@ void Ledgedash_FtInit(LedgedashData *event_data)
     //    event_data->cam->is_disable = 0;
     //    event_vars->Tip_Display(500 * 60, "Error:\nIt appears there are no\ngood ledges on this stage...");
     //}
+}
+
+void Ledgedash_ChangeShowHUD(GOBJ *menu_gobj, int show) {
+    HUDCamData *cam = event_vars->hudcam_gobj->userdata;
+    cam->hide = !show;
 }
 
 void Ledgedash_ChangeCamMode(GOBJ *menu_gobj, int value)

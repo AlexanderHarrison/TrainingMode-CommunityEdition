@@ -821,11 +821,22 @@ void EventLoad(void)
     GOBJ *menu_gobj = EventMenu_Init(*evFunction->menu_start);
     stc_event_vars.menu_gobj = menu_gobj;
     
+    // init HUD camera
+    GOBJ *hudcam_gobj = GObj_Create(19, 20, 0);
+    stc_event_vars.hudcam_gobj = hudcam_gobj;
+    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
+    COBJDesc *cam_desc = dmgScnMdls[1][0];
+    COBJ *hud_cobj = COBJ_LoadDesc(cam_desc);
+    HUDCamData *cam_data = HSD_MemAlloc(sizeof(HUDCamData));
+    memset(cam_data, 0, sizeof(*cam_data));
+    GObj_AddUserData(hudcam_gobj, 4, HSD_Free, cam_data);
+    GObj_AddObject(hudcam_gobj, R13_U8(-0x3E55), hud_cobj);
+    GOBJ_InitCamera(hudcam_gobj, HUD_CObjThink, 7);
+    hudcam_gobj->cobj_links = 1 << GXLINK_HUD;
+    
     // Run this event's init function
-    if (evFunction->Event_Init != 0)
-    {
+    if (evFunction->Event_Init)
         evFunction->Event_Init(gobj);
-    }
 };
 
 void UpdateDevCamera(void)
@@ -1174,14 +1185,13 @@ void Hazards_Disable(void)
 // Message Functions
 void Message_Init(void)
 {
-
     // create cobj
     GOBJ *cam_gobj = GObj_Create(19, 20, 0);
     COBJDesc *cam_desc = stc_event_vars.menu_assets->hud_cobjdesc;
     COBJ *cam_cobj = COBJ_LoadDescSetScissor(cam_desc);
     cam_cobj->scissor_bottom = 400;
     // init camera
-    GObj_AddObject(cam_gobj, R13_U8(-0x3E55), cam_cobj); //R13_U8(-0x3E55)
+    GObj_AddObject(cam_gobj, R13_U8(-0x3E55), cam_cobj);
     GOBJ_InitCamera(cam_gobj, Message_CObjThink, MSG_COBJLGXPRI);
     cam_gobj->cobj_links = MSG_COBJLGXLINKS;
 
@@ -1587,6 +1597,12 @@ void Message_Add(GOBJ *msg_gobj, int queue_num)
     // set prev pos to -1 (slides in)
     msg_data->prev_index = -1;
     msg_data->orig_index = 0;
+}
+void HUD_CObjThink(GOBJ *gobj)
+{
+    HUDCamData *cam = gobj->userdata;
+    if (!cam->hide && Pause_CheckStatus(1) != 2)
+        CObjThink_Common(gobj);
 }
 void Message_CObjThink(GOBJ *gobj)
 {

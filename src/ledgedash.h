@@ -85,6 +85,7 @@ void Tips_Think(LedgedashData *event_data, FighterData *hmn_data);
 void Ledgedash_ToggleStartPosition(GOBJ *menu_gobj, int value);
 void Ledgedash_HUDCamThink(GOBJ *gobj);
 void Ledgedash_ChangeCamMode(GOBJ *gobj, int value);
+void Ledgedash_ChangeShowHUD(GOBJ *gobj, int show);
 GOBJ *Ledgedash_HitLogInit(void);
 void Ledgedash_HitLogGX(GOBJ *gobj, int pass);
 void Ledgedash_FtInit(LedgedashData *event_data);

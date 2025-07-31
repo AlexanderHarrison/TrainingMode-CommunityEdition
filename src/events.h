@@ -123,7 +123,6 @@ typedef struct EventPage
     EventDesc **events;
 } EventPage;
 
-
 typedef struct evFunction
 {
     void (*Event_Init)(GOBJ *event);
@@ -140,6 +139,10 @@ typedef struct RNGControl
     u8 gnw_hammer;      // 0x3
     u8 nana_throw;      // 0x4
 } RNGControl;
+
+typedef struct HUDCamData {
+    bool hide;
+} HUDCamData;
 
 typedef struct EventVars
 {
@@ -165,6 +168,7 @@ typedef struct EventVars
     evFunction evFunction;      // event specific functions
     HSD_Archive *event_archive; // event archive header
     DevText *db_console_text;
+    GOBJ *hudcam_gobj;
 } EventVars;
 #define event_vars_ptr_loc ((EventVars**)0x803d7054)
 #define event_vars (*event_vars_ptr_loc)
@@ -193,6 +197,9 @@ void TM_CreateWatermark(void);
 #define GXLINK_MENUTEXT 12
 #define GXPRI_MENUTEXT GXPRI_MENUMODEL + 1
 
+#define GXLINK_HUD 18
+#define GXPRI_HUD 78
+
 // Message
 void Message_Init(void);
 GOBJ *Message_Display(int msg_kind, int queue_num, int msg_color, char *format, ...);
@@ -200,6 +207,8 @@ void Message_Manager(GOBJ *mngr_gobj);
 void Message_Destroy(GOBJ **msg_queue, int msg_num);
 void Message_Add(GOBJ *msg_gobj, int queue_num);
 void Message_CObjThink(GOBJ *gobj);
+
+void HUD_CObjThink(GOBJ *gobj);
 
 #define MSGQUEUE_NUM 7
 #define MSGQUEUE_SIZE 8

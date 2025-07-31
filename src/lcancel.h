@@ -61,7 +61,7 @@ struct LCancelAssets
 void Tips_Toggle(GOBJ *menu_gobj, int value);
 void Tips_Think(LCancelData *event_data, FighterData *hmn_data);
 void LCancel_Think(LCancelData *event_data, FighterData *hmn_data);
-void LCancel_HUDCamThink(GOBJ *gobj);
+void LCancel_ChangeShowHUD(GOBJ *gobj, int show);
 void LCancel_Init(LCancelData *event_data);
 void Barrel_Think(LCancelData *event_data);
 void Barrel_Toggle(GOBJ *menu_gobj, int value);

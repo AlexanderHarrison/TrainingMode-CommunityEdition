@@ -28,6 +28,7 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
         .val = 1,
         .name = "HUD",
         .desc = {"Toggle visibility of the HUD."},
+        .OnChange = LCancel_ChangeShowHUD,
     },
     // Tips
     {
@@ -101,26 +102,15 @@ void Event_Exit(GOBJ *menu)
 // L-Cancel functions
 void LCancel_Init(LCancelData *event_data)
 {
-
-    // create hud cobj
-    GOBJ *hudcam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
-    COBJDesc *cam_desc = dmgScnMdls[1][0];
-    COBJ *hud_cobj = COBJ_LoadDesc(cam_desc);
-    // init camera
-    GObj_AddObject(hudcam_gobj, R13_U8(-0x3E55), hud_cobj);
-    GOBJ_InitCamera(hudcam_gobj, LCancel_HUDCamThink, 7);
-    hudcam_gobj->cobj_links = 1 << 18;
-
     GOBJ *hud_gobj = GObj_Create(0, 0, 0);
     event_data->hud.gobj = hud_gobj;
     // Load jobj
     JOBJ *hud_jobj = JOBJ_LoadJoint(event_data->lcancel_assets->hud);
     GObj_AddObject(hud_gobj, 3, hud_jobj);
-    GObj_AddGXLink(hud_gobj, GXLink_Common, 18, 80);
+    GObj_AddGXLink(hud_gobj, GXLink_Common, GXLINK_HUD, 80);
 
     // create text canvas
-    int canvas = Text_CreateCanvas(2, hud_gobj, 14, 15, 0, 18, 81, 19);
+    int canvas = Text_CreateCanvas(2, hud_gobj, 14, 15, 0, GXLINK_HUD, 81, 19);
     event_data->hud.canvas = canvas;
 
     // init text
@@ -164,6 +154,10 @@ void LCancel_Init(LCancelData *event_data)
     event_data->is_current_aerial_counted = false;
     arrow_jobj->trans.X = 0;
     JOBJ_SetFlags(arrow_jobj, JOBJ_HIDDEN);
+}
+void LCancel_ChangeShowHUD(GOBJ *menu_gobj, int show) {
+    HUDCamData *cam = event_vars->hudcam_gobj->userdata;
+    cam->hide = !show;
 }
 void LCancel_Think(LCancelData *event_data, FighterData *hmn_data)
 {
