@@ -1,19 +1,19 @@
 #include "ledgedash.h"
 
-static GXColor tmgbar_black = {40, 40, 40, 180};
-static GXColor tmgbar_grey = {120, 120, 120, 180};
-static GXColor tmgbar_blue = {128, 128, 255, 180};
-static GXColor tmgbar_green = {128, 255, 128, 180};
-static GXColor tmgbar_cyan = {52, 202, 228, 180};
-static GXColor tmgbar_red = {255, 128, 128, 180};
-static GXColor tmgbar_indigo = {230, 22, 198, 180};
-static GXColor tmgbar_white = {255, 255, 255, 180};
+static GXColor tmgbar_black = {40, 40, 40, 255};
+static GXColor tmgbar_grey = {120, 120, 120, 255};
+static GXColor tmgbar_blue = {128, 128, 255, 255};
+static GXColor tmgbar_green = {128, 255, 128, 255};
+static GXColor tmgbar_cyan = {52, 202, 228, 255};
+static GXColor tmgbar_red = {255, 128, 128, 255};
+static GXColor tmgbar_magenta = {230, 22, 198, 255};
+static GXColor tmgbar_white = {255, 255, 255, 255};
 static GXColor *tmgbar_colors[] = {
     &tmgbar_black,
     &tmgbar_grey,
     &tmgbar_green,
     &tmgbar_cyan,
-    &tmgbar_indigo,
+    &tmgbar_magenta,
     &tmgbar_white,
     &tmgbar_red,
     &tmgbar_blue,

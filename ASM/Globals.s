@@ -161,8 +161,7 @@
     .set TM_GetPageNum, TM_GetTMCompile + 0x4
     .set TM_GetCSSType, TM_GetPageNum + 0x4
     .set TM_GetIsSelectStage, TM_GetCSSType + 0x4
-    .set TM_GetFighter, TM_GetIsSelectStage + 0x4
-    .set TM_GetCPUFighter, TM_GetFighter + 0x4
+    .set TM_GetCPUFighter, TM_GetIsSelectStage + 0x4
     .set TM_GetStage, TM_GetCPUFighter + 0x4
     .set TM_GetEventFile, TM_GetStage + 0x4
     .set TM_GetCSSFile, TM_GetEventFile + 0x4

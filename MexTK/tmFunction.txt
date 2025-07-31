@@ -10,7 +10,6 @@ GetTMCompile
 GetPageNum
 GetCSSType
 GetIsSelectStage
-GetFighter
 GetCPUFighter
 GetStage
 GetEventFile

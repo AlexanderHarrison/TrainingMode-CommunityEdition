@@ -39,7 +39,6 @@ EventDesc Lab = {
     .eventCSSFile = "TM/labCSS.dat",
     .CSSType = SLCHRKIND_TRAINING,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -73,7 +72,6 @@ EventDesc LCancel = {
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -106,7 +104,6 @@ EventDesc Ledgedash = {
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -139,7 +136,6 @@ EventDesc Wavedash = {
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -149,16 +145,45 @@ EventDesc Wavedash = {
     .matchData = &Wavedash_MatchData,
 };
 
+// Float Cancel Training
+static EventMatchData FloatCancel_MatchData = {
+    .timer = MATCH_TIMER_HIDE,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = false,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = false,
+    .isShowScore = false,
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc FloatCancel = {
+    .eventName = "Float Cancel Training\n",
+    .eventDescription = "TODO\n",
+    .eventFile = "fc",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = { .hmn = CSSID_PEACH, .cpu = -1 },
+    .cpuKind = -1,
+    .stage = GRKINDEXT_FD,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &FloatCancel_MatchData,
+};
+
 // Combo Training
 EventDesc Combo = {
-
     .eventName = "Combo Training\n",
     .eventDescription = "L+DPad adjusts percent | DPadDown moves CPU\nDPad right/left saves and loads positions.",
     .eventFile = 0,
     .jumpTableIndex = JUMP_COMBO,
     .CSSType = SLCHRKIND_TRAINING,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -176,7 +201,6 @@ EventDesc AttackOnShield = {
     .jumpTableIndex = JUMP_ATTACKONSHIELD,
     .CSSType = SLCHRKIND_TRAINING,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -193,7 +217,6 @@ EventDesc Reversal = {
     .jumpTableIndex = JUMP_REVERSAL,
     .CSSType = SLCHRKIND_TRAINING,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -210,7 +233,6 @@ EventDesc SDI = {
     .jumpTableIndex = JUMP_SDITRAINING,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_FOX,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -218,7 +240,6 @@ EventDesc SDI = {
     .scoreType = SCORETYPE_KO,
     .callbackPriority = 3,
     .matchData = 0,
-
 };
 
 static EventMatchData Powershield_MatchData = {
@@ -230,7 +251,6 @@ static EventMatchData Powershield_MatchData = {
     .timerRunOnPause = false,
     .isCheckForZRetry = true,
     .isShowScore = false,
-
     .isRunStockLogic = false,
     .isDisableHit = false,
     .useKOCounter = false,
@@ -243,7 +263,6 @@ EventDesc Powershield = {
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_FALCO,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -259,7 +278,6 @@ EventDesc Ledgetech = {
     .jumpTableIndex = JUMP_LEDGETECH,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_FALCO,
     .stage = -1,
     .disable_hazards = true,
@@ -276,7 +294,6 @@ EventDesc AmsahTech = {
     .jumpTableIndex = JUMP_AMSAHTECH,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_MARTH,
     .stage = -1,
     .disable_hazards = true,
@@ -293,7 +310,6 @@ EventDesc ShieldDrop = {
     .jumpTableIndex = JUMP_SHIELDDROP,
     .CSSType = SLCHRKIND_TRAINING,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -314,7 +330,6 @@ EventDesc WaveshineSDI = {
                     | CSSID_SAMUS | CSSID_ZELDA | CSSID_LINK,
         .cpu = -1,
     },
-    .playerKind = -1,
     .cpuKind = CKIND_FOX,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -331,7 +346,6 @@ EventDesc SlideOff = {
     .jumpTableIndex = JUMP_SLIDEOFF,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_MARTH,
     .stage = GRKINDEXT_PSTAD,
     .disable_hazards = true,
@@ -348,7 +362,6 @@ EventDesc GrabMash = {
     .jumpTableIndex = JUMP_GRABMASH,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_MARTH,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -367,7 +380,6 @@ EventDesc TechCounter = {
         .hmn = CSSID_FALCO | CSSID_FOX,
         .cpu = -1,
     },
-    .playerKind = -1,
     .cpuKind = CKIND_MARTH,
     .stage = -1,
     .disable_hazards = true,
@@ -386,7 +398,6 @@ static EventMatchData Edgeguard_MatchData = {
     .timerRunOnPause = false,
     .isCheckForZRetry = true,
     .isShowScore = false,
-
     .isRunStockLogic = false,
     .isDisableHit = false,
     .useKOCounter = false,
@@ -403,7 +414,6 @@ EventDesc Edgeguard = {
         .cpu = CSSID_FOX | CSSID_FALCO | CSSID_ZELDA | CSSID_CAPTAIN_FALCON
             | CSSID_MARTH
     },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -423,7 +433,6 @@ EventDesc SideBSweet = {
         .hmn = CSSID_FALCO | CSSID_FOX,
         .cpu = -1,
     },
-    .playerKind = -1,
     .cpuKind = CKIND_MARTH,
     .stage = -1,
     .disable_hazards = true,
@@ -442,7 +451,6 @@ EventDesc EscapeSheik = {
         .hmn = CSSID_YOSHI |  CSSID_CAPTAIN_FALCON |  CSSID_FALCO |  CSSID_FOX |  CSSID_PIKACHU,
         .cpu = -1,
     },
-    .playerKind = -1,
     .cpuKind = CKIND_SHEIK,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -459,7 +467,6 @@ EventDesc Eggs = {
     .jumpTableIndex = JUMP_EGGS,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = -1,
     .disable_hazards = true,
@@ -478,7 +485,6 @@ EventDesc Multishine = {
         .hmn = CSSID_FALCO | CSSID_FOX,
         .cpu = -1,
     },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -495,7 +501,6 @@ EventDesc Reaction = {
     .jumpTableIndex = JUMP_REACTION,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = CKIND_FOX,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
@@ -512,7 +517,6 @@ EventDesc Ledgestall = {
     .jumpTableIndex = JUMP_LEDGESTALL,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .playerKind = -1,
     .cpuKind = -1,
     .stage = GRKINDEXT_ZEBES,
     .disable_hazards = true,
@@ -564,22 +568,23 @@ static EventPage General_Page = {
 };
 
 // Page 3 Events
-static EventDesc *Spacie_Events[] = {
+static EventDesc *CharacterSpecific_Events[] = {
     &TechCounter,
     &Edgeguard,
     &SideBSweet,
     &EscapeSheik,
+    &FloatCancel,
 };
-static EventPage Spacie_Page = {
+static EventPage CharacterSpecific_Page = {
     .name = "Character-specific Tech",
-    .eventNum = countof(Spacie_Events),
-    .events = Spacie_Events,
+    .eventNum = countof(CharacterSpecific_Events),
+    .events = CharacterSpecific_Events,
 };
 
 EventPage *EventPages[] = {
     &Minigames_Page,
     &General_Page,
-    &Spacie_Page,
+    &CharacterSpecific_Page,
 };
 
 ////////////////////////
@@ -875,7 +880,7 @@ void EventInit(int page, int eventID, MatchInit *matchData)
             matchData->playerData[1].p_kind = PKIND_CPU;
             matchData->playerData[1].portNumberOverride = cpu_port;
         }
-
+        
         matchData->playerData[0].c_kind = preload->queued.fighters[0].kind;
         matchData->playerData[0].costume = preload->queued.fighters[0].costume;
         matchData->playerData[0].p_kind = PKIND_HMN;
@@ -2039,11 +2044,6 @@ u8 GetIsSelectStage(int page, int event)
 {
     EventDesc *desc = GetEventDesc(page, event);
     return desc->stage == -1;
-}
-s8 GetFighter(int page, int event)
-{
-    EventDesc *desc = GetEventDesc(page, event);
-    return desc->playerKind;
 }
 s8 GetCPUFighter(int page, int event)
 {

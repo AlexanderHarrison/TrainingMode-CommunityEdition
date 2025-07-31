@@ -88,6 +88,7 @@ mex_build "evFunction" "build/ledgedash.dat" "src/ledgedash.c" "dats/ledgedash.d
 mex_build "evFunction" "build/wavedash.dat" "src/wavedash.c" "dats/wavedash.dat" &
 mex_build "evFunction" "build/powershield.dat" "src/powershield.c" &
 mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
+mex_build "evFunction" "build/fc.dat" "src/fc.c" "dats/ledgedash.dat" &
 
 # wait for compilation to finish
 wait
@@ -118,6 +119,7 @@ ${gc_fst} fs TM-CE.iso \
     insert TM/wavedash.dat build/wavedash.dat \
     insert TM/powershield.dat build/powershield.dat \
     insert TM/edgeguard.dat build/edgeguard.dat \
+    insert TM/fc.dat build/fc.dat \
     insert codes.gct build/codes.gct \
     insert Start.dol build/Start.dol \
     insert opening.bnr opening.bnr
