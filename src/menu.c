@@ -26,8 +26,8 @@ GOBJ *EventMenu_Init(EventMenu *start_menu)
     menu_data->canvas_popup = Text_CreateCanvas(2, cam_gobj, 9, 13, 0, GXLINK_MENUTEXT, GXPRI_POPUPTEXT, MENUCAM_GXPRI);
     menu_data->curr_menu = start_menu;
 
-    EventMenu_CreateModel(gobj, start_menu);
-    EventMenu_CreateText(gobj, start_menu);
+    EventMenu_CreateModel(gobj);
+    EventMenu_CreateText(gobj);
     menu_data->hide_menu = 1;
 
     return gobj;
@@ -158,6 +158,7 @@ void EventMenu_Update(GOBJ *gobj)
         return;
     }
 
+    menu_data->hide_menu = 0;
     HSD_Pad *pad = PadGetMaster(menu_data->controller_index);
 
     if ((pad->held & HSD_BUTTON_Y) && menu_data->curr_menu->shortcuts) {
@@ -348,7 +349,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     }
 }
 
-void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
+void EventMenu_CreateModel(GOBJ *gobj)
 {
     MenuData *menu_data = gobj->userdata;
 
@@ -365,8 +366,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
 
     // Create a rowbox for every option row. Rowboxes are the background behind
     // the option value.
-    s32 option_num = min(menu->option_num, MENU_MAXOPTION);
-    for (int i = 0; i < option_num; i++)
+    for (int i = 0; i < MENU_MAXOPTION; i++)
     {
         // create a border jobj
         JOBJ *jobj_rowbox = JOBJ_LoadJoint(menu_assets->popup);
@@ -439,7 +439,7 @@ void EventMenu_CreateModel(GOBJ *gobj, EventMenu *menu)
     menu_data->scrollbar = scroll_jobj;
 }
 
-void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
+void EventMenu_CreateText(GOBJ *gobj)
 {
     MenuData *menu_data = gobj->userdata;
     Text *text;
@@ -467,7 +467,7 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     // output menu title
     float x = MENU_TITLEXPOS;
     float y = MENU_TITLEYPOS;
-    int subtext = Text_AddSubtext(text, x, y, " ");
+    int subtext = Text_AddSubtext(text, x, y, "");
     Text_SetScale(text, subtext, MENU_TITLESCALE, MENU_TITLESCALE);
 
     // Create Description
@@ -489,12 +489,11 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     text->trans.Z = MENU_TEXTZ;
     text->aspect.X = MENU_NAMEASPECT;
 
-    s32 option_num = min(menu->option_num, MENU_MAXOPTION);
-    for (int i = 0; i < option_num; i++)
+    for (int i = 0; i < MENU_MAXOPTION; i++)
     {
         float x = MENU_OPTIONNAMEXPOS;
         float y = MENU_OPTIONNAMEYPOS + (i * MENU_TEXTYOFFSET);
-        Text_AddSubtext(text, x, y, " ");
+        Text_AddSubtext(text, x, y, "");
     }
 
     // Create Values
@@ -512,11 +511,11 @@ void EventMenu_CreateText(GOBJ *gobj, EventMenu *menu)
     text->aspect.X = MENU_VALASPECT;
 
     // Output all values
-    for (int i = 0; i < option_num; i++)
+    for (int i = 0; i < MENU_MAXOPTION; i++)
     {
         float x = MENU_OPTIONVALXPOS;
         float y = MENU_OPTIONVALYPOS + (i * MENU_TEXTYOFFSET);
-        Text_AddSubtext(text, x, y, " ");
+        Text_AddSubtext(text, x, y, "");
     }
 }
 
@@ -527,7 +526,6 @@ void EventMenu_UpdateText(GOBJ *gobj)
 
     s32 cursor = menu->cursor;
     s32 scroll = menu->scroll;
-    s32 option_num = min(menu->option_num, MENU_MAXOPTION);
     Text *text;
 
     // Update Title
@@ -597,68 +595,56 @@ void EventMenu_UpdateText(GOBJ *gobj)
         Text_AddSubtext(text, 0, y_delta, msg_line);
     }
 
-    // Update Names
-    // Output all options
-    text = menu_data->text_name;
-    for (int i = 0; i < option_num; i++)
+    for (int i = 0; i < min(menu->option_num, MENU_MAXOPTION); i++)
     {
-        // get this option
-        EventOption *curr_option = &menu->options[scroll + i];
+        EventOption *option = &menu->options[scroll + i];
+        TMLOG("%d, %s\n", i, option->name);
 
-        // output option name
-        char *str = curr_option->name ? curr_option->name : "";
-        Text_SetText(text, i, str);
+        // Update option name
+        Text_SetText(menu_data->text_name, i, option->name);
 
-        GXColor color = curr_option->disable ? 
-            (GXColor){ 128, 128, 128, 0 } : 
-            (GXColor){ 255, 255, 255, 255 };
-        Text_SetColor(text, i, &color);
-    }
-
-    // Update Values
-    // Output all values
-    text = menu_data->text_value;
-    for (int i = 0; i < option_num; i++)
-    {
-        EventOption *curr_option = &menu->options[scroll + i];
-        int option_val = curr_option->val;
-
-        // Show rowbox w/ base color
+        // Update option value and rowbox
         JOBJ* rowbox = menu_data->rowboxes[i];
         JOBJ_ClearFlags(rowbox, JOBJ_HIDDEN);
         GXColor rowbox_color = ROWBOX_COLOR;
         rowbox->dobj->next->mobj->mat->diffuse = rowbox_color;
 
-        if (curr_option->kind == OPTKIND_STRING)
-        {
-            Text_SetText(text, i, curr_option->values[option_val]);
+        if (option->kind == OPTKIND_STRING) {
+            Text_SetText(menu_data->text_value, i, option->values[option->val]);
         }
-        else if (curr_option->kind == OPTKIND_INT)
-        {
-            Text_SetText(text, i, curr_option->format, option_val);
+        else if (option->kind == OPTKIND_INT) {
+            Text_SetText(menu_data->text_value, i, option->format, option->val);
         }
-        else if (curr_option->kind == OPTKIND_TOGGLE)
-        {
-            if (curr_option->val == 0) {
-                Text_SetText(text, i, "Off");
-            } else if (curr_option->val == 1) {
-                Text_SetText(text, i, "On");
+        else if (option->kind == OPTKIND_TOGGLE) {
+            if (option->val) {
+                Text_SetText(menu_data->text_value, i, "On");
                 GXColor color = ROWBOX_ONCOLOR;
                 rowbox->dobj->next->mobj->mat->diffuse = color;
-            } else
-                assert("Invalid val for toggle option");
-
+            }
+            else {
+                Text_SetText(menu_data->text_value, i, "Off");
+            }
         }
-        else
-        {
-            Text_SetText(text, i, " ");
+        else {
+            Text_SetText(menu_data->text_value, i, "");
             JOBJ_SetFlags(rowbox, JOBJ_HIDDEN);
         }
 
-        GXColor color = curr_option->disable ? 
+        // Grey out text if the option is disabled
+        GXColor color = option->disable ? 
             (GXColor){ 128, 128, 128, 0 } : 
             (GXColor){ 255, 255, 255, 255 };
-        Text_SetColor(text, i, &color);
+        Text_SetColor(menu_data->text_name, i, &color);
+        Text_SetColor(menu_data->text_value, i, &color);
+    }
+
+    // Blank out lines past end of options
+    for (int i = menu->option_num; i < MENU_MAXOPTION; i++)
+    {
+        TMLOG("%d, blanked\n", i);
+        Text_SetText(menu_data->text_name, i, "");
+        Text_SetText(menu_data->text_value, i, "");
+        JOBJ_SetFlags(menu_data->rowboxes[i], JOBJ_HIDDEN);
     }
 
     // update cursor position
@@ -682,6 +668,5 @@ void EventMenu_UpdateText(GOBJ *gobj)
         JOBJ_SetFlags(menu_data->scrollbar, JOBJ_HIDDEN);
     }
 
-    // update jobj
     JOBJ_SetMtxDirtySub(gobj->hsd_object);
 }
