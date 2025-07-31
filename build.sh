@@ -67,6 +67,8 @@ mex_build() {
     
     if [ "${release}" = true ]; then
         local opt="-O2"
+    else
+        local opt="-DTM_DEBUG"
     fi
     
     warn="-Wall -Wextra -Wno-char-subscripts -Wno-builtin-declaration-mismatch -Wno-unused-parameter"

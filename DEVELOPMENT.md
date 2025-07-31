@@ -105,6 +105,8 @@ The powershield event is the simplest and easiest to learn from.
     - Add the OSD to the OSD list in `ASM/training-mode/Globals.s`. OSD ids are weird, I don't know exactly how to do this.
 
 ## Debugging Tips
+- Due to a deficiency in the MexTK headers, we cannot turn on warnings effectively, so be aware of that.
+- Development builds enable logging! Call `TMLOG(...)` to print to the dolphin console and the onscreen console. L/R+Z toggles console visibility.
 - **Use the dolphin debugger!** Make sure you have the latest version of dolphin for debugging.
     - To set a breakpoint, use the `bp()` fn call in C or the `SetBreakpoint` macro in ASM (which will clobber r3). Then when you boot up dolphin, put a breakpoint on the `bp` symbol.
     - **Be sure to load GTME01.map with Symbols->Load Other Map File!**. Or copy it to the Maps/ directory in the dolphin data directory.

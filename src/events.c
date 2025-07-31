@@ -905,6 +905,8 @@ void TM_CreateConsole(void)
     DevText *text = DevelopText_CreateDataTable(13, 0, 0, 32, 32, HSD_MemAlloc(0x1000));
     DevelopText_Activate(0, text);
     text->show_cursor = 0;
+    text->show_text = 0;
+    text->show_background = 0;
 
     GOBJ *gobj = GObj_Create(0, 0, 0);
     GObj_AddUserData(gobj, 4, HSD_Free, text);
@@ -930,11 +932,7 @@ void OnSceneChange(void)
     // Hook exists at 801a4c94
     TM_CreateWatermark();
 
-#if TM_DEBUG == 1   // Create and hide console
-    TM_CreateConsole();
-    stc_event_vars.db_console_text->show_text ^= 1;
-    stc_event_vars.db_console_text->show_background ^= 1;
-#elif TM_DEBUG == 2 // Create and show console
+#if TM_DEBUG
     TM_CreateConsole();
 #endif
 };

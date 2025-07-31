@@ -8,20 +8,26 @@
 
 #define TM_VERSSHORT "TM-CE v1.3.1"
 #define TM_VERSLONG "TM Community Edition v1.3.1"
-#define TM_DEBUG 0 // 0 = release (no logging), 1 = OSReport logs, 2 = onscreen logs
 #define EVENT_DATASIZE 512
 #define TM_FUNC -(50 * 4)
 
 #define ANALOG_TRIGGER_THRESHOLD 43
 
 // disable all logs in release mode
-#if TM_DEBUG == 0
-#define TMLOG(...) (void)0
-#else
+#if TM_DEBUG
 #define TMLOG(...) do { \
     DevelopText_AddString(event_vars->db_console_text, __VA_ARGS__); \
     OSReport(__VA_ARGS__); \
 } while (0)
+#define TMLOG_ONCE(...) do { \
+    static int __logged_once = 0; \
+    if (!__logged_once) { \
+        __logged_once = 1; \
+        TMLOG(__VA_ARGS__); \
+    } \
+} while (0)
+#else
+#define TMLOG(...) (void)0
 #endif
 
 #define SHORTCUT_BUTTONS (HSD_BUTTON_A | HSD_BUTTON_B | HSD_BUTTON_X | HSD_TRIGGER_Z)
