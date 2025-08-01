@@ -3,6 +3,9 @@
 
 #define MENU_MAXOPTION 9
 #define MENU_SCROLLOFF 2
+#define MENU_RAPID_INTERVAL 5
+#define MENU_RAPID_START 15
+#define MENU_RAPID_R 2
 
 // Custom File Structs
 typedef struct evMenu

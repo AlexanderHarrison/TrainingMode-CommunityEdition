@@ -41,6 +41,11 @@
 #define HSD_BUTTON_LEFT 0x40000
 #define HSD_BUTTON_RIGHT 0x80000
 
+#define PAD_ERR_NONE 0
+#define PAD_ERR_NO_CONTROLLER -1
+#define PAD_ERR_NOT_READY -2
+#define PAD_ERR_TRANSFER -3
+
 enum DebugLevel
 {
     DB_MASTER,        // off
@@ -138,25 +143,27 @@ struct HSD_Pad
     int held;            // 0x0
     int heldPrev;        // 0x4
     int down;            // 0x8
-    int rapidFire;       // 0xc
+    int repeat;          // 0xc
     int up;              // 0x10
-    int rapidTimer;      // 0x14
+    int repeat_timer;    // 0x14
     s8 stickX;           // 0x18
     s8 stickY;           // 0x19
     s8 substickX;        // 0x1a
     s8 substickY;        // 0x1b
     u8 triggerLeft;      // 0x1c
     u8 triggerRight;     // 0x1d
+    u8 triggerA;         // 0x1e
+    u8 triggerB;         // 0x1f
     float fstickX;       // 0x20
     float fstickY;       // 0x24
     float fsubstickX;    // 0x28
     float fsubstickY;    // 0x2c
     float ftriggerLeft;  // 0x30
     float ftriggerRight; // 0x34
-    float x38;           // 0x38
-    float x3c;           // 0x3c
-    u8 x40;              // 0x40
-    s8 status;           // 0x41   0 = plugged, -1 = unplugged
+    float ftriggerA;     // 0x30
+    float ftriggerB;     // 0x34
+    u8 cross_dir;        // 0x40
+    s8 error;            // 0x41   0 = plugged, -1 = unplugged
 };
 
 struct HSD_Pads
@@ -315,7 +322,8 @@ static int **stc_rng_seed = (void *)0x804D5F94;
 static HSD_Pads *stc_engine_pads = (HSD_Pads *)0x804c21cc;
 static HSD_Pads *stc_master_pads = (HSD_Pads *)0x804c1fac;
 static u64 *stc_pause_plink_whitelists = (void *)0x803da888; // array of u64 bitfields defining which gobj p_links should run for the corresponding PauseKind
-static PadLibData *stc_hsd_padlibdata = (void *)0x804c1f78;
+static PadLibData *stc_padlibdata = (void *)0x804c1f78;
+static PadLibData *stc_default_padlibdata = (void *)0x80406dac;
 static GXPixelFmt *stc_hsd_pixelfmt = (void *)0x804d76c8;
 
 /*** Functions ***/

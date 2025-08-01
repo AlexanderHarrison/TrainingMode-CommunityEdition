@@ -3700,9 +3700,9 @@ void Record_SetInputs(GOBJ *fighter, RecInputs *inputs, bool mirror) {
     // It would be nice to simply overwrite the raw inputs with recording inputs,
     // and let the game copy it over to the pads we wrote above and internal UCF pads,
     // but alas TM has too much cruft for this to be feasible.
-    int qidx = stc_hsd_padlibdata->qread - 1;
+    int qidx = stc_padlibdata->qread - 1;
     if (qidx < 0) qidx += 5;
-    HSD_PadData *pads = &stc_hsd_padlibdata->queue[qidx];
+    HSD_PadData *pads = &stc_padlibdata->queue[qidx];
     PADStatus *stat = &pads->stat[fighter_data->pad_index];
     stat->button = pad->held;
     stat->stickX = pad->stickX;
@@ -5056,7 +5056,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
 
     // get pausing players inputs
     HSD_Pad *pad = PadGetMaster(stc_hmn_controller);
-    int inputs = pad->rapidFire;
+    int inputs = pad->repeat;
     int input_down = pad->down;
     u8 *cursor = export_data->key_cursor;
     int update_keyboard = 0;

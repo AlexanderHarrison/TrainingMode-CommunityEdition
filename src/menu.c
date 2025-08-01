@@ -39,6 +39,10 @@ void EventMenu_EnterMenu(GOBJ *gobj) {
     menu_data->mode = MenuMode_Paused;
     EventMenu_UpdateText(gobj);
 
+    // Speed up repeat behavior
+    stc_padlibdata->repeat_interval = MENU_RAPID_INTERVAL; // default is 8
+    stc_padlibdata->repeat_start = MENU_RAPID_START;       // default is 45
+
     // Freeze the game
     Match_FreezeGame(1);
     SFX_PlayCommon(5);
@@ -59,6 +63,10 @@ void EventMenu_ExitMenu(GOBJ *gobj) {
         menu_data->custom_gobj_think = 0;
         menu_data->custom_gobj_destroy = 0;
     }
+
+    // Reset repeat behavior
+    stc_padlibdata->repeat_interval = stc_default_padlibdata->repeat_interval;
+    stc_padlibdata->repeat_start = stc_default_padlibdata->repeat_start;
 
     // Unfreeze the game
     Match_UnfreezeGame(1);
@@ -231,10 +239,17 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     MenuData *menu_data = gobj->userdata;
 
     HSD_Pad *pad = PadGetMaster(menu_data->controller_index);
-    int inputs = pad->rapidFire;
+    int inputs = pad->repeat;
+    
+    // Speed up scrolling when R is held
     if ((pad->held & HSD_TRIGGER_R)
         || pad->triggerRight >= ANALOG_TRIGGER_THRESHOLD) {
-        inputs = pad->held;
+        stc_padlibdata->repeat_interval = MENU_RAPID_R;
+        stc_padlibdata->repeat_start = MENU_RAPID_R;
+    }
+    else {
+        stc_padlibdata->repeat_interval = MENU_RAPID_INTERVAL;
+        stc_padlibdata->repeat_start = MENU_RAPID_START;
     }
 
     // get menu variables
@@ -600,7 +615,6 @@ void EventMenu_UpdateText(GOBJ *gobj)
     for (int i = 0; i < min(menu->option_num, MENU_MAXOPTION); i++)
     {
         EventOption *option = &menu->options[scroll + i];
-        TMLOG("%d, %s\n", i, option->name);
 
         // Update option name
         Text_SetText(menu_data->text_name, i, option->name);
@@ -643,7 +657,6 @@ void EventMenu_UpdateText(GOBJ *gobj)
     // Blank out lines past end of options
     for (int i = menu->option_num; i < MENU_MAXOPTION; i++)
     {
-        TMLOG("%d, blanked\n", i);
         Text_SetText(menu_data->text_name, i, "");
         Text_SetText(menu_data->text_value, i, "");
         JOBJ_SetFlags(menu_data->rowboxes[i], JOBJ_HIDDEN);
