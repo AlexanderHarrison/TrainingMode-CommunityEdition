@@ -240,7 +240,7 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
 
     HSD_Pad *pad = PadGetMaster(menu_data->controller_index);
     int inputs = pad->repeat;
-    
+
     // Speed up scrolling when R is held
     if ((pad->held & HSD_TRIGGER_R)
         || pad->triggerRight >= ANALOG_TRIGGER_THRESHOLD) {
@@ -271,13 +271,13 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             return;
 
         cursor += cursor_next;
-        
+
         // If cursor went too far down, scroll down to compensate
         if (cursor >= MENU_MAXOPTION - MENU_SCROLLOFF) {
             int max_scroll = curr_menu->option_num - MENU_MAXOPTION - scroll;
             int want_scroll = cursor - MENU_MAXOPTION + MENU_SCROLLOFF + 1;
             int delta_scroll = min(want_scroll, max_scroll);
-            
+
             scroll += delta_scroll;
             cursor -= delta_scroll;
         }
@@ -302,11 +302,11 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
             return;
 
         cursor -= cursor_next;
-        
+
         // If cursor went too far up, scroll up to compensate
         if (cursor < MENU_SCROLLOFF) {
             int delta_scroll = min(MENU_SCROLLOFF - cursor, scroll);
-            
+
             scroll -= delta_scroll;
             cursor += delta_scroll;
         }
@@ -472,7 +472,6 @@ void EventMenu_CreateText(GOBJ *gobj)
     text->gobj->gx_cb = EventMenu_TextGX;
     menu_data->text_title = text;
     // enable align and kerning
-    text->align = 0;
     text->kerning = 1;
     text->use_aspect = 1;
     // scale canvas
@@ -492,12 +491,26 @@ void EventMenu_CreateText(GOBJ *gobj)
     text->gobj->gx_cb = EventMenu_TextGX;
     menu_data->text_desc = text;
 
+    text->kerning = 1;
+    text->use_aspect = 1;
+
+    text->viewport_scale.X = MENU_CANVASSCALE;
+    text->viewport_scale.Y = MENU_CANVASSCALE;
+    text->trans.X = MENU_DESCXPOS;
+    text->trans.Y = MENU_DESCYPOS;
+    text->trans.Z = MENU_TEXTZ;
+    text->aspect.X = (MENU_DESCTXTASPECT);
+
+    for (int i = 0; i < MENU_DESCLINEMAX; i++)
+    {
+        float y = i * MENU_DESCYOFFSET;
+        Text_AddSubtext(text, 0, y, "");
+    }
+
     // Create Names
     text = Text_CreateText(2, canvas_index);
     text->gobj->gx_cb = EventMenu_TextGX;
     menu_data->text_name = text;
-    // enable align and kerning
-    text->align = 0;
     text->kerning = 1;
     text->use_aspect = 1;
     // scale canvas
@@ -540,9 +553,9 @@ void EventMenu_UpdateText(GOBJ *gobj)
 {
     MenuData *menu_data = gobj->userdata;
     EventMenu *menu = menu_data->curr_menu;
-
     s32 cursor = menu->cursor;
     s32 scroll = menu->scroll;
+    EventOption *curr_option = &menu->options[cursor + scroll];
     Text *text;
 
     // Update Title
@@ -550,66 +563,41 @@ void EventMenu_UpdateText(GOBJ *gobj)
     Text_SetText(text, 0, menu->name);
 
     // Update Description
-    Text_Destroy(menu_data->text_desc); // i think its best to recreate it...
-    text = Text_CreateText(2, menu_data->canvas_menu);
-    text->gobj->gx_cb = EventMenu_TextGX;
-    menu_data->text_desc = text;
-    EventOption *curr_option = &menu->options[menu->cursor + menu->scroll];
-
-    text->kerning = 1;
-    text->align = 0;
-    text->use_aspect = 1;
-
-    // scale canvas
-    text->viewport_scale.X = 0.01 * MENU_DESCTXTSIZEX;
-    text->viewport_scale.Y = 0.01 * MENU_DESCTXTSIZEY;
-    text->trans.X = MENU_DESCXPOS;
-    text->trans.Y = MENU_DESCYPOS;
-    text->trans.Z = MENU_TEXTZ;
-    text->aspect.X = (MENU_DESCTXTASPECT);
-
+    text = menu_data->text_desc;
     char *msg = curr_option->desc;
 
-    // count newlines
-    int line_num = 1;
-    int line_length_arr[MENU_DESCLINEMAX];
-    char *msg_cursor_prev, *msg_cursor_curr; // declare char pointers
-    msg_cursor_prev = msg;
-    msg_cursor_curr = strchr(msg_cursor_prev, '\n'); // check for occurrence
-    while (msg_cursor_curr != 0)                     // if occurrence found, increment values
-    {
-        if (line_num >= MENU_DESCLINEMAX)
-            assert("MENU_DESCLINEMAX exceeded!");
+    int line_num = 0;
+    char *line_start = msg;
 
-        // Save information about this line
-        line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev; // determine length of the line
-        line_num++;                                                        // increment number of newlines found
-        msg_cursor_prev = msg_cursor_curr + 1;                             // update prev cursor
-        msg_cursor_curr = strchr(msg_cursor_prev, '\n');                   // check for another occurrence
-    }
+    while (line_num < MENU_DESCLINEMAX && *line_start != '\0') {
+        // The end of the line is next '\n' or end of string
+        char *line_end = strchr(line_start, '\n');
+        if (!line_end) {
+            line_end = line_start + strlen(line_start); // Point to null terminator
+        }
 
-    // get last lines length
-    msg_cursor_curr = strchr(msg_cursor_prev, 0);
-    line_length_arr[line_num - 1] = msg_cursor_curr - msg_cursor_prev;
-
-    // copy each line to an individual char array
-    for (int i = 0; i < line_num; i++)
-    {
-        // check if over char max
-        u8 line_length = line_length_arr[i];
-        if (line_length > MENU_DESCCHARMAX)
+        int line_length = line_end - line_start;
+        if (line_length > MENU_DESCCHARMAX) {
             assert("MENU_DESCCHARMAX exceeded!");
+        }
 
+        // Copy line to buffer
         char msg_line[MENU_DESCCHARMAX + 1];
-        memcpy(msg_line, msg, line_length);
+        memcpy(msg_line, line_start, line_length);
         msg_line[line_length] = '\0';
 
-        // increment msg
-        msg += (line_length + 1); // +1 to skip past newline
+        Text_SetText(text, line_num, msg_line);
+        line_num++;
 
-        // print line
-        int y_delta = (i * MENU_DESCYOFFSET);
-        Text_AddSubtext(text, 0, y_delta, msg_line);
+        // Move to start of next line
+        if (*line_end == '\n') {
+            line_start = line_end + 1;
+        } else {
+            break;
+        }
+    }
+    for (int i = line_num; i < MENU_DESCLINEMAX; i++) {
+        Text_SetText(text, i, "");
     }
 
     for (int i = 0; i < min(menu->option_num, MENU_MAXOPTION); i++)
@@ -647,8 +635,8 @@ void EventMenu_UpdateText(GOBJ *gobj)
         }
 
         // Grey out text if the option is disabled
-        GXColor color = option->disable ? 
-            (GXColor){ 128, 128, 128, 0 } : 
+        GXColor color = option->disable ?
+            (GXColor){ 128, 128, 128, 0 } :
             (GXColor){ 255, 255, 255, 255 };
         Text_SetColor(menu_data->text_name, i, &color);
         Text_SetColor(menu_data->text_value, i, &color);

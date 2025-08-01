@@ -1006,13 +1006,13 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
         .kind = OPTKIND_MENU,
         .menu = &LabMenu_OverlaysHMN,
         .name = "HMN Color Overlays",
-        .desc = "Set up color indicators for\n action states.",
+        .desc = "Set up color indicators for\naction states.",
     },
     {
         .kind = OPTKIND_MENU,
         .menu = &LabMenu_OverlaysCPU,
         .name = "CPU Color Overlays",
-        .desc = "Set up color indicators for\n action states.",
+        .desc = "Set up color indicators for\naction states.",
     },
     {
         .kind = OPTKIND_TOGGLE,

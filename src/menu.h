@@ -125,7 +125,6 @@ enum option_kind {
 
 // menu text object
 #define MENU_CANVASSCALE 0.05
-#define MENU_TEXTSCALE 1
 #define MENU_TEXTZ 0
 // menu title
 #define MENU_TITLEXPOS -430
@@ -135,9 +134,6 @@ enum option_kind {
 // menu description
 #define MENU_DESCXPOS -21.5
 #define MENU_DESCYPOS 12
-#define MENU_DESCSCALE 1
-#define MENU_DESCTXTSIZEX 5
-#define MENU_DESCTXTSIZEY 5
 #define MENU_DESCTXTASPECT 885
 #define MENU_DESCLINEMAX 4
 #define MENU_DESCCHARMAX 100
