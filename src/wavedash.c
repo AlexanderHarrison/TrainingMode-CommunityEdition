@@ -16,33 +16,37 @@ static EventOption WdOptions_Main[] = {
     {
         .kind = OPTKIND_TOGGLE,
         .name = "Target",
-        .desc = "Highlight an area of the stage to wavedash towards.",
+        .desc = {"Highlight an area of the stage to wavedash towards."},
     },
     // HUD
     {
         .kind = OPTKIND_TOGGLE,
         .name = "HUD",
-        .desc = "Toggle visibility of the HUD.",
+        .desc = {"Toggle visibility of the HUD."},
         .val = 1,
     },
     // Tips
     {
         .kind = OPTKIND_TOGGLE,
         .name = "Tips",
-        .desc = "Toggle the onscreen display of tips.",
+        .desc = {"Toggle the onscreen display of tips."},
         .val = 1,
     },
     // Help
     {
         .kind = OPTKIND_INFO,
         .name = "Help",
-        .desc = "A wavedash is performed by air-dodging diagonally down\nas soon you leave the ground from a jump, causing the fighter\nto slide a short distance. This technique will allow you to quickly\nadjust your position and even attack while sliding.",
+        .desc =
+            {"A wavedash is performed by air-dodging diagonally down",
+             "as soon you leave the ground from a jump, causing the fighter",
+             "to slide a short distance. This technique will allow you to quickly",
+             "adjust your position and even attack while sliding."},
     },
     // Exit
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
-        .desc = "Return to the Event Selection Screen.",
+        .desc = {"Return to the Event Selection Screen."},
         .OnSelect = Event_Exit,
     },
 };

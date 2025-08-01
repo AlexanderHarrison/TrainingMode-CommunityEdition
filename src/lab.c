@@ -141,7 +141,7 @@ void Lab_AddCustomOSD(GOBJ *menu_gobj) {
     LabOptions_CustomOSDs[row]= (EventOption) {
         .kind = OPTKIND_FUNC,
         .name = row_text,
-        .desc = "Remove this Custom OSD.",
+        .desc = {"Remove this Custom OSD."},
         .OnSelect = Lab_RemoveCustomOSD,
     };
 }

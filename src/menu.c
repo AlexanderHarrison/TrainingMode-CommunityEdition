@@ -564,40 +564,12 @@ void EventMenu_UpdateText(GOBJ *gobj)
 
     // Update Description
     text = menu_data->text_desc;
-    char *msg = curr_option->desc;
-
-    int line_num = 0;
-    char *line_start = msg;
-
-    while (line_num < MENU_DESCLINEMAX && *line_start != '\0') {
-        // The end of the line is next '\n' or end of string
-        char *line_end = strchr(line_start, '\n');
-        if (!line_end) {
-            line_end = line_start + strlen(line_start); // Point to null terminator
-        }
-
-        int line_length = line_end - line_start;
-        if (line_length > MENU_DESCCHARMAX) {
-            assert("MENU_DESCCHARMAX exceeded!");
-        }
-
-        // Copy line to buffer
-        char msg_line[MENU_DESCCHARMAX + 1];
-        memcpy(msg_line, line_start, line_length);
-        msg_line[line_length] = '\0';
-
-        Text_SetText(text, line_num, msg_line);
-        line_num++;
-
-        // Move to start of next line
-        if (*line_end == '\n') {
-            line_start = line_end + 1;
-        } else {
-            break;
-        }
-    }
-    for (int i = line_num; i < MENU_DESCLINEMAX; i++) {
-        Text_SetText(text, i, "");
+    for (int i = 0; i < MENU_DESCLINEMAX; i++) {
+        char *line = curr_option->desc[i];
+        if (line)
+            Text_SetText(text, i, line);
+        else
+            Text_SetText(text, i, "");
     }
 
     for (int i = 0; i < min(menu->option_num, MENU_MAXOPTION); i++)

@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #define MENU_MAXOPTION 9
+#define MENU_DESCLINEMAX 4
 #define MENU_SCROLLOFF 2
 #define MENU_RAPID_INTERVAL 5
 #define MENU_RAPID_START 15
@@ -33,7 +34,7 @@ typedef struct EventOption
     s16 val;                                        // value of this option
     s16 val_prev;                                   // previous value of this option
     char *name;                                     // pointer to the name of this option
-    char *desc;                                     // pointer to the description string for this option
+    char *desc[MENU_DESCLINEMAX];                   // pointer to the description string array for this option
     union {
         EventMenu *menu;                            // pointer to submenu for OPTKIND_MENU
         const char **values;                        // options for OPTKIND_STRING
@@ -135,8 +136,6 @@ enum option_kind {
 #define MENU_DESCXPOS -21.5
 #define MENU_DESCYPOS 12
 #define MENU_DESCTXTASPECT 885
-#define MENU_DESCLINEMAX 4
-#define MENU_DESCCHARMAX 100
 #define MENU_DESCYOFFSET 30
 // menu option name
 #define MENU_OPTIONNAMEXPOS -430

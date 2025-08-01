@@ -18,7 +18,8 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
         .kind = OPTKIND_STRING,
         .value_num = sizeof(LcOptions_Barrel) / 4,
         .name = "Target",
-        .desc = "Enable a target to attack. Use DPad down to\nmanually move it.",
+        .desc = {"Enable a target to attack. Use DPad down to",
+                 "manually move it."},
         .values = LcOptions_Barrel,
     },
     // HUD
@@ -26,27 +27,30 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
         .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "HUD",
-        .desc = "Toggle visibility of the HUD.",
+        .desc = {"Toggle visibility of the HUD."},
     },
     // Tips
     {
         .kind = OPTKIND_TOGGLE,
         .val = 1,
         .name = "Tips",
-        .desc = "Toggle the onscreen display of tips.",
+        .desc = {"Toggle the onscreen display of tips."},
         .OnChange = Tips_Toggle,
     },
     // Help
     {
         .kind = OPTKIND_INFO,
-        .name = "Help",                                                                                                                                                                                             // pointer to a string
-        .desc = "L-canceling is performed by pressing L, R, or Z up to \n7 frames before landing from a non-special aerial\nattack. This will cut the landing lag in half, allowing \nyou to act sooner after attacking.", // string describing what this option does
+        .name = "Help", // pointer to a string
+        .desc = {"L-canceling is performed by pressing L, R, or Z up to ",
+                 "7 frames before landing from a non-special aerial",
+                 "attack. This will cut the landing lag in half, allowing ",
+                 "you to act sooner after attacking."},
     },
     // Exit
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
-        .desc = "Return to the Event Selection Screen.",
+        .desc = {"Return to the Event Selection Screen."},
         .OnSelect = Event_Exit,
     },
 };
