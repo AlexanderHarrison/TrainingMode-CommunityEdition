@@ -54,9 +54,6 @@ enum reset_pos
 // Main Menu
 static const char *LdshOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced"};
 static const char *LdshOptions_Start[] = {"Ledge", "Falling", "Stage", "Respawn Platform"};
-static const char *LdshOptions_HUD[] = {"On", "Off"};
-static const char *LdshOptions_Inv[] = {"Off", "On"};
-static const char *LdshOptions_Overlays[] = {"Off", "On"};
 static float LdshOptions_GameSpeeds[] = {1.f, 5.f/6.f, 2.f/3.f, 1.f/2.f, 1.f/4.f};
 static const char *LdshOptions_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"};
 static const char *LdshOptions_Reset[] = {"None", "Same Side", "Swap", "Swap on Success", "Random"};
@@ -69,7 +66,8 @@ static EventOption LdshOptions_Main[] = {
         .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_Start) / 4,
         .name = "Starting Position",
-        .desc = "Choose where the fighter is placed \nafter resetting positions.",
+        .desc = {"Choose where the fighter is placed ",
+                 "after resetting positions."},
         .values = LdshOptions_Start,
         .OnChange = Ledgedash_ToggleStartPosition,
     },
@@ -78,86 +76,88 @@ static EventOption LdshOptions_Main[] = {
         .value_num = sizeof(LdshOptions_Reset) / 4,
         .val = OPTRESET_SAME_SIDE,
         .name = "Reset",
-        .desc = "Change where the fighter gets placed\nafter a ledgedash attempt.",
+        .desc = {"Change where the fighter gets placed",
+                 "after a ledgedash attempt."},
         .values = LdshOptions_Reset,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "HUD",
-        .desc = "Toggle visibility of the HUD.",
-        .values = LdshOptions_HUD,
+        .desc = {"Toggle visibility of the HUD."},
+        .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_HUD) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Tips",
-        .desc = "Toggle the onscreen display of tips.",
-        .values = LdshOptions_HUD,
+        .desc = {"Toggle the onscreen display of tips."},
+        .val = 1,
         .OnChange = Tips_Toggle,
     },
     {
         .kind = OPTKIND_STRING,
         .value_num = sizeof(LdshOptions_CamMode) / 4,
         .name = "Camera Mode",
-        .desc = "Adjust the camera's behavior.\nIn advanced mode, use C-Stick while holding\nA/B/Y to pan, rotate and zoom, respectively.",
+        .desc = {"Adjust the camera's behavior.",
+                 "In advanced mode, use C-Stick while holding",
+                 "A/B/Y to pan, rotate and zoom, respectively."},
         .values = LdshOptions_CamMode,
         .OnChange = Ledgedash_ChangeCamMode,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_Inv) / 4,
+        .kind = OPTKIND_TOGGLE,
         .name = "Keep Ledge Invincibility",
-        .desc = "Keep maximum invincibility while on the ledge\nto practice the ledgedash inputs.",
-        .values = LdshOptions_Inv,
+        .desc = {"Keep maximum invincibility while on the ledge",
+                 "to practice the ledgedash inputs."},
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_GameSpeedText) / sizeof(*LdshOptions_GameSpeedText),
+        .value_num = sizeof(LdshOptions_GameSpeedText) /
+                     sizeof(*LdshOptions_GameSpeedText),
         .name = "Game Speed",
-        .desc = "Change how fast the game engine runs.",
+        .desc = {"Change how fast the game engine runs."},
         .values = LdshOptions_GameSpeedText,
     },
     {
-        .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_Overlays) / sizeof(*LdshOptions_Overlays),
+        .kind = OPTKIND_TOGGLE,
         .name = "Color Overlays",
-        .desc = "Show which state you are in with a color overlay.",
-        .values = LdshOptions_Overlays,
+        .desc = {"Show which state you are in with a color overlay."},
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(LdshOptions_ResetDelay) / sizeof(*LdshOptions_ResetDelay),
+        .value_num =
+            sizeof(LdshOptions_ResetDelay) / sizeof(*LdshOptions_ResetDelay),
         .val = 1,
         .name = "Reset Delay",
-        .desc = "Change how quickly you can start a new ledgedash.",
+        .desc = {"Change how quickly you can start a new ledgedash."},
         .values = LdshOptions_ResetDelay,
     },
     {
-        .kind = OPTKIND_FUNC,
-        .name = "About",
-        .desc = "Ledgedashing is the act of wavedashing onto stage from ledge.\nThis is most commonly done by dropping off ledge, double jumping \nimmediately, and quickly airdodging onto stage. Each input \nis performed quickly after the last, making it difficult and risky.",
+        .kind = OPTKIND_INFO,
+        .name = "HELP",
+        .desc =
+            {"Ledgedashing is the act of wavedashing onto stage from ledge.",
+             "This is most commonly done by dropping off ledge, double jumping ",
+             "immediately, and quickly airdodging onto stage. Each input",
+             "is performed quickly after the last, making it difficult and risky."},
     },
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
-        .desc = "Return to the Event Selection Screen.",
+        .desc = {"Return to the Event Selection Screen."},
         .OnSelect = Event_Exit,
     },
 };
 
-static const char *LdshOptions_FrameAdvance[] = {"Off", "On"};
 static EventOption Ldsh_FrameAdvance = {
-    .kind = OPTKIND_STRING,
-    .value_num = sizeof(LdshOptions_FrameAdvance) / 4,
+    .kind = OPTKIND_TOGGLE,
     .name = "Frame Advance",
-    .desc = "Enable frame advance. Press to advance one\nframe. Hold to advance at normal speed.",
-    .values = LdshOptions_FrameAdvance,
+    .desc = {"Enable frame advance. Press to advance one",
+             "frame. Hold to advance at normal speed."},
 };
 
 static Shortcut Ldsh_Shortcuts[] = {
     {
-        .buttons_mask = HSD_BUTTON_A,
+        .button_mask = HSD_BUTTON_A,
         .option = &Ldsh_FrameAdvance,
     }
 };

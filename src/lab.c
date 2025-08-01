@@ -71,10 +71,6 @@ RecInputs *Lab_GetAlteringInputs(void) {
 }
 
 void Lab_ChangeAlterInputsFrame(GOBJ *menu_gobj, int value) {
-    Lab_SetAlterInputsMenuOptions(menu_gobj);
-}
-
-int Lab_SetAlterInputsMenuOptions(GOBJ *menu_gobj) {
     RecInputData *rec = Lab_GetAlteringRecording();
     int frame = LabOptions_AlterInputs[OPTINPUT_FRAME].val;
     if (rec->num < frame)
@@ -93,7 +89,6 @@ int Lab_SetAlterInputsMenuOptions(GOBJ *menu_gobj) {
     LabOptions_AlterInputs[OPTINPUT_L].val        = inputs->btn_L;
     LabOptions_AlterInputs[OPTINPUT_R].val        = inputs->btn_R;
     LabOptions_AlterInputs[OPTINPUT_Z].val        = inputs->btn_Z;
-    return 1;
 }
 
 void Lab_ChangeInputs(GOBJ *menu_gobj, int value) {
@@ -146,7 +141,7 @@ void Lab_AddCustomOSD(GOBJ *menu_gobj) {
     LabOptions_CustomOSDs[row]= (EventOption) {
         .kind = OPTKIND_FUNC,
         .name = row_text,
-        .desc = "Remove this Custom OSD.",
+        .desc = {"Remove this Custom OSD."},
         .OnSelect = Lab_RemoveCustomOSD,
     };
 }
@@ -2972,9 +2967,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     Text_AddSubtext(text_curr, -460, 285, "A = Save Input  X = Delete Input  B = Return");
     Text_AddSubtext(text_curr, -460, 320, "Z = Reversible");
 
-    // hide original menu
-    event_vars->hide_menu = 1;
-
     // set pointers to custom gobj
     menu_data->custom_gobj = tdi_gobj;
     menu_data->custom_gobj_destroy = CustomTDI_Destroy;
@@ -2996,7 +2988,7 @@ int CustomTDI_Update(GOBJ *gobj)
     int inputs = pad->down;
 
     // if press A, save stick
-    if ((inputs & HSD_BUTTON_A) != 0 && stc_tdi_val_num < TDI_HITNUM) {
+    if ((inputs & HSD_BUTTON_A) && stc_tdi_val_num < TDI_HITNUM) {
         GOBJ *hmn = Fighter_GetGObj(0);
         GOBJ *cpu = Fighter_GetGObj(1);
         FighterData *hmn_data = hmn->userdata;
@@ -3020,13 +3012,13 @@ int CustomTDI_Update(GOBJ *gobj)
     }
 
     // if press X, go back a hit
-    if ((inputs & HSD_BUTTON_X) != 0 && stc_tdi_val_num > 0) {
+    if ((inputs & HSD_BUTTON_X) && stc_tdi_val_num > 0) {
         stc_tdi_val_num--;
         SFX_PlayCommon(0);
     }
 
     // if press B, exit
-    if ((inputs & HSD_BUTTON_B) != 0)
+    if (inputs & HSD_BUTTON_B)
     {
         CustomTDI_Destroy(gobj);
         return 1;
@@ -3112,7 +3104,6 @@ void CustomTDI_Destroy(GOBJ *gobj)
     GObj_Destroy(gobj);
 
     // show menu
-    event_vars->hide_menu = 0;
     menu_data->custom_gobj = 0;
     menu_data->custom_gobj_think = 0;
     menu_data->custom_gobj_destroy = 0;
@@ -3709,9 +3700,9 @@ void Record_SetInputs(GOBJ *fighter, RecInputs *inputs, bool mirror) {
     // It would be nice to simply overwrite the raw inputs with recording inputs,
     // and let the game copy it over to the pads we wrote above and internal UCF pads,
     // but alas TM has too much cruft for this to be feasible.
-    int qidx = stc_hsd_padlibdata->qread - 1;
+    int qidx = stc_padlibdata->qread - 1;
     if (qidx < 0) qidx += 5;
-    HSD_PadData *pads = &stc_hsd_padlibdata->queue[qidx];
+    HSD_PadData *pads = &stc_padlibdata->queue[qidx];
     PADStatus *stat = &pads->stat[fighter_data->pad_index];
     stat->button = pad->held;
     stat->stickX = pad->stickX;
@@ -4361,14 +4352,12 @@ void Record_MemcardLoad(int slot, int file_no)
 
             // enter recording menu
             MenuData *menu_data = event_vars->menu_gobj->userdata;
-            EventMenu *curr_menu = menu_data->currMenu;
-            curr_menu->state = EMSTATE_OPENSUB;
+            EventMenu *curr_menu = menu_data->curr_menu;
             // update curr_menu
             EventMenu *next_menu = curr_menu->options[2].menu;
             next_menu->prev = curr_menu;
-            next_menu->state = EMSTATE_FOCUS;
             curr_menu = next_menu;
-            menu_data->currMenu = curr_menu;
+            menu_data->curr_menu = curr_menu;
 
             // save to personal savestate
             event_vars->Savestate_Save_v1(event_vars->savestate, 0);
@@ -4667,7 +4656,6 @@ void Export_Init(GOBJ *menu_gobj)
     // initialize memcard menu
     Export_SelCardInit(export_gobj);
 
-    event_vars->hide_menu = 1;                       // hide original menu
     menu_data->custom_gobj = export_gobj;            // set custom gobj
     menu_data->custom_gobj_think = Export_Think;     // set think function
     menu_data->custom_gobj_destroy = Export_Destroy; // set destroy function
@@ -4726,7 +4714,6 @@ void Export_Destroy(GOBJ *export_gobj)
     GObj_Destroy(export_gobj);
 
     // show menu
-    event_vars->hide_menu = 0;
     menu_data->custom_gobj = 0;
     menu_data->custom_gobj_think = 0;
     menu_data->custom_gobj_destroy = 0;
@@ -4860,7 +4847,6 @@ int Export_SelCardThink(GOBJ *export_gobj)
         export_data->is_inserted[i] = is_inserted;
     }
 
-    // if left
     if ((inputs & HSD_BUTTON_LEFT) || (inputs & HSD_BUTTON_DPAD_LEFT))
     {
         if (export_data->slot > 0)
@@ -4870,7 +4856,6 @@ int Export_SelCardThink(GOBJ *export_gobj)
         }
     }
 
-    // if right
     if ((inputs & HSD_BUTTON_RIGHT) || (inputs & HSD_BUTTON_DPAD_RIGHT))
     {
         if (export_data->slot < 1)
@@ -4881,7 +4866,6 @@ int Export_SelCardThink(GOBJ *export_gobj)
     }
 
     int cursor = export_data->slot;
-    // if press A,
     if ((inputs & HSD_BUTTON_A) || (inputs & HSD_BUTTON_START))
     {
         // ensure it can be saved
@@ -4901,9 +4885,7 @@ int Export_SelCardThink(GOBJ *export_gobj)
         else
             SFX_PlayCommon(3);
     }
-
-    // if press B,
-    if ((inputs & HSD_BUTTON_B))
+    else if (inputs & HSD_BUTTON_B)
     {
         Export_Destroy(export_gobj);
 
@@ -5074,7 +5056,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
 
     // get pausing players inputs
     HSD_Pad *pad = PadGetMaster(stc_hmn_controller);
-    int inputs = pad->rapidFire;
+    int inputs = pad->repeat;
     int input_down = pad->down;
     u8 *cursor = export_data->key_cursor;
     int update_keyboard = 0;
@@ -5173,8 +5155,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
             SFX_PlayCommon(3);
         }
     }
-    // if B
-    else if ((inputs & HSD_BUTTON_B))
+    else if (inputs & HSD_BUTTON_B)
     {
 
         // check if can delete
@@ -5203,8 +5184,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
             return 0;
         }
     }
-    // if Y
-    if ((inputs & HSD_BUTTON_Y))
+    if (inputs & HSD_BUTTON_Y)
     {
         // toggle capslock
         if (export_data->caps_lock == 0)
@@ -5217,8 +5197,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
 
         SFX_PlayCommon(1);
     }
-    // if X
-    if ((inputs & HSD_BUTTON_X))
+    if (inputs & HSD_BUTTON_X)
     {
 
         // check if any remaining characters
@@ -5244,8 +5223,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
             TMLOG("max characters!\n");
         }
     }
-    // if START
-    if ((inputs & HSD_BUTTON_START))
+    if (inputs & HSD_BUTTON_START)
     {
         // at least 1 character
         if (export_data->filename_cursor > 0)
@@ -5354,7 +5332,6 @@ int Export_ConfirmThink(GOBJ *export_gobj)
 
         int update_cursor = 0;
 
-        // if left
         if ((inputs & HSD_BUTTON_LEFT) || (inputs & HSD_BUTTON_DPAD_LEFT))
         {
             if (export_data->confirm_cursor > 0)
@@ -5363,7 +5340,6 @@ int Export_ConfirmThink(GOBJ *export_gobj)
                 update_cursor = 1;
             }
         }
-        // if right
         else if ((inputs & HSD_BUTTON_RIGHT) || (inputs & HSD_BUTTON_DPAD_RIGHT))
         {
             if (export_data->confirm_cursor < 1)
@@ -5372,9 +5348,7 @@ int Export_ConfirmThink(GOBJ *export_gobj)
                 update_cursor = 1;
             }
         }
-
-        // if b
-        else if ((inputs & HSD_BUTTON_B))
+        else if (inputs & HSD_BUTTON_B)
         {
             Export_ConfirmExit(export_gobj);
 
@@ -5383,7 +5357,6 @@ int Export_ConfirmThink(GOBJ *export_gobj)
 
             return 0;
         }
-        // if a
         else if ((inputs & HSD_BUTTON_A) || (inputs & HSD_BUTTON_START))
         {
 

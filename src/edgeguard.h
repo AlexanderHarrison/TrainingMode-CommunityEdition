@@ -21,8 +21,6 @@ static EventMenu Menu_CustomHitStrength;
 
 // Common values -------------------------------------------------
 
-static const char *OffOn[2] = {"Off", "On"};
-
 typedef struct KBValues {
     float mag_min, mag_max;
     float ang_min, ang_max;
@@ -90,20 +88,20 @@ static EventOption Options_Main[] = {
         .kind = OPTKIND_MENU,
         .menu = 0, // Set in Event_Init
         .name = "Recovery Options",
-        .desc = "Alter the CPU's recovery options.",
+        .desc = {"Alter the CPU's recovery options."},
     },
     {
         .kind = OPTKIND_INT,
         .value_num = 999,
         .name = "Player Percent",
-        .desc = "Adjust the player's percent.",
+        .desc = {"Adjust the player's percent."},
         .format = "%d%%",
         .OnChange = ChangePlayerPercent,
     },
     {
         .kind = OPTKIND_STRING,
         .name = "Hit Strength",
-        .desc = "How far the CPU will be knocked back.",
+        .desc = {"How far the CPU will be knocked back."},
         .values = Values_HitStrength,
         .value_num = countof(Values_HitStrength),
         .val = 1,
@@ -112,15 +110,15 @@ static EventOption Options_Main[] = {
         .kind = OPTKIND_MENU,
         .menu = &Menu_CustomHitStrength,
         .name = "Customize Hit Strength",
-        .desc = "Manually adjust where and how far the CPU\nwill be knocked back.",
+        .desc = {"Manually adjust where and how far the CPU",
+                 "will be knocked back."},
     },
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
-        .desc = "Return to the Event Select Screen.",
+        .desc = {"Return to the Event Select Screen."},
         .OnSelect = Exit,
-    }
-};
+    }};
 
 static EventMenu Menu_Main = {
     .name = "Edgeguard",
@@ -147,7 +145,7 @@ static EventOption Options_CustomHitStrength[] = {
         .value_num = 301,
         .val = CUSTOMKB_INIT_MAGMIN,
         .name = "Knockback Min",
-        .desc = "Adjust the minimum of how far the CPU will fly.",
+        .desc = {"Adjust the minimum of how far the CPU will fly."},
         .format = "%d",
         .OnChange = ChangeCustomKB_MagMin,
     },
@@ -156,7 +154,7 @@ static EventOption Options_CustomHitStrength[] = {
         .value_num = 301,
         .val = CUSTOMKB_INIT_MAGMAX,
         .name = "Knockback Max",
-        .desc = "Adjust the maximum of how far the CPU will fly.",
+        .desc = {"Adjust the maximum of how far the CPU will fly."},
         .format = "%d",
         .OnChange = ChangeCustomKB_MagMax,
     },
@@ -166,7 +164,7 @@ static EventOption Options_CustomHitStrength[] = {
         .value_num = 91,
         .val = CUSTOMKB_INIT_ANGMIN,
         .name = "Angle Min",
-        .desc = "Adjust the minimum angle the CPU will fly.",
+        .desc = {"Adjust the minimum angle the CPU will fly."},
         .format = "%d",
         .OnChange = ChangeCustomKB_AngMin,
     },
@@ -175,7 +173,7 @@ static EventOption Options_CustomHitStrength[] = {
         .value_num = 91,
         .val = CUSTOMKB_INIT_ANGMAX,
         .name = "Angle Max",
-        .desc = "Adjust the maximum angle the CPU will fly.",
+        .desc = {"Adjust the maximum angle the CPU will fly."},
         .format = "%d",
         .OnChange = ChangeCustomKB_AngMax,
     },
@@ -185,7 +183,7 @@ static EventOption Options_CustomHitStrength[] = {
         .value_num = 1000,
         .val = CUSTOMKB_INIT_DMGMIN,
         .name = "Percent Min",
-        .desc = "Adjust the CPU's minimum percent.",
+        .desc = {"Adjust the CPU's minimum percent."},
         .format = "%d%",
         .OnChange = ChangeCustomKB_DmgMin,
     },
@@ -194,7 +192,7 @@ static EventOption Options_CustomHitStrength[] = {
         .value_num = 1000,
         .val = CUSTOMKB_INIT_DMGMAX,
         .name = "Percent Max",
-        .desc = "Adjust the CPU's maximum percent.",
+        .desc = {"Adjust the CPU's maximum percent."},
         .format = "%d%",
         .OnChange = ChangeCustomKB_DmgMax,
     },
@@ -219,47 +217,35 @@ enum options_spacies {
 
 static EventOption Options_Fox[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firefox Low",
-        .desc = "Allow Fox to aim his up special to the ledge.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Fox to aim his up special to the ledge."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firefox Mid",
-        .desc = "Allow Fox to aim his up special to the stage.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Fox to aim his up special to the stage."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firefox High",
-        .desc = "Allow Fox to aim his up special high.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Fox to aim his up special high."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
-        .desc = "Allow Fox to double jump.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Fox to double jump."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Illusion",
-        .desc = "Allow Fox to side special.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Fox to side special."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
-        .desc = "Allow Fox to fast fall.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Fox to fast fall."},
     },
 };
 static EventMenu Menu_Fox = {
@@ -272,47 +258,35 @@ static EventMenu Menu_Fox = {
 
 static EventOption Options_Falco[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firebird Low",
-        .desc = "Allow Falco to aim his up special to the ledge.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falco to aim his up special to the ledge."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firebird Mid",
-        .desc = "Allow Falco to aim his up special to the stage.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falco to aim his up special to the stage."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Firebird High",
-        .desc = "Allow Falco to aim his up special high.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falco to aim his up special high."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
-        .desc = "Allow Falco to double jump.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falco to double jump."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Phantasm",
-        .desc = "Allow Falco to side special.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falco to side special."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
-        .desc = "Allow Falco to fast fall.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falco to fast fall."},
     },
 };
 static EventMenu Menu_Falco = {
@@ -336,49 +310,39 @@ enum options_sheik {
 
 static EventOption Options_Sheik[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Vanish to Ledge",
-        .desc = "Allow Sheik to vanish to ledge and the\ntip of the stage.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Sheik to vanish to ledge and the",
+                 "tip of the stage."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Vanish to Stage",
-        .desc = "Allow Sheik to vanish deep into stage.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Sheik to vanish deep into stage."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Vanish High",
-        .desc = "Allow Sheik to vanish above the ledge\nand to platforms.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Sheik to vanish above the ledge",
+                 "and to platforms."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
-        .desc = "Allow Sheik to double jump.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Sheik to double jump."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fair",
-        .desc = "Allow Sheik to fair the player.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Sheik to fair the player."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Amsah Tech",
-        .desc = "Allow Sheik to Amsah Tech.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Sheik to Amsah Tech."},
     },
 };
 
@@ -402,41 +366,31 @@ enum options_falcon {
 
 static EventOption Options_Falcon[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Falcon Dive",
-        .desc = "Allow Falcon to Up B.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falcon to Up B."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Drift Back",
-        .desc = "Allow Falcon to drift backwards.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falcon to drift backwards."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
-        .desc = "Allow Falcon to double jump.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falcon to double jump."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
-        .desc = "Allow Falcon to fast fall.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falcon to fast fall."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Falcon Kick",
-        .desc = "Allow Falcon to Down B.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Falcon to Down B."},
     },
 };
 
@@ -458,34 +412,27 @@ enum options_marth {
 
 static EventOption Options_Marth[] = {
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Dolphin Slash Early",
-        .desc = "Allow Marth to Up B above the ledge.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Marth to Up B above the ledge."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Double Jump",
-        .desc = "Allow Marth to double jump.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Marth to double jump."},
         .val = 1,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Dancing Blade",
-        .desc = "Allow Marth to use SideB to recover and\ndelay his timing.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Marth to use SideB to recover and",
+                 "delay his timing."},
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Fair",
-        .desc = "Allow Marth to fair the player.",
-        .values = OffOn,
-        .value_num = 2,
+        .desc = {"Allow Marth to fair the player."},
     },
 };
 

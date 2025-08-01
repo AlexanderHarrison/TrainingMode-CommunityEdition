@@ -14,6 +14,7 @@ char *strrchr(const char *, int);
 char *strchr(const char *s, int c);
 int strncmp(const char *s1, const char *s2, int n);
 int strcpy(const char *s1, const char *s2);
+int strlen(const char *s);
 
 void memcpy(void *dest, void *source, int size);
 void memmove(void *dest, void *source, int size);
@@ -552,7 +553,7 @@ void OSCreateAlarm(OSAlarm *alarm);
 void OSSetPeriodicAlarm(OSAlarm *alarm, OSTime start, OSTime period, void *handler);
 void OSCancelAlarm(OSAlarm *alarm);
 void OSReport(char *, ...);
-void __assert(char *file, int line, char *assert);
+void __assert(const char *file, int line, const char *msg);
 int OSCreateHeap(void *heap_lo, void *heap_hi);
 void OSDestroyHeap(int heap_id);
 void *OSAllocFromHeap(int heap_id);
