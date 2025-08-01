@@ -2,7 +2,7 @@
 #include <stdint.h>
 
 #define MENU_MAXOPTION 9
-#define MENU_POPMAXOPTION 5
+#define MENU_SCROLLOFF 2
 
 // Custom File Structs
 typedef struct evMenu

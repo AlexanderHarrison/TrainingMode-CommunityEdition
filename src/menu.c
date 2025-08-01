@@ -242,7 +242,6 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     s32 scroll = curr_menu->scroll;
     EventOption *curr_option = &curr_menu->options[cursor + scroll];
 
-    // check for dpad down
     if (inputs & (HSD_BUTTON_DOWN | HSD_BUTTON_DPAD_DOWN)) {
         // loop to find next option
         int cursor_next = 0; // how much to move the cursor by
@@ -253,23 +252,26 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
                 break;
             }
         }
+        if (cursor_next == 0)
+            return;
 
-        // if another option exists, move down
-        if (cursor_next > 0) {
-            cursor += cursor_next;
-
-            // cursor overflowed, correct it
-            if (cursor >= MENU_MAXOPTION) {
-                scroll += (cursor - MENU_MAXOPTION + 1);
-                cursor = MENU_MAXOPTION - 1;
-            }
-
-            curr_menu->cursor = cursor;
-            curr_menu->scroll = scroll;
-
-            EventMenu_UpdateText(gobj);
-            SFX_PlayCommon(2);
+        cursor += cursor_next;
+        
+        // If cursor went too far down, scroll down to compensate
+        if (cursor >= MENU_MAXOPTION - MENU_SCROLLOFF) {
+            int max_scroll = curr_menu->option_num - MENU_MAXOPTION - scroll;
+            int want_scroll = cursor - MENU_MAXOPTION + MENU_SCROLLOFF + 1;
+            int delta_scroll = min(want_scroll, max_scroll);
+            
+            scroll += delta_scroll;
+            cursor -= delta_scroll;
         }
+
+        curr_menu->cursor = cursor;
+        curr_menu->scroll = scroll;
+
+        EventMenu_UpdateText(gobj);
+        SFX_PlayCommon(2);
     }
     else if (inputs & (HSD_BUTTON_UP | HSD_BUTTON_DPAD_UP)) {
         // loop to find next option
@@ -281,23 +283,23 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
                 break;
             }
         }
+        if (cursor_next == 0)
+            return;
 
-        // if another option exists, move up
-        if (cursor_next > 0) {
-            cursor -= cursor_next;
-
-            // cursor overflowed, correct it
-            if (cursor < 0) {
-                scroll += cursor; // effectively scroll up by adding a negative number
-                cursor = 0;       // cursor is positioned at 0
-            }
-
-            curr_menu->cursor = cursor;
-            curr_menu->scroll = scroll;
-
-            EventMenu_UpdateText(gobj);
-            SFX_PlayCommon(2);
+        cursor -= cursor_next;
+        
+        // If cursor went too far up, scroll up to compensate
+        if (cursor < MENU_SCROLLOFF) {
+            int delta_scroll = min(MENU_SCROLLOFF - cursor, scroll);
+            
+            scroll -= delta_scroll;
+            cursor += delta_scroll;
         }
+        curr_menu->cursor = cursor;
+        curr_menu->scroll = scroll;
+
+        EventMenu_UpdateText(gobj);
+        SFX_PlayCommon(2);
     }
     else if (inputs & HSD_BUTTON_B && curr_menu->prev)
     {
