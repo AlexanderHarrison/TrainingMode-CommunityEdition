@@ -2911,8 +2911,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     // create stick curr text
     Text *text_curr = Text_CreateText(2, menu_data->canvas_menu);
     userdata->text_curr = text_curr;
-    // enable align and kerning
-    text_curr->align = 0;
     text_curr->kerning = 1;
     // scale canvas
     text_curr->viewport_scale.X = MENU_CANVASSCALE;
@@ -4729,7 +4727,6 @@ void Export_SelCardInit(GOBJ *export_gobj)
     // create text
     Text *text_misc = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_misc = text_misc;
-    // enable align and kerning
     text_misc->align = 1;
     text_misc->kerning = 1;
     // scale canvas
@@ -4739,8 +4736,6 @@ void Export_SelCardInit(GOBJ *export_gobj)
     // create title text
     Text *text_title = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_title = text_title;
-    // enable align and kerning
-    text_title->align = 0;
     text_title->kerning = 1;
     // scale canvas
     text_title->trans.X = -23;
@@ -4751,8 +4746,6 @@ void Export_SelCardInit(GOBJ *export_gobj)
     // create desc text
     Text *text_desc = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_desc = text_desc;
-    // enable align and kerning
-    text_desc->align = 0;
     text_desc->kerning = 1;
     // scale canvas
     text_desc->trans.X = -23;
@@ -4952,7 +4945,6 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     // create keyboard text
     Text *text_keyboard = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_keyboard = text_keyboard;
-    // enable align and kerning
     text_keyboard->align = 1;
     text_keyboard->kerning = 1;
     // scale canvas
@@ -4981,8 +4973,6 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     char *cpu_name = Fighter_GetName(header->metadata.cpu);
     Text *text_filedetails = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_filedetails = text_filedetails;
-    // enable align and kerning
-    text_filedetails->align = 0;
     text_filedetails->kerning = 1;
     // scale canvas
     text_filedetails->trans.X = EXP_FILEDETAILS_X;
@@ -4995,8 +4985,6 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     // create title text
     Text *text_title = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_title = text_title;
-    // enable align and kerning
-    text_title->align = 0;
     text_title->kerning = 1;
     // scale canvas
     text_title->trans.X = -23;
@@ -5008,8 +4996,6 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     // create desc text
     Text *text_desc = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_desc = text_desc;
-    // enable align and kerning
-    text_desc->align = 0;
     text_desc->kerning = 1;
     // scale canvas
     text_desc->trans.X = -23;
@@ -5022,8 +5008,6 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     // create filename
     Text *text_filename = Text_CreateText(2, menu_data->canvas_menu);
     export_data->text_filename = text_filename;
-    // enable align and kerning
-    text_filename->align = 0;
     text_filename->kerning = 1;
     text_filename->use_aspect = 1;
     GXColor filename_color = {225, 225, 225, 255};
@@ -5276,7 +5260,6 @@ void Export_ConfirmInit(GOBJ *export_gobj)
     // create text
     Text *confirm_text = Text_CreateText(2, menu_data->canvas_popup);
     export_data->confirm_text = confirm_text;
-    // enable align and kerning
     confirm_text->align = 1;
     confirm_text->kerning = 1;
     // scale canvas
@@ -5360,7 +5343,6 @@ int Export_ConfirmThink(GOBJ *export_gobj)
                 // create text
                 Text *confirm_text = Text_CreateText(2, menu_data->canvas_popup);
                 export_data->confirm_text = confirm_text;
-                // enable align and kerning
                 confirm_text->align = 1;
                 confirm_text->kerning = 1;
                 // scale canvas

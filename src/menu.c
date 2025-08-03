@@ -469,13 +469,11 @@ void EventMenu_CreateText(GOBJ *gobj)
     text = Text_CreateText(2, canvas_index);
     text->gobj->gx_cb = EventMenu_TextGX;
     menu_data->text_title = text;
-    // enable align and kerning
     text->kerning = 1;
     text->use_aspect = 1;
-    // scale canvas
+    text->aspect.X = MENU_TITLEASPECT;
     text->viewport_scale.X = MENU_CANVASSCALE;
     text->viewport_scale.Y = MENU_CANVASSCALE;
-    text->aspect.X = MENU_TITLEASPECT;
 
     // output menu title
     float x = MENU_TITLEXPOS;
@@ -488,14 +486,13 @@ void EventMenu_CreateText(GOBJ *gobj)
     text->gobj->gx_cb = EventMenu_TextGX;
     menu_data->text_desc = text;
 
-    text->kerning = 1;
-    text->use_aspect = 1;
-
-    text->viewport_scale.X = MENU_CANVASSCALE;
-    text->viewport_scale.Y = MENU_CANVASSCALE;
     text->trans.X = MENU_DESCXPOS;
     text->trans.Y = MENU_DESCYPOS;
-    text->aspect.X = (MENU_DESCTXTASPECT);
+    text->kerning = 1;
+    text->use_aspect = 1;
+    text->aspect.X = MENU_DESCTXTASPECT;
+    text->viewport_scale.X = MENU_CANVASSCALE;
+    text->viewport_scale.Y = MENU_CANVASSCALE;
 
     for (int i = 0; i < MENU_DESCLINEMAX; i++)
     {
@@ -509,10 +506,9 @@ void EventMenu_CreateText(GOBJ *gobj)
     menu_data->text_name = text;
     text->kerning = 1;
     text->use_aspect = 1;
-    // scale canvas
+    text->aspect.X = MENU_NAMEASPECT;
     text->viewport_scale.X = MENU_CANVASSCALE;
     text->viewport_scale.Y = MENU_CANVASSCALE;
-    text->aspect.X = MENU_NAMEASPECT;
 
     for (int i = 0; i < MENU_MAXOPTION; i++)
     {
@@ -525,14 +521,12 @@ void EventMenu_CreateText(GOBJ *gobj)
     text = Text_CreateText(2, canvas_index);
     text->gobj->gx_cb = EventMenu_TextGX;
     menu_data->text_value = text;
-    // enable align and kerning
     text->align = 1;
     text->kerning = 1;
     text->use_aspect = 1;
-    // scale canvas
+    text->aspect.X = MENU_VALASPECT;
     text->viewport_scale.X = MENU_CANVASSCALE;
     text->viewport_scale.Y = MENU_CANVASSCALE;
-    text->aspect.X = MENU_VALASPECT;
 
     // Output all values
     for (int i = 0; i < MENU_MAXOPTION; i++)
