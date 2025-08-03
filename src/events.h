@@ -136,12 +136,6 @@ typedef struct Rect
     float x, y, w, h;
 } Rect;
 
-static inline void RectCentre(Vec2 *dst, Rect *rect)
-{
-    dst->X = rect->x + rect->w / 2.f;
-    dst->Y = rect->y + rect->h / 2.f;
-}
-
 static inline void RectShrink(Rect *dst, float size)
 {
     dst->x += size;

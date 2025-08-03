@@ -76,7 +76,7 @@ struct Text
     u8 x9d;                                   // 0x9d
     u8 x9e;                                   // 0x9e, checked per character, 1 and 2 are valid inputs. updates the float @ x70
     u8 x9f;                                   // 0x9f
-    int x100;                                 // 0xa0
+    int xa0;                                  // 0xa0
 };
 
 /*** Functions ***/

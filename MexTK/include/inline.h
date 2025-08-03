@@ -64,7 +64,7 @@ static void PRIM_DRAW(float x, float y, float z, u32 color)
     *(volatile float *)(gx_pipe) = x;
     *(volatile float *)(gx_pipe) = y;
     *(volatile float *)(gx_pipe) = z;
-    *(volatile int   *)(gx_pipe) = color;
+    *(volatile u32   *)(gx_pipe) = color;
 }
 
 static HSD_Pad *PadGetMaster(int player_index)

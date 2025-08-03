@@ -665,6 +665,10 @@ static GXColor stc_msg_colors[] = {
 
 void HUD_DrawRects(Rect *rects, GXColor *colors, int count)
 {
+    HUDCamData *cam_data = stc_event_vars.hudcam_gobj->userdata;
+    if (cam_data->hide)
+        return;
+
     COBJ *cur_cam = COBJ_GetCurrent(stc_event_vars.hudcam_gobj->hsd_object);
     CObj_SetCurrent(stc_event_vars.hudcam_gobj->hsd_object);
     

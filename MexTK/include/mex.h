@@ -278,7 +278,7 @@ void *calloc(int size);
 void bp();
 
 // see https://smashboards.com/threads/primitive-drawing-module.454232/
-PRIM *PRIM_NEW(int vert_count, int params1, int params2);
+void PRIM_NEW(int vert_count, int params1, int params2);
 void PRIM_CLOSE();
 
 static void MEX_InitRELDAT(HSD_Archive *archive, char *symbol_name, void **return_func_array)
