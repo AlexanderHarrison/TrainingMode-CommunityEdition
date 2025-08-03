@@ -2825,12 +2825,12 @@ void DIDraw_GX()
                     Vec2 *vertices = didraw->vertices[j];
 
                     // alloc prim
-                    PRIM *gx = PRIM_NEW(vertex_num, 0x001F1306, 0x00000C55);
+                    PRIM_NEW(vertex_num, 0x001F1306, 0x00000C55);
 
                     // draw each
                     for (int k = 0; k < vertex_num; k++)
                     {
-                        PRIM_DRAW(gx, vertices[k].X, vertices[k].Y, 0, 0x008affff);
+                        PRIM_DRAW(vertices[k].X, vertices[k].Y, 0, 0x008affff);
                     }
 
                     // close

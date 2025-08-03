@@ -314,7 +314,6 @@ typedef struct ClassicLineup ClassicLineup;
 typedef struct FtVarKirby FtVarKirby;
 
 // Custom
-typedef struct PRIM PRIM;
 typedef struct Stc_icns Stc_icns;
 typedef struct MEXPlaylist MEXPlaylist;
 typedef struct MEXPlaylistEntry MEXPlaylistEntry;

@@ -38,10 +38,7 @@ typedef enum SSMKind
 
 /*** Structs ***/
 
-struct PRIM
-{
-    volatile void *data;
-};
+typedef volatile void PRIM;
 
 struct Stc_icns
 {

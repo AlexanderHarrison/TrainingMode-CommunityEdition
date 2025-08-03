@@ -131,6 +131,56 @@ typedef struct evFunction
     EventMenu **menu_start;
 } evFunction;
 
+typedef struct Rect
+{
+    float x, y, w, h;
+} Rect;
+
+static inline void RectCentre(Vec2 *dst, Rect *rect)
+{
+    dst->X = rect->x + rect->w / 2.f;
+    dst->Y = rect->y + rect->h / 2.f;
+}
+
+static inline void RectShrink(Rect *dst, float size)
+{
+    dst->x += size;
+    dst->y += size;
+    dst->w -= size * 2.f;
+    dst->h -= size * 2.f;
+}
+
+static inline void RectSplitL(Rect *dst, Rect *src, float size, float padding)
+{
+    *dst = (Rect) { src->x, src->y, size, src->h };
+    src->x += size + padding;
+    src->w -= size + padding;
+}
+
+static inline void RectSplitR(Rect *dst, Rect *src, float size, float padding)
+{
+    *dst = (Rect) { src->x + src->w - size, src->y, size, src->h };
+    src->w -= size + padding;
+}
+
+static inline void RectSplitU(Rect *dst, Rect *src, float size, float padding)
+{
+    *dst = (Rect) { src->x, src->y, src->w, size };
+    src->y += size + padding;
+    src->h -= size + padding;
+}
+
+static inline void RectSplitD(Rect *dst, Rect *src, float size, float padding)
+{
+    *dst = (Rect) { src->x, src->y + src->h - size, src->w, size };
+    src->h -= size + padding;
+}
+
+void HUD_DrawRects(Rect *rects, GXColor *colors, int count);
+void HUD_DrawText(const char *text, Rect *pos, float size);
+void HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
+void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int action_count);
+
 typedef struct RNGControl
 {
     u8 peach_item;      // 0x0
@@ -142,6 +192,9 @@ typedef struct RNGControl
 
 typedef struct HUDCamData {
     bool hide;
+    int canvas;
+    u32 text_cache_used;
+    Text *text_cache[32];
 } HUDCamData;
 
 typedef struct EventVars
@@ -169,6 +222,10 @@ typedef struct EventVars
     HSD_Archive *event_archive; // event archive header
     DevText *db_console_text;
     GOBJ *hudcam_gobj;
+    void (*HUD_DrawRects)(Rect *rects, GXColor *colors, int count);
+    void (*HUD_DrawText)(const char *text, Rect *pos, float size);
+    void (*HUD_DrawActionLogBar)(u8 *action_log, GXColor *color_lookup, int log_count);
+    void (*HUD_DrawActionLogKey)(char **action_names, GXColor *action_colors, int action_count);
 } EventVars;
 #define event_vars_ptr_loc ((EventVars**)0x803d7054)
 #define event_vars (*event_vars_ptr_loc)

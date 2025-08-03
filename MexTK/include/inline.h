@@ -59,12 +59,12 @@ static float ceil(float x)
     return (float)trunc;
 }
 
-static void PRIM_DRAW(PRIM *gx, float x, float y, float z, int color)
+static void PRIM_DRAW(float x, float y, float z, u32 color)
 {
-    *(volatile float *)(gx->data) = x;
-    *(volatile float *)(gx->data) = y;
-    *(volatile float *)(gx->data) = z;
-    *(volatile int   *)(gx->data) = color;
+    *(volatile float *)(gx_pipe) = x;
+    *(volatile float *)(gx_pipe) = y;
+    *(volatile float *)(gx_pipe) = z;
+    *(volatile int   *)(gx_pipe) = color;
 }
 
 static HSD_Pad *PadGetMaster(int player_index)

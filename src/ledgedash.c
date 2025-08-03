@@ -1,13 +1,13 @@
 #include "ledgedash.h"
 
-static GXColor tmgbar_black = {40, 40, 40, 255};
-static GXColor tmgbar_grey = {120, 120, 120, 255};
-static GXColor tmgbar_blue = {128, 128, 255, 255};
-static GXColor tmgbar_green = {128, 255, 128, 255};
-static GXColor tmgbar_cyan = {52, 202, 228, 255};
-static GXColor tmgbar_red = {255, 128, 128, 255};
-static GXColor tmgbar_indigo = {230, 22, 198, 255};
-static GXColor tmgbar_white = {255, 255, 255, 255};
+static GXColor tmgbar_black = {40, 40, 40, 180};
+static GXColor tmgbar_grey = {120, 120, 120, 180};
+static GXColor tmgbar_blue = {128, 128, 255, 180};
+static GXColor tmgbar_green = {128, 255, 128, 180};
+static GXColor tmgbar_cyan = {52, 202, 228, 180};
+static GXColor tmgbar_red = {255, 128, 128, 180};
+static GXColor tmgbar_indigo = {230, 22, 198, 180};
+static GXColor tmgbar_white = {255, 255, 255, 180};
 static GXColor *tmgbar_colors[] = {
     &tmgbar_black,
     &tmgbar_grey,
@@ -293,7 +293,6 @@ void Ledgedash_HUDInit(LedgedashData *event_data)
     Text **text_arr = &event_data->hud.text_angle;
     for (int i = 0; i < 2; i++)
     {
-
         // Create text object
         Text *hud_text = Text_CreateText(2, canvas);
         text_arr[i] = hud_text;
@@ -325,37 +324,10 @@ void Ledgedash_HUDInit(LedgedashData *event_data)
     // reset all bar colors
     JOBJ *timingbar_jobj;
     JOBJ_GetChild(hud_jobj, &timingbar_jobj, LCLJOBJ_BAR, -1); // get timing bar jobj
-    DOBJ *d = timingbar_jobj->dobj;
-    int count = 0;
-    while (d != 0)
-    {
-        // if a box dobj
-        if ((count >= 0) && (count < 30))
-        {
-
-            // if mobj exists (it will)
-            MOBJ *m = d->mobj;
-            if (m != 0)
-            {
-
-                HSD_Material *mat = m->mat;
-
-                // set alpha
-                mat->alpha = 0.7;
-
-                // set color
-                mat->diffuse = tmgbar_black;
-            }
-        }
-
-        // inc
-        count++;
-        d = d->next;
-    }
+    JOBJ_SetFlagsAll(hud_jobj, JOBJ_HIDDEN);
 }
 void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
 {
-
     // run tip logic
     Tips_Think(event_data, hmn_data);
 
@@ -498,41 +470,6 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
         JOBJ_AddAnimAll(hud_jobj, 0, matanim, 0);
         JOBJ_ReqAnimAll(hud_jobj, 0);
     }
-
-    // update bar colors
-    JOBJ *timingbar_jobj;
-    JOBJ_GetChild(hud_jobj, &timingbar_jobj, LCLJOBJ_BAR, -1); // get timing bar jobj
-    DOBJ *d = timingbar_jobj->dobj;
-    int count = 0;
-    while (d != 0)
-    {
-        // if a box dobj
-        if ((count >= 0) && (count < 30))
-        {
-
-            // if mobj exists (it will)
-            MOBJ *m = d->mobj;
-            if (m != 0)
-            {
-
-                HSD_Material *mat = m->mat;
-                int this_frame = 29 - count;
-                GXColor *bar_color;
-
-                // check if GALINT frame
-                bar_color = tmgbar_colors[event_data->action_state.action_log[this_frame]];
-
-                mat->diffuse = *bar_color;
-            }
-        }
-
-        // inc
-        count++;
-        d = d->next;
-    }
-
-    // update HUD anim
-    JOBJ_AnimAll(hud_jobj);
 }
 
 void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
@@ -700,16 +637,49 @@ void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn)
         }
     }
 }
+
 void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
 {
-
     static GXColor hitlog_ambient = {128, 0, 0, 50};
     static GXColor hit_diffuse = {255, 99, 99, 50};
     static GXColor grab_diffuse = {255, 0, 255, 50};
     static GXColor detect_diffuse = {255, 255, 255, 50};
 
     LdshHitlogData *hitlog_data = gobj->userdata;
-
+    
+    if (pass == 2) {
+        LedgedashData *event_data = event_vars->event_gobj->userdata;
+        static GXColor colors[] = {
+            {40, 40, 40, 180},
+            {120, 120, 120, 180},
+            {128, 255, 128, 180},
+            {52, 202, 228, 180},
+            {230, 22, 198, 180},
+            {255, 255, 255, 180},
+            {255, 128, 128, 180},
+            {128, 128, 255, 180},
+        };
+        static char *names[] = {
+            "Cliffwait",
+            "Fall",
+            "Jump",
+            "Airdodge",
+            "Attack",
+            "Landing",
+            "GALINT",
+        };
+        event_vars->HUD_DrawActionLogBar(
+            event_data->action_state.action_log,
+            colors,
+            countof(event_data->action_state.action_log)
+        );
+        event_vars->HUD_DrawActionLogKey(
+            names,
+            &colors[1],
+            countof(names)
+        );
+    }
+    
     for (int i = 0; i < hitlog_data->num; i++)
     {
         LdshHitboxData *this_ldsh_hit = &hitlog_data->hitlog[i];
