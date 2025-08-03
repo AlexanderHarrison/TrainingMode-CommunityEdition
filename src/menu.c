@@ -392,7 +392,6 @@ void EventMenu_CreateModel(GOBJ *gobj)
         // move it into position
         JOBJ_GetChild(jobj_rowbox, corners, 2, 3, 4, 5, -1);
         // Modify scale and position
-        jobj_rowbox->trans.Z = ROWBOX_Z;
         jobj_rowbox->scale = (Vec3){ 1, 1, 1 };
         corners[0]->trans.X = -(ROWBOX_WIDTH / 2) + ROWBOX_X;
         corners[0]->trans.Y = (ROWBOX_HEIGHT / 2) + ROWBOX_Y + (i * ROWBOX_YOFFSET);
@@ -420,7 +419,6 @@ void EventMenu_CreateModel(GOBJ *gobj)
     // move it into position
     JOBJ_GetChild(jobj_highlight, corners, 2, 3, 4, 5, -1);
     // Modify scale and position
-    jobj_highlight->trans.Z = MENUHIGHLIGHT_Z;
     jobj_highlight->scale = (Vec3)MENUHIGHLIGHT_SCALE;
     corners[0]->trans.X = -(MENUHIGHLIGHT_WIDTH / 2) + MENUHIGHLIGHT_X;
     corners[0]->trans.Y = (MENUHIGHLIGHT_HEIGHT / 2) + MENUHIGHLIGHT_Y;
@@ -477,7 +475,6 @@ void EventMenu_CreateText(GOBJ *gobj)
     // scale canvas
     text->viewport_scale.X = MENU_CANVASSCALE;
     text->viewport_scale.Y = MENU_CANVASSCALE;
-    text->trans.Z = MENU_TEXTZ;
     text->aspect.X = MENU_TITLEASPECT;
 
     // output menu title
@@ -498,7 +495,6 @@ void EventMenu_CreateText(GOBJ *gobj)
     text->viewport_scale.Y = MENU_CANVASSCALE;
     text->trans.X = MENU_DESCXPOS;
     text->trans.Y = MENU_DESCYPOS;
-    text->trans.Z = MENU_TEXTZ;
     text->aspect.X = (MENU_DESCTXTASPECT);
 
     for (int i = 0; i < MENU_DESCLINEMAX; i++)
@@ -516,7 +512,6 @@ void EventMenu_CreateText(GOBJ *gobj)
     // scale canvas
     text->viewport_scale.X = MENU_CANVASSCALE;
     text->viewport_scale.Y = MENU_CANVASSCALE;
-    text->trans.Z = MENU_TEXTZ;
     text->aspect.X = MENU_NAMEASPECT;
 
     for (int i = 0; i < MENU_MAXOPTION; i++)
@@ -537,7 +532,6 @@ void EventMenu_CreateText(GOBJ *gobj)
     // scale canvas
     text->viewport_scale.X = MENU_CANVASSCALE;
     text->viewport_scale.Y = MENU_CANVASSCALE;
-    text->trans.Z = MENU_TEXTZ;
     text->aspect.X = MENU_VALASPECT;
 
     // Output all values

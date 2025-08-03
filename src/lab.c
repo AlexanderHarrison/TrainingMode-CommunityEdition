@@ -2917,7 +2917,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     // scale canvas
     text_curr->viewport_scale.X = MENU_CANVASSCALE;
     text_curr->viewport_scale.Y = MENU_CANVASSCALE;
-    text_curr->trans.Z = MENU_TEXTZ;
     // create hit num
     Text_AddSubtext(text_curr, -50, 185, " ");
     // create lstick coords
@@ -4736,7 +4735,6 @@ void Export_SelCardInit(GOBJ *export_gobj)
     // scale canvas
     text_misc->viewport_scale.X = MENU_CANVASSCALE;
     text_misc->viewport_scale.Y = MENU_CANVASSCALE;
-    text_misc->trans.Z = MENU_TEXTZ;
 
     // create title text
     Text *text_title = Text_CreateText(2, menu_data->canvas_menu);
@@ -4749,7 +4747,6 @@ void Export_SelCardInit(GOBJ *export_gobj)
     text_title->trans.Y = -18;
     text_title->viewport_scale.X = MENU_CANVASSCALE * 2;
     text_title->viewport_scale.Y = MENU_CANVASSCALE * 2;
-    text_title->trans.Z = MENU_TEXTZ;
 
     // create desc text
     Text *text_desc = Text_CreateText(2, menu_data->canvas_menu);
@@ -4762,7 +4759,6 @@ void Export_SelCardInit(GOBJ *export_gobj)
     text_desc->trans.Y = 12;
     text_desc->viewport_scale.X = MENU_CANVASSCALE;
     text_desc->viewport_scale.Y = MENU_CANVASSCALE;
-    text_desc->trans.Z = MENU_TEXTZ;
 
     Text_AddSubtext(text_title, 0, 0, "Select a Memory Card"); // add title
     Text_AddSubtext(text_desc, 0, 0, "");                      // add description
@@ -5007,7 +5003,6 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     text_title->trans.Y = -18;
     text_title->viewport_scale.X = MENU_CANVASSCALE * 2;
     text_title->viewport_scale.Y = MENU_CANVASSCALE * 2;
-    text_title->trans.Z = MENU_TEXTZ;
     Text_AddSubtext(text_title, 0, 0, "Enter File Name");
 
     // create desc text
@@ -5186,13 +5181,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
     }
     if (inputs & HSD_BUTTON_Y)
     {
-        // toggle capslock
-        if (export_data->caps_lock == 0)
-            export_data->caps_lock = 1;
-        else
-            export_data->caps_lock = 0;
-
-        // update keyboard
+        export_data->caps_lock ^= 1;
         update_keyboard = 1;
 
         SFX_PlayCommon(1);
@@ -5295,7 +5284,6 @@ void Export_ConfirmInit(GOBJ *export_gobj)
     confirm_text->trans.Y = 0;
     confirm_text->viewport_scale.X = MENU_CANVASSCALE;
     confirm_text->viewport_scale.Y = MENU_CANVASSCALE;
-    confirm_text->trans.Z = MENU_TEXTZ;
     Text_AddSubtext(confirm_text, 0, -40, "Save File to Slot %s?", slots_names[export_data->slot]);
     int yes_subtext = Text_AddSubtext(confirm_text, -60, 20, "Yes");
     GXColor yellow = {201, 178, 0, 255};
@@ -5380,7 +5368,6 @@ int Export_ConfirmThink(GOBJ *export_gobj)
                 confirm_text->trans.Y = 0;
                 confirm_text->viewport_scale.X = MENU_CANVASSCALE;
                 confirm_text->viewport_scale.Y = MENU_CANVASSCALE;
-                confirm_text->trans.Z = MENU_TEXTZ;
                 Text_AddSubtext(confirm_text, 0, -20, "");
 
                 export_data->confirm_state = EXPOP_SAVE;

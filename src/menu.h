@@ -126,7 +126,6 @@ enum option_kind {
 
 // menu text object
 #define MENU_CANVASSCALE 0.05
-#define MENU_TEXTZ 0
 // menu title
 #define MENU_TITLEXPOS -430
 #define MENU_TITLEYPOS -366
@@ -159,7 +158,6 @@ enum option_kind {
 #define ROWBOX_WIDTH 18.f
 #define ROWBOX_X 12.5
 #define ROWBOX_Y 10.8
-#define ROWBOX_Z 0
 #define ROWBOX_YOFFSET -2.5
 #define ROWBOX_COLOR { 25, 25, 45, 255 }
 #define ROWBOX_ONCOLOR { 25, 225, 25, 255 }
@@ -169,6 +167,5 @@ enum option_kind {
 #define MENUHIGHLIGHT_WIDTH 43.175
 #define MENUHIGHLIGHT_X 0.f
 #define MENUHIGHLIGHT_Y 10.8
-#define MENUHIGHLIGHT_Z 0.01
 #define MENUHIGHLIGHT_YOFFSET ROWBOX_YOFFSET
 #define MENUHIGHLIGHT_COLOR { 255, 211, 0, 255 }
