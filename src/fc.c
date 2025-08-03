@@ -1,11 +1,6 @@
 #include "../MexTK/mex.h"
 #include "events.h"
 
-static struct Assets {
-    JOBJDesc *hud;
-} *assets;
-static JOBJ *hud_jobj;
-
 void Exit(GOBJ *menu);
 
 static EventOption Options_Main[] = {
@@ -50,11 +45,18 @@ enum Action {
     
     Action_Count
 };
+static char *action_names[] = {
+    "Float",
+    "Deadzone",
+    "Attack",
+    "Fall",
+    "Fastfall",
+};
 
 static u32 action_log_cur;
 static u8 action_log[30];
 
-static GXColor action_colours[Action_Count] = {
+static GXColor action_colors[Action_Count] = {
     {40, 40, 40, 180},  // dark gray
     {255, 128, 128, 180}, // red
     {230, 22, 198, 180}, // magenta
@@ -63,7 +65,8 @@ static GXColor action_colours[Action_Count] = {
     {128, 255, 128, 255}, // green
 };
 
-void HitboxGX(GOBJ *gobj, int pass) {
+void GX(GOBJ *gobj, int pass) {
+    // hitbox GX
     if (pass == 1) {
         GOBJ *ft = Fighter_GetGObj(0);
         FighterData *ft_data = ft->userdata;
@@ -75,8 +78,20 @@ void HitboxGX(GOBJ *gobj, int pass) {
             if (hit->active)
                 Develop_DrawSphere(hit->size, &hit->pos, &hit->pos_prev, &diffuse, &ambient);
         }
-        
-        PRIM *gx = PRIM_NEW(4, 0xffffffff, 0xffffffff);
+    }
+    
+    // action log gx
+    if (pass == 2) {
+        event_vars->HUD_DrawActionLogBar(
+            action_log,
+            action_colors,
+            countof(action_log)
+        );
+        event_vars->HUD_DrawActionLogKey(
+            action_names,
+            &action_colors[1],
+            countof(action_names)
+        );
     }
 }
 
@@ -85,42 +100,10 @@ void Exit(GOBJ *menu) {
     Match_EndVS();
 }
 
-/*void Square(void) {
-    // init hud object
-    GOBJ *g = GObj_Create(0, 0, 0);
-    JOBJ *j = JOBJ_LoadJoint(assets->hud);
-    JOBJ *b;
-    JOBJ_GetChild(j, &b, 4, -1);
-    b->trans.Y += 1.f;
-    GObj_AddObject(g, 3, b);
-    GObj_AddGXLink(g, GXLink_Common, 18, 80);
-}*/
-
 void Event_Init(GOBJ *menu) {
-    // re-use the ledgedash hud for now
-    assets = Archive_GetPublicAddress(event_vars->event_archive, "ledgedash");
-    
-    // create hud cobj
-    GOBJ *hudcam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
-    COBJDesc *cam_desc = dmgScnMdls[1][0];
-    COBJ *hud_cobj = COBJ_LoadDesc(cam_desc);
-    
-    // init hud camera
-    GObj_AddObject(hudcam_gobj, R13_U8(-0x3E55), hud_cobj);
-    GOBJ_InitCamera(hudcam_gobj, HUDCamThink, 7);
-    hudcam_gobj->cobj_links = 1 << 18;
-
-    // init hud object
-    GOBJ *hud_gobj = GObj_Create(0, 0, 0);
-    hud_jobj = JOBJ_LoadJoint(assets->hud);
-    hud_jobj->child->flags |= JOBJ_HIDDEN;
-    GObj_AddObject(hud_gobj, 3, hud_jobj);
-    GObj_AddGXLink(hud_gobj, GXLink_Common, 18, 80);
-    
-    // init hitbox display gobj
-    GOBJ *hitbox_gobj = GObj_Create(0, 0, 0);
-    GObj_AddGXLink(hitbox_gobj, HitboxGX, 5, 0);
+    // init display gobj
+    GOBJ *gobj = GObj_Create(0, 0, 0);
+    GObj_AddGXLink(gobj, GX, 5, 0);
 }
 
 void Event_Think(GOBJ *menu) {
@@ -153,20 +136,6 @@ void Event_Think(GOBJ *menu) {
         action_log_cur = 0;
     } else if (action_log_cur < countof(action_log)) {
         action_log[action_log_cur++] = cur_action;
-    }
-        
-    // colour action log
-    JOBJ *timingbar_jobj;
-    JOBJ_GetChild(hud_jobj, &timingbar_jobj, 4, -1);
-    DOBJ *d = timingbar_jobj->dobj;
-    
-    OSReport("pobj %p\n", d->pobj);
-    
-    // iter backwards... dobjs are stored right to left for some reason
-    for (u32 i = countof(action_log); i > 0; --i) {
-        int action = action_log[i-1];
-        d->mobj->mat->diffuse = action_colours[action];
-        d = d->next;
     }
 }
 
