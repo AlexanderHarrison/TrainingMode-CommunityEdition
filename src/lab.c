@@ -639,12 +639,6 @@ GOBJ *InfoDisplay_Init(int ply)
     //else // 480i on wii uses large (shitty composite!)
     //    LabOptions_InfoDisplay[OPT_SCALE].val = 2;
 
-    // background scale
-
-    Vec2 pos = {-26.5, 21.5};
-    menu->trans.X = pos.X;
-    menu->trans.Y = pos.Y;
-
     GXColor shield_color = (*stc_shieldcolors)[ply];
     shield_color.a = 255;
     GXColor *border_color = &menu->dobj->mobj->mat->diffuse;
@@ -2891,20 +2885,14 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
 
     // load current stick joints
     JOBJ *stick_joint = JOBJ_LoadJoint(stc_lab_data->stick);
-    stick_joint->scale.X = 2;
-    stick_joint->scale.Y = 2;
-    stick_joint->scale.Z = 2;
-    stick_joint->trans.X = -6;
-    stick_joint->trans.Y = -6;
+    stick_joint->scale = (Vec3) {2, 2, 1};
+    stick_joint->trans = (Vec3) {-6, -6, 0};
     userdata->stick_curr[0] = stick_joint;
     JOBJ_AddChild(tdi_gobj->hsd_object, stick_joint);
     // current c stick
     stick_joint = JOBJ_LoadJoint(stc_lab_data->cstick);
-    stick_joint->scale.X = 2;
-    stick_joint->scale.Y = 2;
-    stick_joint->scale.Z = 2;
-    stick_joint->trans.X = 6;
-    stick_joint->trans.Y = -6;
+    stick_joint->scale = (Vec3) {2, 2, 1};
+    stick_joint->trans = (Vec3) {6, -6, 0};
     userdata->stick_curr[1] = stick_joint;
     JOBJ_AddChild(tdi_gobj->hsd_object, stick_joint);
 
@@ -2933,9 +2921,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     {
         // left stick
         JOBJ *prevstick_joint = JOBJ_LoadJoint(stc_lab_data->stick);
-        prevstick_joint->scale.X = 1;
-        prevstick_joint->scale.Y = 1;
-        prevstick_joint->scale.Z = 1;
         prevstick_joint->rot.X = 0.4;
         prevstick_joint->trans.X = -22 + (i * (55 / TDI_DISPNUM));
         prevstick_joint->trans.Y = 10;
@@ -2945,9 +2930,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
 
         // cstick
         prevstick_joint = JOBJ_LoadJoint(stc_lab_data->cstick);
-        prevstick_joint->scale.X = 1;
-        prevstick_joint->scale.Y = 1;
-        prevstick_joint->scale.Z = 1;
         prevstick_joint->rot.X = 0.4;
         prevstick_joint->trans.X = -18 + (i * (55 / TDI_DISPNUM));
         prevstick_joint->trans.Y = 8;
@@ -2967,12 +2949,6 @@ void Lab_SelectCustomTDI(GOBJ *menu_gobj)
     // set pointers to custom gobj
     menu_data->custom_gobj = tdi_gobj;
     menu_data->custom_gobj_destroy = CustomTDI_Destroy;
-
-    /*
-    // Change color
-    GXColor gx_color = TEXT_BGCOLOR;
-    popup_joint->dobj->mobj->mat->diffuse = gx_color;
-*/
 }
 int CustomTDI_Update(GOBJ *gobj)
 {
@@ -5263,8 +5239,6 @@ void Export_ConfirmInit(GOBJ *export_gobj)
     confirm_text->align = 1;
     confirm_text->kerning = 1;
     // scale canvas
-    confirm_text->trans.X = 0;
-    confirm_text->trans.Y = 0;
     confirm_text->viewport_scale.X = MENU_CANVASSCALE;
     confirm_text->viewport_scale.Y = MENU_CANVASSCALE;
     Text_AddSubtext(confirm_text, 0, -40, "Save File to Slot %s?", slots_names[export_data->slot]);
@@ -5346,8 +5320,6 @@ int Export_ConfirmThink(GOBJ *export_gobj)
                 confirm_text->align = 1;
                 confirm_text->kerning = 1;
                 // scale canvas
-                confirm_text->trans.X = 0;
-                confirm_text->trans.Y = 0;
                 confirm_text->viewport_scale.X = MENU_CANVASSCALE;
                 confirm_text->viewport_scale.Y = MENU_CANVASSCALE;
                 Text_AddSubtext(confirm_text, 0, -20, "");

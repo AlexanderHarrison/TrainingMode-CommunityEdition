@@ -385,14 +385,11 @@ void EventMenu_CreateModel(GOBJ *gobj)
     // the option value.
     for (int i = 0; i < MENU_MAXOPTION; i++)
     {
-        // create a border jobj
+        // create a border and attach to root jobj
         JOBJ *jobj_rowbox = JOBJ_LoadJoint(menu_assets->popup);
-        // attach to root jobj
         JOBJ_AddChild(gobj->hsd_object, jobj_rowbox);
-        // move it into position
-        JOBJ_GetChild(jobj_rowbox, corners, 2, 3, 4, 5, -1);
         // Modify scale and position
-        jobj_rowbox->scale = (Vec3){ 1, 1, 1 };
+        JOBJ_GetChild(jobj_rowbox, corners, 2, 3, 4, 5, -1);
         corners[0]->trans.X = -(ROWBOX_WIDTH / 2) + ROWBOX_X;
         corners[0]->trans.Y = (ROWBOX_HEIGHT / 2) + ROWBOX_Y + (i * ROWBOX_YOFFSET);
         corners[1]->trans.X = (ROWBOX_WIDTH / 2) + ROWBOX_X;
@@ -410,16 +407,13 @@ void EventMenu_CreateModel(GOBJ *gobj)
         menu_data->rowboxes[i] = jobj_rowbox;
     }
 
-    // create a highlight jobj
+    // create a highlight jobj and attach to root jobj
     JOBJ *jobj_highlight = JOBJ_LoadJoint(menu_assets->popup);
+    JOBJ_AddChild(gobj->hsd_object, jobj_highlight);
     // remove outline
     DOBJ_SetFlags(jobj_highlight->dobj, DOBJ_HIDDEN);
-    // attach to root jobj
-    JOBJ_AddChild(gobj->hsd_object, jobj_highlight);
     // move it into position
     JOBJ_GetChild(jobj_highlight, corners, 2, 3, 4, 5, -1);
-    // Modify scale and position
-    jobj_highlight->scale = (Vec3)MENUHIGHLIGHT_SCALE;
     corners[0]->trans.X = -(MENUHIGHLIGHT_WIDTH / 2) + MENUHIGHLIGHT_X;
     corners[0]->trans.Y = (MENUHIGHLIGHT_HEIGHT / 2) + MENUHIGHLIGHT_Y;
     corners[1]->trans.X = (MENUHIGHLIGHT_WIDTH / 2) + MENUHIGHLIGHT_X;
@@ -433,19 +427,14 @@ void EventMenu_CreateModel(GOBJ *gobj)
     jobj_highlight->dobj->next->mobj->mat->diffuse = highlight;
     menu_data->highlight_menu = jobj_highlight;
 
-    // create scroll bar
+    // create scroll bar and attach to root jobj
     JOBJ *scroll_jobj = JOBJ_LoadJoint(menu_assets->scroll);
-    // attach to root jobj
     JOBJ_AddChild(gobj->hsd_object, scroll_jobj);
-    // move it into position
     JOBJ_GetChild(scroll_jobj, corners, 2, 3, -1);
-    // scale scrollbar accordingly
     scroll_jobj->scale.X = MENUSCROLL_SCALE;
     scroll_jobj->scale.Y = MENUSCROLL_SCALEY;
-    scroll_jobj->scale.Z = MENUSCROLL_SCALE;
     scroll_jobj->trans.X = MENUSCROLL_X;
     scroll_jobj->trans.Y = MENUSCROLL_Y;
-    scroll_jobj->trans.Z = MENUSCROLL_Z;
     menu_data->scroll_top = corners[0];
     menu_data->scroll_bot = corners[1];
     GXColor scroll_color = MENUSCROLL_COLOR;
@@ -460,7 +449,6 @@ void EventMenu_CreateText(GOBJ *gobj)
     Text *text;
     int canvas_index = menu_data->canvas_menu;
 
-    // free text if it exists
     if (menu_data->text_name || menu_data->text_value ||
             menu_data->text_title || menu_data->text_desc)
         assert("Menu text already created");
