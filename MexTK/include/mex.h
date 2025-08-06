@@ -38,8 +38,6 @@ typedef enum SSMKind
 
 /*** Structs ***/
 
-typedef volatile void PRIM;
-
 struct Stc_icns
 {
     u16 reserved_num;
