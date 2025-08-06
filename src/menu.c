@@ -244,12 +244,8 @@ void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     // Speed up scrolling when R is held
     if ((pad->held & HSD_TRIGGER_R)
         || pad->triggerRight >= ANALOG_TRIGGER_THRESHOLD) {
-        stc_padlibdata->repeat_interval = MENU_RAPID_R;
-        stc_padlibdata->repeat_start = MENU_RAPID_R;
-    }
-    else {
-        stc_padlibdata->repeat_interval = MENU_RAPID_INTERVAL;
-        stc_padlibdata->repeat_start = MENU_RAPID_START;
+        if (pad->repeat_timer > MENU_RAPID_R)
+            pad->repeat_timer = MENU_RAPID_R;
     }
 
     // get menu variables
