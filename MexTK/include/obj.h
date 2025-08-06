@@ -813,7 +813,7 @@ void CObj_SetInterest(COBJ *cobj, Vec3 *pos);
 void CObj_SetRoll(COBJ *cobj, float roll);
 void CObj_Release(COBJ *cobj);
 void CObj_Destroy(COBJ *cobj);
-COBJ *COBJ_GetCurrent();
+COBJ *COBJ_GetCurrent(void);
 void COBJ_GetEyeVector(COBJ *cobj, Vec3 *eye_vec);
 void COBJ_GetInterest(COBJ *cobj, Vec3 *interest);
 float COBJ_GetEyeDistance(COBJ *cobj);
