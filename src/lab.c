@@ -2407,7 +2407,7 @@ void DIDraw_Update()
         .left = {-3.3, 5.7},
         .right = {3.3, 5.7},
     };
-
+    
     // if enabled and pause menu isnt shown, update di draw
     if ((LabOptions_General[OPTGEN_DI].val == 1)) //  && (Pause_CheckStatus(1) != 2)
     {
@@ -2521,9 +2521,8 @@ void DIDraw_Update()
                 float y_vel = fighter_data->phys.self_vel.Y;
                 Vec3 pos = fighter_data->phys.pos;
                 float decay = ft_common->kb_frameDecay;
-                int hitstun_frames;
-                memcpy(&hitstun_frames, &fighter_data->state_var.state_var1,
-                        sizeof(float));
+                float hitstun_frames;
+                memcpy(&hitstun_frames, &fighter_data->state_var.state_var1, sizeof(float));
                 int vertices_num = 0;    // used to track how many vertices will be needed
                 int override_frames = 0; // used as an alternate countdown
                 DIDrawCalculate *DICollData = calloc(sizeof(DIDrawCalculate) * hitstun_frames);
@@ -2810,7 +2809,6 @@ void DIDraw_GX()
     // if toggle enabled
     if (LabOptions_General[OPTGEN_DI].val == 1)
     {
-
         // draw each
         for (int i = 0; i < 6; i++)
         {
@@ -2825,7 +2823,15 @@ void DIDraw_GX()
                     Vec2 *vertices = didraw->vertices[j];
 
                     // alloc prim
-                    PRIM_NEW(vertex_num, 0x001F1306, 0x00000C55);
+                    PRIM_DrawMode draw_mode = {
+                        .line_width = 31,
+                        .z_compare_enable = true,
+                        .z_logic_eq = true,
+                        .z_logic_lt = true,
+                        .shape = PRIM_SHAPE_LINE_STRIP,
+                    };
+                    PRIM_BlendMode blend_mode = { 0 };
+                    PRIM_NEW(vertex_num, draw_mode, blend_mode);
 
                     // draw each
                     for (int k = 0; k < vertex_num; k++)

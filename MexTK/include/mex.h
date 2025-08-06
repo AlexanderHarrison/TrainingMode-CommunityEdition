@@ -276,7 +276,91 @@ void *calloc(int size);
 void bp();
 
 // see https://smashboards.com/threads/primitive-drawing-module.454232/
-void PRIM_NEW(int vert_count, int params1, int params2);
+
+enum PRIM_Shape {
+    PRIM_SHAPE_QUADS,
+    PRIM_SHAPE_TRIANGLES = 2,
+    PRIM_SHAPE_TRIANGLE_STRIP,
+    PRIM_SHAPE_TRIANGLE_FAN,
+    PRIM_SHAPE_LINES,
+    PRIM_SHAPE_LINE_STRIP,
+    PRIM_SHAPE_POINTS,
+};
+enum PRIM_Blend_Type {
+    PRIM_BLEND_NONE,
+    PRIM_BLEND_BLEND,
+    PRIM_BLEND_LOGIC,
+    PRIM_BLEND_SUBTRACT,
+};
+enum PRIM_Logic {
+    PRIM_LOGIC_CLEAR,
+    PRIM_LOGIC_AND,
+    PRIM_LOGIC_REVAND,
+    PRIM_LOGIC_COPY,
+    PRIM_LOGIC_INVAND,
+    PRIM_LOGIC_NOOP,
+    PRIM_LOGIC_XOR,
+    PRIM_LOGIC_OR,
+    PRIM_LOGIC_EQUIV,
+    PRIM_LOGIC_INV,
+    PRIM_LOGIC_REVOR,
+    PRIM_LOGIC_INVCOPY,
+    PRIM_LOGIC_INVOR,
+    PRIM_LOGIC_NAND,
+    PRIM_LOGIC_SET,
+};
+enum PRIM_Source {
+    PRIM_SOURCE_0,
+    PRIM_SOURCE_1,
+    PRIM_SOURCE_SRC_COLOR,
+    PRIM_SOURCE_SRC_INV_COLOR,
+    PRIM_SOURCE_SRC_ALPHA,
+    PRIM_SOURCE_SRC_INV_ALPHA,
+    PRIM_SOURCE_DST_ALPHA,
+    PRIM_SOURCE_DST_INV_ALPHA,
+};
+
+typedef struct PRIM_DrawMode {
+    u32 cull_back : 1;
+    u32 cull_front : 1;
+    u32 unk1 : 4;
+    u32 line_width : 10;
+    u32 unk2 : 2;
+    u32 z_compare_timing : 1;
+    u32 z_compare_enable : 1;
+    u32 z_update_enable : 1;
+    u32 z_logic_gt : 1;
+    u32 z_logic_eq : 1;
+    u32 z_logic_lt : 1;
+    u32 shape : 8;
+} PRIM_DrawMode;
+typedef struct PRIM_BlendMode {
+    u32 unk1 : 18;
+    u32 blend_type : 2;
+    u32 unk2 : 1;
+    u32 blend_src : 3;
+    u32 unk3 : 1;
+    u32 blend_dst : 3;
+    u32 blend_logic : 4;
+} PRIM_BlendMode;
+
+void PRIM_NEW_INTERNAL(int vert_count, u32 draw_mode, u32 blend_mode);
+static inline void PRIM_NEW(int vert_count, PRIM_DrawMode draw_mode, PRIM_BlendMode blend_mode)
+{
+    union {
+        PRIM_DrawMode bitflags;
+        u32 integer;
+    } dm;
+    union {
+        PRIM_BlendMode bitflags;
+        u32 integer;
+    } bm;
+    
+    dm.bitflags = draw_mode;
+    bm.bitflags = blend_mode;
+    
+    PRIM_NEW_INTERNAL(vert_count, dm.integer, bm.integer);
+}
 void PRIM_CLOSE();
 
 static void MEX_InitRELDAT(HSD_Archive *archive, char *symbol_name, void **return_func_array)

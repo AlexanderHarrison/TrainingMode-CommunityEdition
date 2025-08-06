@@ -675,7 +675,16 @@ void HUD_DrawRects(Rect *rects, GXColor *colors, int count)
     // https://smashboards.com/threads/primitive-drawing-module.454232/
     // params1: no culling, no point/line size, no zbuffer, triangles
     // params2: blending, blend src = src.a, blend dst = 1-src.a, noop blend op
-    PRIM_NEW(count * 6, 0x00000002, 0x00001455);
+    PRIM_DrawMode draw_mode = {
+        .shape = PRIM_SHAPE_TRIANGLES,
+    };
+    PRIM_BlendMode blend_mode = {
+        .blend_type = PRIM_BLEND_BLEND,
+        .blend_src = PRIM_SOURCE_SRC_ALPHA,
+        .blend_dst = PRIM_SOURCE_SRC_INV_ALPHA,
+        .blend_logic = PRIM_LOGIC_NOOP,
+    };
+    PRIM_NEW(count * 6, draw_mode, blend_mode);
     
     for (int i = 0; i < count; ++i) {
         GXColor gx_color = colors[i];
