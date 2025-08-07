@@ -7,7 +7,7 @@ static EventOption Options_Main[] = {
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
-        .desc = "Return to the Event Select Screen.",
+        .desc = { "Return to the Event Select Screen." },
         .OnSelect = Exit,
     },
 };
