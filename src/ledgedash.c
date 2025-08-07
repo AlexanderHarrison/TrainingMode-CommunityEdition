@@ -324,7 +324,7 @@ void Ledgedash_HUDInit(LedgedashData *event_data)
     // reset all bar colors
     JOBJ *timingbar_jobj;
     JOBJ_GetChild(hud_jobj, &timingbar_jobj, LCLJOBJ_BAR, -1); // get timing bar jobj
-    JOBJ_SetFlagsAll(hud_jobj, JOBJ_HIDDEN);
+    JOBJ_SetFlagsAll(timingbar_jobj, JOBJ_HIDDEN);
 }
 void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
 {

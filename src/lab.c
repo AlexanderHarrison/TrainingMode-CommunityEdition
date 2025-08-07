@@ -3341,16 +3341,6 @@ GOBJ *Record_Init()
     // Add per frame process
     GObj_AddProc(rec_gobj, Record_Think, 3);
 
-    // create cobj
-    GOBJ *cam_gobj = GObj_Create(19, 20, 0);
-    COBJDesc ***dmgScnMdls = Archive_GetPublicAddress(*stc_ifall_archive, (void *)0x803f94d0);
-    COBJDesc *cam_desc = dmgScnMdls[1][0];
-    COBJ *rec_cobj = COBJ_LoadDesc(cam_desc);
-    // init camera
-    GObj_AddObject(cam_gobj, R13_U8(-0x3E55), rec_cobj);
-    GOBJ_InitCamera(cam_gobj, Record_CObjThink, RECCAM_GXPRI);
-    cam_gobj->cobj_links = RECCAM_COBJGXLINK;
-
     evMenu *menuAssets = event_vars->menu_assets;
     JOBJ *playback = JOBJ_LoadJoint(menuAssets->playback);
 
@@ -3442,14 +3432,6 @@ GOBJ *Record_Init()
     DevelopText_StoreTextScale(dev_text, 7.5, 10);
     */
     return rec_gobj;
-}
-void Record_CObjThink(GOBJ *gobj)
-{
-    // hide UI if set to off
-    if ((rec_state->is_exist == 1) && ((LabOptions_Record[OPTREC_CPUMODE].val != 0) || (LabOptions_Record[OPTREC_HMNMODE].val != 0)))
-    {
-        CObjThink_Common(gobj);
-    }
 }
 void Record_GX(GOBJ *gobj, int pass)
 {
@@ -5884,6 +5866,11 @@ void Event_Update()
 
     // Check for savestates
     Savestates_Update();
+    
+    // hide UI if set to off
+    bool hide = LabOptions_Record[OPTREC_CPUMODE].val == 0 && LabOptions_Record[OPTREC_HMNMODE].val == 0;
+    HUDCamData *hud_cam = event_vars->hudcam_gobj->userdata;
+    hud_cam->hide = hide;
 }
 
 void Event_Think_LabState_Normal(GOBJ *event) {
