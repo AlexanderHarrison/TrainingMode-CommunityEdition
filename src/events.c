@@ -162,7 +162,7 @@ static EventMatchData FloatCancel_MatchData = {
 };
 EventDesc FloatCancel = {
     .eventName = "Float Cancel Training\n",
-    .eventDescription = "TODO\n",
+    .eventDescription = "Practice Peach's most important\ntechnique!\n",
     .eventFile = "fc",
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,

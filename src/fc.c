@@ -18,12 +18,6 @@ static EventMenu Menu_Main = {
     .options = Options_Main,
 };
 
-void HUDCamThink(GOBJ *gobj) {
-    // if HUD enabled and not paused
-    if (Pause_CheckStatus(1) != 2)
-        CObjThink_Common(gobj);
-}
-
 enum PeachActionStates {
     ASID_FLOAT = 341,
     ASID_FLOATENDF,
@@ -36,21 +30,26 @@ enum PeachActionStates {
 };
 
 enum Action {
+    Action_None,
     Action_Wait,
     Action_Float,
     Action_FloatNeutral,
     Action_FloatAttack,
     Action_FloatAttackFall,
     Action_FloatAttackFastFall,
+    Action_Landing,
     
     Action_Count
 };
 static char *action_names[] = {
+    "None",
+    "Wait",
     "Float",
     "Deadzone",
     "Attack",
     "Fall",
     "Fastfall",
+    "Landing",
 };
 
 static u32 action_log_cur;
@@ -58,11 +57,13 @@ static u8 action_log[30];
 
 static GXColor action_colors[Action_Count] = {
     {40, 40, 40, 180},  // dark gray
+    {80, 80, 80, 180},  // dark gray
     {255, 128, 128, 180}, // red
     {230, 22, 198, 180}, // magenta
     {52, 202, 228, 180}, // cyan
     {128, 128, 255, 180}, // blue
-    {128, 255, 128, 255}, // green
+    {128, 255, 128, 180}, // green
+    {220, 220, 70, 180}, // yellow
 };
 
 void GX(GOBJ *gobj, int pass) {
@@ -87,10 +88,12 @@ void GX(GOBJ *gobj, int pass) {
             action_colors,
             countof(action_log)
         );
+        
+        // skip none and wait states
         event_vars->HUD_DrawActionLogKey(
-            action_names,
-            &action_colors[1],
-            countof(action_names)
+            &action_names[2],
+            &action_colors[2],
+            countof(action_names) - 2
         );
     }
 }
@@ -106,6 +109,9 @@ void Event_Init(GOBJ *menu) {
     GObj_AddGXLink(gobj, GX, 5, 0);
 }
 
+// prevent action log from filling until first jump.
+static bool started = false;
+
 void Event_Think(GOBJ *menu) {
     GOBJ *ft = Fighter_GetGObj(0);
     FighterData *ft_data = ft->userdata;
@@ -115,24 +121,32 @@ void Event_Think(GOBJ *menu) {
     // determine current action
     int cur_action;
     bool reset = false; 
-    if ((state == ASID_JUMPF || state == ASID_JUMPB) && ft_data->TM.state_frame == 1) {
-        reset = true;
-        cur_action = Action_Wait;
-    } else if (state == ASID_FLOAT)
+    if (state == ASID_JUMPF || state == ASID_JUMPB) {
+        started = true;
+        cur_action = Action_None;
+        
+        // reset action log on the final frame of jumpsquat
+        reset = ft_data->TM.state_frame == 2;
+    } else if (state == ASID_FLOAT) {
         if (ft_data->input.lstick.X == 0.f && ft_data->input.lstick.Y == 0.f)
             cur_action = Action_FloatNeutral;
         else
             cur_action = Action_Float;
-    else if (state >= ASID_FLOATATTACKN && state <= ASID_FLOATATTACKD)
+    } else if (state >= ASID_FLOATATTACKN && state <= ASID_FLOATATTACKD) {
         if (ft_data->phys.self_vel.Y == 0.f)
             cur_action = Action_FloatAttack;
         else
             cur_action = is_fastfall ? Action_FloatAttackFastFall : Action_FloatAttackFall;
-    else
+    } else if (state == ASID_LANDING) {
+        cur_action = Action_Landing;
+    } else {
         cur_action = Action_Wait;
+    }
         
+    if (!started) return;
+    
     if (reset) {
-        memset(action_log, Action_Wait, sizeof(action_log));
+        memset(action_log, Action_None, sizeof(action_log));
         action_log_cur = 0;
     } else if (action_log_cur < countof(action_log)) {
         action_log[action_log_cur++] = cur_action;
