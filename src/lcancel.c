@@ -491,6 +491,35 @@ void Tips_Think(LCancelData *event_data, FighterData *hmn_data)
 }
 
 // Barrel Functions
+static void UpdateBarrelIntangibility(LCancelData *event_data, GOBJ *barrel_gobj)
+{
+    if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val != 0)
+    {
+        int timer_cycle = 120;
+        event_data->barrel_intangible_timer++;
+        if (event_data->barrel_intangible_timer >= timer_cycle)
+            event_data->barrel_intangible_timer = 0;
+
+        // determine intangibility duration based on option value
+        int intangibility_duration;
+        if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 1) // Low
+            intangibility_duration = 40;
+        else if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 2) // Middle
+            intangibility_duration = 60;
+        else if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 3) // High
+            intangibility_duration = 80;
+        else
+            intangibility_duration = 0;
+
+        // the timer is lower than intangibility_duration = intangible(2), rest = tangible(0)
+        int tangibility = (event_data->barrel_intangible_timer < intangibility_duration) ? 2 : 0; 
+        Item_SetHurtboxTangibility(barrel_gobj, tangibility);
+    }
+    else
+    {
+        Item_SetHurtboxTangibility(barrel_gobj, 0);
+    }
+}
 void Barrel_Think(LCancelData *event_data)
 {
     GOBJ *barrel_gobj = event_data->barrel_gobj;
@@ -525,20 +554,7 @@ void Barrel_Think(LCancelData *event_data)
         ItemData *barrel_data = barrel_gobj->userdata;
         barrel_data->can_hold = 0;
 
-        if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val != 0)
-        {
-            event_data->barrel_intangible_timer++;
-            if (event_data->barrel_intangible_timer >= 120)
-                event_data->barrel_intangible_timer = 0;
-
-            // the timer is lower than Barrel_Intangibility_Duration() = intangible, rest = tangible
-            int tangibility = (event_data->barrel_intangible_timer < Barrel_Intangibility_Duration()) ? 2 : 0; 
-            Item_SetHurtboxTangibility(barrel_gobj, tangibility);
-        }
-        else
-        {
-            Item_SetHurtboxTangibility(barrel_gobj, 0);
-        }
+        UpdateBarrelIntangibility(event_data, barrel_gobj);
 
         // check to move barrel
         // get fighter data
@@ -601,36 +617,11 @@ void Barrel_Think(LCancelData *event_data)
         barrel_data->can_hold = 0;
         barrel_data->can_nudge = 0;
 
-        if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val != 0)
-        {
-            event_data->barrel_intangible_timer++;
-            if (event_data->barrel_intangible_timer >= 120)
-                event_data->barrel_intangible_timer = 0;
-
-            // the timer is lower than Barrel_Intangibility_Duration() = intangible, rest = tangible
-            int tangibility = (event_data->barrel_intangible_timer < Barrel_Intangibility_Duration()) ? 2 : 0; 
-            Item_SetHurtboxTangibility(barrel_gobj, tangibility);
-        }
-        else
-        {
-            Item_SetHurtboxTangibility(barrel_gobj, 0);
-        }
+        UpdateBarrelIntangibility(event_data, barrel_gobj);
 
         break;
     }
     }
-}
-int Barrel_Intangibility_Duration()
-{
-    if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 1) // Low
-        return 40;
-    else if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 2) // Middle
-        return 60;
-    else if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 3) // High
-        return 80;
-    else
-        return 0;
-
 }
 GOBJ *Barrel_Spawn(int pos_kind)
 {

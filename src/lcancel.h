@@ -66,7 +66,6 @@ void LCancel_ChangeBarrel(GOBJ *gobj, int value);
 void LCancel_ChangeShowHUD(GOBJ *gobj, int show);
 void LCancel_Init(LCancelData *event_data);
 void Barrel_Think(LCancelData *event_data);
-int Barrel_Intangibility_Duration(void);
 void Barrel_Toggle(GOBJ *menu_gobj, int value);
 GOBJ *Barrel_Spawn(int pos_kind);
 int Barrel_OnHurt(GOBJ *barrel_gobj);
