@@ -10,6 +10,7 @@ struct LCancelData
     LCancelAssets *lcancel_assets;
     GOBJ *barrel_gobj;
     Vec3 barrel_lastpos;
+    int barrel_intangible_timer; // frame counter for intangible cycles (0-119)
     bool is_fail;      // status of the last l-cancel
     bool is_fastfall;  // bool used to detect fastfall frame
     u8 fastfall_frame; // frame the player fastfell on
@@ -61,6 +62,7 @@ struct LCancelAssets
 void Tips_Toggle(GOBJ *menu_gobj, int value);
 void Tips_Think(LCancelData *event_data, FighterData *hmn_data);
 void LCancel_Think(LCancelData *event_data, FighterData *hmn_data);
+void LCancel_ChangeBarrel(GOBJ *gobj, int value);
 void LCancel_ChangeShowHUD(GOBJ *gobj, int show);
 void LCancel_Init(LCancelData *event_data);
 void Barrel_Think(LCancelData *event_data);

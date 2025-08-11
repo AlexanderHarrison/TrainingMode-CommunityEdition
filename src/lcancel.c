@@ -4,6 +4,7 @@
 enum lcancel_option
 {
     OPTLC_BARREL,
+    OPTLC_BARREL_INTANGIBILITY_RATE,
     OPTLC_HUD,
     OPTLC_TIPS,
     OPTLC_HELP,
@@ -12,6 +13,7 @@ enum lcancel_option
     OPTLC_COUNT
 };
 static const char *LcOptions_Barrel[] = {"Off", "Stationary", "Move"};
+static const char *LcOptions_Barrel_Intangibility_Rate[] = {"Off", "Low", "Middle", "High"};
 static EventOption LcOptions_Main[OPTLC_COUNT] = {
     // Target
     {
@@ -21,6 +23,17 @@ static EventOption LcOptions_Main[OPTLC_COUNT] = {
         .desc = {"Enable a target to attack. Use DPad down to",
                  "manually move it."},
         .values = LcOptions_Barrel,
+        .OnChange = LCancel_ChangeBarrel,
+    },
+    // Target's Intangibility Rate
+    {
+        .kind = OPTKIND_STRING,
+        .value_num = sizeof(LcOptions_Barrel_Intangibility_Rate) / 4,
+        .name = "Target's Intangibility Rate",
+        .desc = {"Target sometimes becomes intangible to",
+                 "practice L-cancel inputs for both hit",
+                 "and no-hit timings."},
+        .values = LcOptions_Barrel_Intangibility_Rate,
     },
     // HUD
     {
@@ -72,6 +85,9 @@ void Event_Init(GOBJ *gobj)
     // create HUD
     LCancel_Init(event_data);
 
+    // initialize barrel intangible timer
+    event_data->barrel_intangible_timer = 0;
+
     // set CPU AI to no_act 15
     //cpu_data->cpu.ai = 0;
 }
@@ -86,6 +102,8 @@ void Event_Think(GOBJ *event)
 
     // set infinite shields
     hmn_data->shield.health = 60;
+
+    LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].disable = (LcOptions_Main[OPTLC_BARREL].val == 0) ? 1 : 0;
 
     LCancel_Think(event_data, hmn_data);
     Barrel_Think(event_data);
@@ -154,6 +172,9 @@ void LCancel_Init(LCancelData *event_data)
     event_data->is_current_aerial_counted = false;
     arrow_jobj->trans.X = 0;
     JOBJ_SetFlags(arrow_jobj, JOBJ_HIDDEN);
+}
+void LCancel_ChangeBarrel(GOBJ *menu_gobj, int value) {
+    LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].disable = (value == 0) ? 1 : 0;
 }
 void LCancel_ChangeShowHUD(GOBJ *menu_gobj, int show) {
     HUDCamData *cam = event_vars->hudcam_gobj->userdata;
@@ -470,6 +491,35 @@ void Tips_Think(LCancelData *event_data, FighterData *hmn_data)
 }
 
 // Barrel Functions
+static void UpdateBarrelIntangibility(LCancelData *event_data, GOBJ *barrel_gobj)
+{
+    if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val != 0)
+    {
+        int timer_cycle = 120;
+        event_data->barrel_intangible_timer++;
+        if (event_data->barrel_intangible_timer >= timer_cycle)
+            event_data->barrel_intangible_timer = 0;
+
+        // determine intangibility duration based on option value
+        int intangibility_duration;
+        if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 1) // Low
+            intangibility_duration = 40;
+        else if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 2) // Middle
+            intangibility_duration = 60;
+        else if (LcOptions_Main[OPTLC_BARREL_INTANGIBILITY_RATE].val == 3) // High
+            intangibility_duration = 80;
+        else
+            intangibility_duration = 0;
+
+        // the timer is lower than intangibility_duration = intangible(2), rest = tangible(0)
+        int tangibility = (event_data->barrel_intangible_timer < intangibility_duration) ? 2 : 0; 
+        Item_SetHurtboxTangibility(barrel_gobj, tangibility);
+    }
+    else
+    {
+        Item_SetHurtboxTangibility(barrel_gobj, 0);
+    }
+}
 void Barrel_Think(LCancelData *event_data)
 {
     GOBJ *barrel_gobj = event_data->barrel_gobj;
@@ -484,6 +534,9 @@ void Barrel_Think(LCancelData *event_data)
             Item_Destroy(barrel_gobj);
             event_data->barrel_gobj = 0;
         }
+
+        // reset intangible timer when target is off
+        event_data->barrel_intangible_timer = 0;
 
         break;
     }
@@ -500,6 +553,8 @@ void Barrel_Think(LCancelData *event_data)
 
         ItemData *barrel_data = barrel_gobj->userdata;
         barrel_data->can_hold = 0;
+
+        UpdateBarrelIntangibility(event_data, barrel_gobj);
 
         // check to move barrel
         // get fighter data
@@ -561,6 +616,8 @@ void Barrel_Think(LCancelData *event_data)
         ItemData *barrel_data = barrel_gobj->userdata;
         barrel_data->can_hold = 0;
         barrel_data->can_nudge = 0;
+
+        UpdateBarrelIntangibility(event_data, barrel_gobj);
 
         break;
     }
