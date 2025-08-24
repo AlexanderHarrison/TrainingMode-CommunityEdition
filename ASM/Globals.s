@@ -30,7 +30,6 @@
     bl Reversal
     bl SDITraining
     bl ShieldDrop
-    bl SideBSweetspot
     bl SlideOff
     bl WaveshineSDI
     .long -1

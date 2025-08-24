@@ -1894,7 +1894,7 @@ struct FighterData
         Vec3 kb_vel;                                           // 0x8C
         Vec3 atk_shield_kb_vel;                                // 0x98
         Vec3 xA4;                                              // 0xA4
-        Vec3 pos;                                              // 0xb0
+        Vec3 pos;                                              // 0xB0
         Vec3 pos_prev;                                         // 0xBC
         Vec3 pos_delta;                                        // 0xC8
         Vec3 xD4;                                              // 0xD4

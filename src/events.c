@@ -176,6 +176,41 @@ EventDesc FloatCancel = {
     .matchData = &FloatCancel_MatchData,
 };
 
+static EventMatchData Sweetspot_MatchData = {
+    .timer = MATCH_TIMER_HIDE,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = false,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = true,
+    .isShowScore = false,
+
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc Sweetspot = {
+    .eventName = "Side-B Sweetspot\n",
+    .eventDescription = "Use a sweetspot Side-B to avoid Marth's\ndown-tilt and grab the ledge!",
+    .eventFile = "sweetspot",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = {
+        .hmn = CSSID_FALCO | CSSID_FOX,
+        .cpu = -1,
+    },
+    .playerKind = -1,
+    .cpuKind = CKIND_MARTH,
+    .stage = -1,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &Sweetspot_MatchData,
+};
+
 // Combo Training
 EventDesc Combo = {
     .eventName = "Combo Training\n",
@@ -423,24 +458,6 @@ EventDesc Edgeguard = {
     .matchData = &Edgeguard_MatchData,
 };
 
-EventDesc SideBSweet = {
-    .eventName = "Side-B Sweetspot\n",
-    .eventDescription = "Use a sweetspot Side-B to avoid Marth's\ndown-tilt and grab the ledge!",
-    .eventFile = 0,
-    .jumpTableIndex = JUMP_SIDEBSWEET,
-    .CSSType = SLCHRKIND_EVENT,
-    .allowed_characters = {
-        .hmn = CSSID_FALCO | CSSID_FOX,
-        .cpu = -1,
-    },
-    .cpuKind = CKIND_MARTH,
-    .stage = -1,
-    .disable_hazards = true,
-    .force_sopo = false,
-    .scoreType = SCORETYPE_KO,
-    .callbackPriority = 3,
-    .matchData = 0,
-};
 EventDesc EscapeSheik = {
     .eventName = "Escape Sheik Techchase\n",
     .eventDescription = "Practice escaping the tech chase with a\nframe perfect shine or jab SDI!\n",
@@ -571,7 +588,7 @@ static EventPage General_Page = {
 static EventDesc *CharacterSpecific_Events[] = {
     &TechCounter,
     &Edgeguard,
-    &SideBSweet,
+    &Sweetspot,
     &EscapeSheik,
     &FloatCancel,
 };

@@ -33,8 +33,8 @@
 #define JOBJ_JOINT2 (2 << 21)              // 0x00200000
 #define JOBJ_EFFECTOR (3 << 21)            // 0x00300000
 #define JOBJ_USER_DEFINED_MTX (1 << 23)    // 0x00800000
-#define JOBJ_MTX_INDEPEND_PARENT (1 << 24) // 0x01000000
-#define JOBJ_MTS_INDEPEND_SRT (1 << 25)    // 0x02000000
+#define JOBJ_MTX_INDEP_PARENT (1 << 24)    // 0x01000000
+#define JOBJ_MTS_INDEP_SRT (1 << 25)       // 0x02000000
 #define JOBJ_GENERALFLAG (1 << 26)         // 0x04000000
 #define JOBJ_GENERALFLAG2 (1 << 27)        // 0x08000000
 #define JOBJ_ROOT_OPA (1 << 28)            // 0x10000000 only rendered with gx pass 3
