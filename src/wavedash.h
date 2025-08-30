@@ -50,23 +50,15 @@ struct WavedashData
     struct
     {
         u8 shield_num;
+        u8 short_hop;
     } tip;
     float wd_maxdstn;
     int timer;
     u8 airdodge_frame;
-    u8 is_airdodge;
-    u8 is_early_airdodge;
-    u8 is_wavedashing;
-    u8 since_wavedash;
     float wd_angle;
+    int short_hop;
     int wd_attempted;
     int wd_succeeded;
-    struct
-    {
-        u16 line_index;
-        Vec2 pos;
-    } restore;
-    GXColor orig_colors[WDFRAMES];
 };
 
 struct WavedashAssets

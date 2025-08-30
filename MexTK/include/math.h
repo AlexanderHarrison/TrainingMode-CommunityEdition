@@ -38,7 +38,7 @@ static inline float Vec2_Magnitude(Vec2 *v)
 
 /*** Functions ***/
 // float fmod(float a, float b);
-// float atan(float in);
+float atan(float in);
 float atan2(float y, float x);
 float sin(float x);
 float cos(float x);
