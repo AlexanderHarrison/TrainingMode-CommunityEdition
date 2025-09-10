@@ -570,7 +570,7 @@ struct ItemData
     ItemState *item_states;                             // 0xbc
     int air_state;                                      // 0xc0
     itData *itData;                                     // 0xc4
-    JOBJ *joint;                                        // 0xc8
+    JOBJDesc *joint;                                    // 0xc8
     itCommonAttr *common_attr;                          // 0xcc
     int xd0;                                            // 0xd0
     ItDynamicBoneset dynamics_boneset[24];              // 0xd4
@@ -979,9 +979,11 @@ struct ItemData
 
 static itPublicData **stc_itPublicData = R13_OFFSET(-0x4978);
 static ItemDesc **stc_itdesc_enemies = R13_OFFSET(-0x4968);
+static HSD_ObjAllocData *stc_item_alloc_data = (void*)0x804A0BE0;
 
 /*** Functions ***/
 void Item_IndexStageItem(ItemDesc *item_desc, int index);
+void Item_OnUserDataRemove(void *userdata);
 void Item_Hold(GOBJ *item, GOBJ *fighter, int boneID);
 void Item_Catch(GOBJ *fighter, int unk);
 void Item_StoreItemDataToCharItemTable(int articleData, int articleID);
@@ -991,6 +993,7 @@ GOBJ *Item_CreateItem1(SpawnItem *item_spawn);
 GOBJ *Item_CreateItem2(SpawnItem *item_spawn);
 GOBJ *Item_CreateItem3(SpawnItem *item_spawn);
 GOBJ *Item_CreateMapItem(int index, int initial_state, void *data, JOBJ *jobj, void *onHit, void *onHurt, void *onUnk);
+void Item_InitGObjObject(GOBJ *item);
 void Item_Destroy(GOBJ *item);
 int Item_CollGround_PassLedge(GOBJ *item, void *callback);
 int Item_CollGround_StopLedge(GOBJ *item, void *callback);

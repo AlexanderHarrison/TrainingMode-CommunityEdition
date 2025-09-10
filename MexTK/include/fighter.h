@@ -2273,13 +2273,15 @@ struct FighterData
         char jumps_used;               // 0x1968
         char walljumps_used;           // 0x1969
     } jump;                            //
-    float hitlag_mult;                 // 0x196c
-    int x1970;                         // 0x1970
-    GOBJ *item_held;                   // 0x1974
-    GOBJ *x1978;                       // 0x1978
-    int x197c;                         // 0x197c
-    GOBJ *item_head;                   // 0x1980
-    GOBJ *item_held_spec;              // 0x1984, special held item
+    float jab2_timer;                  // 0x196c
+    struct item {
+        int x1970;                     // 0x1970
+        GOBJ *held;               // 0x1974
+        GOBJ *held_2;             // 0x1978
+        GOBJ *held_3;             // 0x197c
+        GOBJ *head;               // 0x1980
+        GOBJ *held_special;       // 0x1984
+    } item;
     struct hurt                        // 0x1988
     {                                  //
         int kind_script;               // 0x1988, hurtkind set by action script
@@ -2428,7 +2430,7 @@ struct FighterData
     } afterimage;                         //
     int x2104;                            // 0x2104
     int x2108;                            // 0x2108
-    struct                                // 0x210c
+    struct wall                           // 0x210c
     {                                     //
         s8 timer;                         // 0x210c, Set to 0 when contact with a wall (other conditions necessary)
         float direction;                  // 0x2110
