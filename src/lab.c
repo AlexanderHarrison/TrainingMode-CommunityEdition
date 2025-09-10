@@ -9,7 +9,7 @@ static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
-static Savestate_v1 *rec_state;
+static Savestate_v2 *rec_state;
 static _HSD_ImageDesc snap_image = {0};
 static _HSD_ImageDesc resized_image = {
     .format = 4,
@@ -3653,7 +3653,7 @@ GOBJ *Record_Init()
     rec_data.text = text;
 
     // alloc rec_state
-    rec_state = calloc(sizeof(Savestate_v1));
+    rec_state = calloc(sizeof(Savestate_v2));
     // set as not exist
     rec_state->is_exist = 0;
 
@@ -4121,7 +4121,7 @@ void Record_InitState(GOBJ *menu_gobj)
 {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
-    if (event_vars->Savestate_Save_v1(rec_state, 0))
+    if (event_vars->Savestate_Save_v2(rec_state, 0))
         Record_OnSuccessfulSave(1);
 }
 
@@ -4131,7 +4131,7 @@ int Record_RemakeState(void)
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     int prev_frame = rec_state->frame;
-    if (event_vars->Savestate_Save_v1(rec_state, 0))
+    if (event_vars->Savestate_Save_v2(rec_state, 0))
         Record_OnSuccessfulSave(0);
     int new_frame = rec_state->frame;
     int time_diff = new_frame - prev_frame;
@@ -4501,7 +4501,7 @@ void Record_OnSuccessfulSave(int deleteRecordings)
     }
 
     // also save to personal savestate
-    event_vars->Savestate_Save_v1(event_vars->savestate, 0);
+    event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
     event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
 
     // take screenshot
@@ -4604,13 +4604,13 @@ void Record_MemcardLoad(int slot, int file_no)
             lz77Decompress(compressed_recording, (u8 *)loaded_recsave);
 
             // copy buffer to savestate
-            memcpy(rec_state, &loaded_recsave->savestate, sizeof(Savestate_v1));
+            memcpy(rec_state, &loaded_recsave->savestate, sizeof(Savestate_v2));
             event_vars->savestate_saved_while_mirrored = false;
             event_vars->loaded_mirrored = false;
 
             // restore controller indices
-            rec_state->ft_state[0].player_block.controller = stc_hmn_controller;
-            rec_state->ft_state[1].player_block.controller = stc_cpu_controller;
+            rec_state->ft_state[0].playerblock.controller = stc_hmn_controller;
+            rec_state->ft_state[1].playerblock.controller = stc_cpu_controller;
 
             // load state
             Record_LoadSavestate(rec_state);
@@ -4633,7 +4633,7 @@ void Record_MemcardLoad(int slot, int file_no)
             LabOptions_Record[OPTREC_AUTORESTORE].val = menu_settings->auto_restore;
 
             // save to personal savestate
-            event_vars->Savestate_Save_v1(event_vars->savestate, 0);
+            event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
             event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
         }
 
@@ -4672,7 +4672,7 @@ void Record_RerollSlotRNG(void) {
     }
 }
 
-void Record_Restart(Savestate_v1 *savestate, int flags) {
+void Record_Restart(Savestate_v2 *savestate, int flags) {
     int mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
     if (mirror == OPTMIRROR_RANDOM)
         mirror = HSD_Randi(2);
@@ -4699,7 +4699,7 @@ void Record_Restart(Savestate_v1 *savestate, int flags) {
     event_vars->Savestate_Load_v1(savestate, flags);
 }
 
-void Record_LoadSavestate(Savestate_v1 *savestate) {
+void Record_LoadSavestate(Savestate_v2 *savestate) {
     Record_Restart(savestate, 0);
     Record_RerollSlotRNG();
 }
@@ -4756,7 +4756,7 @@ void Savestates_Update()
                     if (save_timer[port] == SAVE_THRESHOLD)
                     {
                         // save state
-                        event_vars->Savestate_Save_v1(event_vars->savestate, 0);
+                        event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
                         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
                         save_timer[port] = 0; // Reset timer after saving
                         lockout_timer = LOCKOUT_DURATION;
@@ -4771,7 +4771,7 @@ void Savestates_Update()
                 if (pad->down & loadstate_mask)
                 {
                     // load state
-                    Record_LoadSavestate(event_vars->savestate);
+                    Record_LoadSavestate(event_vars->savestate2);
                     stc_playback_cancelled_hmn = false;
                     stc_playback_cancelled_cpu = false;
 
@@ -4866,7 +4866,7 @@ void Export_Init(GOBJ *menu_gobj)
     // copy match data to buffer
     memcpy(&temp_rec_save->match_data, &stc_match->match, sizeof(MatchInit));
     // copy savestate to buffer
-    memcpy(&temp_rec_save->savestate, rec_state, sizeof(Savestate_v1));
+    memcpy(&temp_rec_save->savestate, rec_state, sizeof(Savestate_v2));
     // copy recordings
     for (int i = 0; i < REC_SLOTS; i++)
     {
@@ -6580,8 +6580,8 @@ void Event_Think(GOBJ *event)
 {
     // Save a minor state at event start, so people can reset if they SD.
     // This cannot be done in Event_Init, so we do it here.
-    if (!event_vars->savestate->is_exist) {
-        event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
+    if (!event_vars->savestate2->is_exist) {
+        event_vars->Savestate_Save_v2(event_vars->savestate2, Savestate_Silent);
         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
     }
 

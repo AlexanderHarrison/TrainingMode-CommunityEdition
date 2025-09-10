@@ -5,6 +5,96 @@
 
 #define EVENT_DATASIZE 512
 
+// VERSION 2 #####################################################
+    
+typedef struct FtSaveStateData_v2 {
+    int is_exist;
+    int state_id;
+    float facing_direction;
+    float state_frame;
+    float state_rate;
+    float state_blend;
+    struct phys phys;
+    struct input input;
+    CollData coll_data;
+    ColorOverlay color[3];
+    CmSubject camera_subject;
+    ftHit hitbox[4];
+    ftHit throw_hitbox[2];
+    ftHit thrown_hitbox;
+    struct flags flags;
+    struct fighter_var fighter_var;
+    struct state_var state_var;
+    struct ftcmd_var ftcmd_var;
+    struct dmg dmg;
+    struct grab grab;
+    CPU cpu;
+    struct wall wall;
+    float jab2_timer;
+    struct item item;
+    struct jump jump;
+    struct smash smash;
+    struct hurt hurt;
+    struct shield shield;
+    struct shield_bubble shield_bubble;
+    struct reflect_bubble reflect_bubble;
+    struct absorb_bubble absorb_bubble;
+    struct reflect_hit reflect_hit;
+    struct absorb_hit absorb_hit;
+    struct cb cb;
+} FtSaveStateData_v2;
+
+typedef struct FtSaveState_v2 {
+    FtSaveStateData_v2 data[2];
+    Playerblock playerblock;
+    int stale_queue[11];
+} FtSaveState_v2;
+
+// enum StageSaveStateTag_v2 {
+//     STSV2_StadiumTransformation = 1,
+// };
+
+// typedef struct StageSaveState_v2 {
+//     u16 tag;
+//     union {
+//     };
+// } StageSaveState_v2;
+
+typedef struct ItemSaveState_v2 {
+    int is_exist;
+    
+    struct itgobjinfo {
+        short entity_class;
+        char p_link;
+        char gx_link;
+        char p_priority;
+        char gx_pri;
+        char obj_kind;
+        char data_kind;
+        void (*gx_cb)(GOBJ*, int);
+        u64 cobj_links;
+        void *destructor_function;
+
+        void *proc[12];
+        char proc_s_link[12];
+        char proc_flags[12];
+    } gobj;
+    
+    ItemData data;
+} ItemSaveState_v2;
+
+typedef struct Savestate_v2
+{
+    int is_exist;
+    int frame;
+    u8 event_data[EVENT_DATASIZE];
+    FtSaveState_v2 ft_state[6];
+    ItemSaveState_v2 item_state[8];
+    // StageSaveState_v2 *stage_state;
+} Savestate_v2;
+
+// VERSION 1 #####################################################
+    
 typedef struct FtSaveStateData_v1
 {
     int is_exist;
@@ -204,5 +294,7 @@ enum savestate_flags {
 
 int Savestate_Save_v1(Savestate_v1 *savestate, int flags);
 int Savestate_Load_v1(Savestate_v1 *savestate, int flags);
+int Savestate_Save_v2(Savestate_v2 *savestate, int flags);
+int Savestate_Load_v2(Savestate_v2 *savestate, int flags);
 
 #endif

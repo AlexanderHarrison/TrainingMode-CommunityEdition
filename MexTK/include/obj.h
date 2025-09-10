@@ -194,6 +194,21 @@ struct HSD_Obj
     s16 ref_count_individual; // 0x6
 };
 
+enum GOBJClass {
+    HSD_GOBJ_CLASS_NONE = 0,
+    HSD_GOBJ_CLASS_STAGE = 0x3,
+    HSD_GOBJ_CLASS_FIGHTER = 0x4,
+    HSD_GOBJ_CLASS_ITEM = 0x6,
+    
+    // Used by chain-type items in-game to link multiple parts together
+    HSD_GOBJ_CLASS_ITEMLINK = 0x7,
+    
+    HSD_GOBJ_CLASS_EFFECT = 0x8,
+    HSD_GOBJ_CLASS_LIGHT = 0xB,
+    HSD_GOBJ_CLASS_UI = 0xE,
+    HSD_GOBJ_CLASS_CAMERA = 0x13,
+};
+
 struct GOBJ
 {
     short entity_class;      // 0x0
@@ -212,8 +227,8 @@ struct GOBJ
     u64 cobj_links;          // 0x20. this is used to know which gobjs to render
     void *hsd_object;        // 0x28
     void *userdata;          // 0x2C
-    int destructor_function; // 0x30
-    int unk_linked_list;     // 0x34
+    void *destructor_function; // 0x30
+    void *unk_linked_list;     // 0x34
 };
 
 struct GOBJProc
@@ -222,13 +237,18 @@ struct GOBJProc
     GOBJProc *next;
     GOBJProc *prev;
     char s_link;     // 0xC
-    char x0d_80 : 1; // 0xD
-    char x0d_40 : 1;
-    char update_idx : 2;
-    char x0d_08 : 1;
-    char x0d_04 : 1;
-    char x0d_02 : 1;
-    char x0d_01 : 1;
+    union {
+        char flags;
+        struct {
+            char x0d_80 : 1; // 0xD
+            char x0d_40 : 1;
+            char update_idx : 2;
+            char x0d_08 : 1;
+            char x0d_04 : 1;
+            char x0d_02 : 1;
+            char x0d_01 : 1;
+        };
+    };
     GOBJ *parentGOBJ;       // 0x10
     void (*cb)(GOBJ *gobj); // function callback
 };
