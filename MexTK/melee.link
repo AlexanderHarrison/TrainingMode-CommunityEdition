@@ -444,6 +444,7 @@
 80090718:Fighter_PlayQueuedDamageSounds
 80160968:Fighter_GetPlyHUDColor
 8026AC74:Item_Throw
+802680cc:Item_InitGObjObject
 80272C90:Item_GetHeldBone
 80272DB0:Item_BounceOffVictim
 80273078:Item_BounceOffShield

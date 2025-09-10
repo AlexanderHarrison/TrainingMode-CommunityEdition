@@ -198,12 +198,15 @@ typedef struct EventVars
     GOBJ *menu_gobj;                                                                         // event menu gobj
     RNGControl *rng;                                                                         // rng struct pointer
     int game_timer;                                                                          // amount of game frames passed
-    int (*Savestate_Save_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to save state
-    int (*Savestate_Load_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to load state
+    int (*Savestate_Save_v1)(Savestate_v1 *savestate, int flags);                            // function pointer to save state
+    int (*Savestate_Load_v1)(Savestate_v1 *savestate, int flags);                            // function pointer to load state
+    int (*Savestate_Save_v2)(Savestate_v2 *savestate, int flags);                            // function pointer to save state
+    int (*Savestate_Load_v2)(Savestate_v2 *savestate, int flags);                            // function pointer to load state
     GOBJ *(*Message_Display)(int msg_kind, int queue_num, int msg_color, char *format, ...); // function pointer to display message
     int (*Tip_Display)(int lifetime, char *fmt, ...);
     void (*Tip_Destroy)(void);      // function pointer to destroy tip
     Savestate_v1 *savestate;       // points to the events main savestate
+    Savestate_v2 *savestate2;      // points to the events main savestate
 
     // To allow minor savestates during mirrored playback, 
     // we need to record if the minor savestate was saved duting mirroring.
@@ -228,12 +231,6 @@ EventDesc *GetEventDesc(int page, int event);
 void EventInit(int page, int eventID, MatchInit *matchData);
 void EventLoad(void);
 int Text_AddSubtextManual(Text *text, char *string, int posx, int posy, int scalex, int scaley);
-GOBJ *GOBJToID(GOBJ *gobj);
-FighterData *FtDataToID(FighterData *fighter_data);
-JOBJ *BoneToID(FighterData *fighter_data, JOBJ *bone);
-GOBJ *IDToGOBJ(GOBJ *id_as_ptr);
-FighterData *IDToFtData(FighterData *id_as_ptr);
-JOBJ *IDToBone(FighterData *fighter_data, JOBJ *id_as_ptr);
 void UpdateDevCamera(void);
 void EventUpdate(void);
 void Event_IncTimer(GOBJ *gobj);
