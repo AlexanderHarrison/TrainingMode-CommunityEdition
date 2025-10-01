@@ -5,6 +5,8 @@
 8008cfac:Fighter_EnterAerial
 80068E98:Fighter_Create
 800BE7E0:Fighter_Create2
+8008702c:Fighter_IncrementReferenceCount
+80087050:Fighter_DecrementReferenceCount
 800693AC:ActionStateChange
 8006f190:FrameSpeedChange
 8036410C:AOBJ_ReqAnim
@@ -675,7 +677,7 @@
 80272460:Item_UpdateHitboxDamage
 8027236C:Item_GiveOwnershipToAttacker
 802F23AC:Item_GetDistanceFromPointSquared
-802F28C8:Item_DestroyAndRemovedGrabbed
+802F28C8:Item_DestroyAndRemoveGrabbed
 8037210C:JOBJ_LoadDummy
 8036FB5C:JOBJ_AddAnimAll
 803717A8:JOBJ_AddChild

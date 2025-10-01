@@ -572,7 +572,7 @@ struct ItemData
     itData *itData;                                     // 0xc4
     JOBJDesc *joint;                                    // 0xc8
     itCommonAttr *common_attr;                          // 0xcc
-    int xd0;                                            // 0xd0
+    ItemStateDesc *desc;                                // 0xd0
     ItDynamicBoneset dynamics_boneset[24];              // 0xd4
     int dynamics_num;                                   // 0x374
     CollData coll_data;                                 // 0x378 -> 0x518
@@ -698,7 +698,7 @@ struct ItemData
     } dmg;                                              //
     GOBJ *hit_fighter;                                  // 0xcf4, fighter that got hit by, shielded, or hit this item. is removed after processing the damage callbacks
     GOBJ *detected_fighter;                             // 0xcf8, fighter that touched the items detect box. updated @ 800798d4
-    int xcfc;                                           // 0xcfc
+    GOBJ *unk_fighter;                                  // 0xcfc
     GOBJ *grabbed_fighter;                              // 0xd00
     GOBJ *attacker_item;                                // 0xd04
     u8 xd08;                                            // 0xd08
@@ -1050,7 +1050,7 @@ void Item_UpdateHitboxDamage(itHit *hit, int dmg, GOBJ *item);
 GOBJ *Item_GiveOwnershipToAttacker(GOBJ *item);
 char Item_GetHoldKind(GOBJ *item);
 float Item_GetDistanceFromPointSquared(GOBJ *item, Vec3 *position);
-void Item_DestroyAndRemovedGrabbed(GOBJ *item, int flag, float damage);
+void Item_DestroyAndRemoveGrabbed(GOBJ *item, int flag, float damage);
 bool Item_RemoveFighterReference(GOBJ *item, GOBJ *fighter);
 void Item_ClearHitlagFlag(GOBJ *item);
 #endif
