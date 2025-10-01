@@ -9,7 +9,8 @@
     
 typedef struct FtSaveStateData_v2 {
     int is_exist;
-    int state_id;
+    FighterData ft_data;
+    /*int state_id;
     float facing_direction;
     float state_frame;
     float state_rate;
@@ -41,7 +42,7 @@ typedef struct FtSaveStateData_v2 {
     struct absorb_bubble absorb_bubble;
     struct reflect_hit reflect_hit;
     struct absorb_hit absorb_hit;
-    struct cb cb;
+    struct cb cb;*/
 } FtSaveStateData_v2;
 
 typedef struct FtSaveState_v2 {
@@ -79,6 +80,16 @@ typedef struct ItemSaveState_v2 {
         char proc_s_link[12];
         char proc_flags[12];
     } gobj;
+    
+    // char fighter_attached_bone;
+    // char item_attached_bone;
+    JOBJ *attached;
+    JOBJ *attached_to;
+    
+    // struct itattachinfo {
+    //     JOBJ *to_attach;
+    //     JOBJ *attach_to;
+    // }[4];
     
     ItemData data;
 } ItemSaveState_v2;

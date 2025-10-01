@@ -498,8 +498,55 @@ struct JOBJ
     Vec3 *VEC;      // 0x74
     Mtx *MTX;       // 0x78
     AOBJ *aobj;     // 0x7C
-    int *RObj;      // 0x80
+    ROBJ *robj;     // 0x80
     JOBJDesc *desc; // 0x84
+};
+
+struct Rvalue
+{
+    Rvalue *next;
+    u32 flags;
+    JOBJ *jobj;
+};
+
+struct IKHint
+{
+    f32 bone_length;
+    f32 rotate_x;
+};
+
+struct Exp
+{
+    union
+    {
+        f32 (*func)(void*);
+        u8 *bytecode;
+    } expr;
+    Rvalue *rvalue;
+    u32 nb_args;
+    u8 is_bytecode;
+};
+
+#define ROBJ_HAS_TYPE 0x80000000
+#define ROBJ_TYPE_MASK 0x70000000
+#define ROBJ_EXP 0x00000000
+#define ROBJ_JOBJ 0x10000000
+#define ROBJ_LIMIT 0x20000000
+#define ROBJ_BYTECODE 0x30000000
+#define ROBJ_IKHINT 0x40000000
+
+struct ROBJ
+{
+    ROBJ *next;
+    u32 flags;
+    union
+    {
+        JOBJ *jobj;
+        Exp exp;
+        f32 limit;
+        IKHint ik_hint;
+    } u;
+    AOBJ *aobj;
 };
 
 struct WOBJ
