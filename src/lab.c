@@ -7,7 +7,6 @@ static DIDraw didraws[6];
 static DIDraw sdidraws[6];
 static u8 hitlag_prev[6];
 static u8 hitlag_counter[6];
-static u8 sdidraw_duration[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
@@ -2432,7 +2431,6 @@ void DIDraw_Init()
 
         hitlag_prev[i] = 0;
         hitlag_counter[i] = 0;
-        sdidraw_duration[i] = 0;
     }
 }
 void DIDraw_Update()
@@ -2825,7 +2823,6 @@ void DIDraw_Update()
                 if (hitlag_prev[ply] == 0 && fighter_data->dmg.hitlag_frames > 0)
                 {
                     hitlag_counter[ply] = 0;
-                    sdidraw_duration[ply] = 0;
                     sdidraw->vertices[ply] = calloc(sizeof(Vec2) * fighter_data->dmg.hitlag_frames);
                 }
                 
@@ -2843,8 +2840,8 @@ void DIDraw_Update()
                     sdidraw->color.a = 255;
                 }
             } 
-            // if not in hitlag and last sdidraw was present for more than 30 frames, then zero out sdidraw
-            else if (fighter_data->flags.hitlag_victim == 0 && sdidraw_duration[ply] > 30)
+            // if not in hitstun, then zero out sdidraw
+            else if (fighter_data->flags.hitstun == 0)
             {
                 // reset hitlag frame counter
                 hitlag_counter[ply] = 0;
@@ -2859,12 +2856,6 @@ void DIDraw_Update()
 
             // save this frame's hitlag frames for next frame
             hitlag_prev[ply] = fighter_data->dmg.hitlag_frames;
-
-            // increment counter keeping track of how long sdidraw is displayed
-            if (sdidraw_duration[ply] <= 30)
-            {
-                sdidraw_duration[ply]++;
-            }
         }
     }
 
