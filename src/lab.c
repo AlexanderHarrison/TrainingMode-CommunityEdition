@@ -2418,7 +2418,7 @@ void DIDraw_Init()
     // Add gxlink
     GObj_AddGXLink(didraw_gobj, DIDraw_GX, 6, 0);
     GObj_AddGXLink(sdidraw_gobj, DIDraw_GX, 6, 0);
-    // init didraw pointers
+    // init didraw and sdidraw pointers
     for (int i = 0; i < 6; i++)
     {
         // for each subchar
@@ -2426,22 +2426,10 @@ void DIDraw_Init()
         {
             didraws[i].num[j] = 0;
             didraws[i].vertices[j] = 0;
-        }
-    }
-    
-    // init sdidraw pointers
-    for (int i = 0; i < 6; i++)
-    {
-        // for each subchar
-        for (int j = 0; j < 2; j++)
-        {
             sdidraws[i].num[j] = 0;
             sdidraws[i].vertices[j] = 0;
         }
-    }
 
-    // init counters used for managing sdi draw
-    for (int i = 0; i < 6; i++){
         hitlag_prev[i] = 0;
         hitlag_counter[i] = 0;
         sdidraw_duration[i] = 0;
@@ -2883,10 +2871,11 @@ void DIDraw_Update()
     // is off, remove all di draw and sdi draw
     else
     {
-        // all slots for di draw
+        // all slots for di and sdi draw
         for (int i = 0; i < 6; i++)
         {
             DIDraw *didraw = &didraws[i];
+            DIDraw *sdidraw = &sdidraws[i];
 
             // all subchars
             for (int j = 0; j < 2; j++)
@@ -2897,16 +2886,6 @@ void DIDraw_Update()
                     didraw->num[j] = 0;
                     didraw->vertices[j] = 0;
                 }
-            }
-        }
-        // all slots for sdi draw
-        for (int i = 0; i < 6; i++)
-        {
-            DIDraw *sdidraw = &sdidraws[i];
-
-            // all subchars
-            for (int j = 0; j < 2; j++)
-            {
                 if (sdidraw->vertices[j] != 0)
                 {
                     HSD_Free(sdidraw->vertices[j]);
