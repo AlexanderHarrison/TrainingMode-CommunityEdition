@@ -2928,7 +2928,7 @@ void DIDraw_GX()
                         .z_update_enable = true,
                         .z_logic_eq = true,
                         .z_logic_lt = true,
-                        .shape = PRIM_SHAPE_POINTS,
+                        .shape = PRIM_SHAPE_LINE_STRIP,
                     };
                     PRIM_BlendMode blend_mode = { 0 };
                     PRIM_NEW(vertex_num, draw_mode, blend_mode);
