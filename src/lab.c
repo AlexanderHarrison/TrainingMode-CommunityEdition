@@ -6,6 +6,7 @@
 static DIDraw didraws[6];
 static DIDraw sdidraws[6];
 static u8 hitlag_prev[6];
+static u8 sdidraw_vertices_buf_count[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
@@ -2797,15 +2798,24 @@ void DIDraw_Update()
             // keep track of position for each frame in hitlag while updating sdi draw
             if (fighter_data->flags.hitlag_victim == 1)
             {
-                // if hitlag goes from 0 to greater than 0, free old and restart counters
-                if (hitlag_prev[ply] == 0 && fighter_data->dmg.hitlag_frames > 0)
+                // on the first frame of hitlag
+                if (hitlag_prev[ply] < fighter_data->dmg.hitlag_frames)
                 {
+                    // free old 
+                    if (sdidraw->vertices[ply] != 0)
+                    {
+                        HSD_Free(sdidraw->vertices[ply]);
+                        sdidraw->num[ply] = 0;
+                        sdidraw->vertices[ply] = 0;
+                    }
                     sdidraw->num[ply] = 0;
+                    // allocate Vec2 memory for each hitlag frame
                     sdidraw->vertices[ply] = calloc(sizeof(Vec2) * fighter_data->dmg.hitlag_frames);
+                    sdidraw_vertices_buf_count[ply] = fighter_data->dmg.hitlag_frames;
                 }
                 
-                // only draw sdi for a maximum of 10 frames
-                if (sdidraw->num[ply] < 10){
+                // only make a new vertex for each Vec2 allocated
+                if (sdidraw->num[ply] < sdidraw_vertices_buf_count[ply]){
                     sdidraw->vertices[ply][sdidraw->num[ply]].X = fighter_data->coll_data.topN_Curr.X;
                     sdidraw->vertices[ply][sdidraw->num[ply]].Y = fighter_data->coll_data.topN_Curr.Y + fighter_data->coll_data.ecbCurr_left.Y;
                     sdidraw->num[ply]++;
@@ -2918,7 +2928,7 @@ void DIDraw_GX()
                         .z_update_enable = true,
                         .z_logic_eq = true,
                         .z_logic_lt = true,
-                        .shape = PRIM_SHAPE_LINE_STRIP,
+                        .shape = PRIM_SHAPE_POINTS,
                     };
                     PRIM_BlendMode blend_mode = { 0 };
                     PRIM_NEW(vertex_num, draw_mode, blend_mode);
