@@ -4,6 +4,10 @@
 
 // Static Variables
 static DIDraw didraws[6];
+static DIDraw sdidraws[10];
+static u8 hitlag_prev[2];
+static u8 hitlag_counter[2];
+static u8 sdidraw_duration[2];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
@@ -2408,10 +2412,12 @@ int Update_CheckAdvance()
 }
 void DIDraw_Init()
 {
-    // Create DIDraw GOBJ
+    // Create GOBJ for DIDraw and SDIDraw
     GOBJ *didraw_gobj = GObj_Create(0, 0, 0);
+    GOBJ *sdidraw_gobj = GObj_Create(0, 0, 0);
     // Add gxlink
     GObj_AddGXLink(didraw_gobj, DIDraw_GX, 6, 0);
+    GObj_AddGXLink(sdidraw_gobj, DIDraw_GX, 6, 0);
     // init didraw pointers
     for (int i = 0; i < 6; i++)
     {
@@ -2421,6 +2427,24 @@ void DIDraw_Init()
             didraws[i].num[j] = 0;
             didraws[i].vertices[j] = 0;
         }
+    }
+    
+    // init sdidraw pointers
+    for (int i = 0; i < 10; i++)
+    {
+        // for each subchar
+        for (int j = 0; j < 2; j++)
+        {
+            sdidraws[i].num[j] = 0;
+            sdidraws[i].vertices[j] = 0;
+        }
+    }
+
+    // init counters used for managing sdi draw
+    for (int i = 0; i < 2; i++){
+        hitlag_prev[i] = 0;
+        hitlag_counter[i] = 0;
+        sdidraw_duration[i] = 0;
     }
 }
 void DIDraw_Update()
@@ -2804,13 +2828,62 @@ void DIDraw_Update()
                     didraw->vertices[ply] = 0;
                 }
             }
+
+            DIDraw *sdidraw = &sdidraws[ply];
+            // keep track of position for each frame in hitlag while updating sdi draw
+            if (fighter_data->flags.hitlag_victim == 1)
+            {
+                // if hitlag goes from 0 to greater than 0, free old and restart counters
+                if (hitlag_prev[ply] == 0 && fighter_data->dmg.hitlag_frames > 0)
+                {
+                    hitlag_counter[ply] = 0;
+                    sdidraw_duration[ply] = 0;
+                    sdidraw->vertices[ply] = calloc(sizeof(Vec2) * fighter_data->dmg.hitlag_frames);
+                }
+                
+                // only draw sdi for a maximum of 10 frames
+                if (hitlag_counter[ply] < 10){
+                    sdidraw->vertices[ply][hitlag_counter[ply]].X = fighter_data->coll_data.topN_Curr.X;
+                    sdidraw->vertices[ply][hitlag_counter[ply]].Y = fighter_data->coll_data.topN_Curr.Y + fighter_data->coll_data.ecbCurr_left.Y;
+                    hitlag_counter[ply]++;
+                    sdidraw->num[ply] = hitlag_counter[ply];
+
+                    // set vertex color (unsure if this does anything?)
+                    sdidraw->color.r = 255;
+                    sdidraw->color.g = 255;
+                    sdidraw->color.b = 0;
+                    sdidraw->color.a = 255;
+                }
+            } 
+            // if not in hitlag and last sdidraw was present for more than 30 frames, then zero out sdidraw
+            else if (fighter_data->flags.hitlag_victim == 0 && sdidraw_duration[ply] > 30)
+            {
+                // reset hitlag frame counter
+                hitlag_counter[ply] = 0;
+
+                if (sdidraw->vertices[ply] != 0)
+                {
+                    HSD_Free(sdidraw->vertices[ply]);
+                    sdidraw->num[ply] = 0;
+                    sdidraw->vertices[ply] = 0;
+                }
+            }
+
+            // save this frame's hitlag frames for next frame
+            hitlag_prev[ply] = fighter_data->dmg.hitlag_frames;
+
+            // increment counter keeping track of how long sdidraw is displayed
+            if (sdidraw_duration[ply] <= 30)
+            {
+                sdidraw_duration[ply]++;
+            }
         }
     }
 
-    // is off, remove all di draw
+    // is off, remove all di draw and sdi draw
     else
     {
-        // all slots
+        // all slots for di draw
         for (int i = 0; i < 6; i++)
         {
             DIDraw *didraw = &didraws[i];
@@ -2823,6 +2896,22 @@ void DIDraw_Update()
                     HSD_Free(didraw->vertices[j]);
                     didraw->num[j] = 0;
                     didraw->vertices[j] = 0;
+                }
+            }
+        }
+        // all slots for sdi draw
+        for (int i = 0; i < 10; i++)
+        {
+            DIDraw *sdidraw = &sdidraws[i];
+
+            // all subchars
+            for (int j = 0; j < 2; j++)
+            {
+                if (sdidraw->vertices[j] != 0)
+                {
+                    HSD_Free(sdidraw->vertices[j]);
+                    sdidraw->num[j] = 0;
+                    sdidraw->vertices[j] = 0;
                 }
             }
         }
@@ -2861,6 +2950,42 @@ void DIDraw_GX()
                     for (int k = 0; k < vertex_num; k++)
                     {
                         PRIM_DRAW(vertices[k].X, vertices[k].Y, 0, 0x008affff);
+                    }
+
+                    // close
+                    PRIM_CLOSE();
+                }
+            }
+        }
+        // draw each
+        for (int i = 0; i < 10; i++)
+        {
+            // for each subchar
+            for (int j = 0; j < 2; j++)
+            {
+                DIDraw *sdidraw = &sdidraws[i];
+                // if it exists
+                if (sdidraw->num[j] != 0)
+                {
+                    int vertex_num = sdidraw->num[j];
+                    Vec2 *vertices = sdidraw->vertices[j];
+
+                    // alloc prim
+                    PRIM_DrawMode draw_mode = {
+                        .line_width = 31,
+                        .z_compare_enable = false,
+                        .z_update_enable = true,
+                        .z_logic_eq = true,
+                        .z_logic_lt = true,
+                        .shape = PRIM_SHAPE_LINE_STRIP,
+                    };
+                    PRIM_BlendMode blend_mode = { 0 };
+                    PRIM_NEW(vertex_num, draw_mode, blend_mode);
+
+                    // draw each
+                    for (int k = 0; k < vertex_num; k++)
+                    {
+                        PRIM_DRAW(vertices[k].X, vertices[k].Y, 0, 0xffff00ff);
                     }
 
                     // close
