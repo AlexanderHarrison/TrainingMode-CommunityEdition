@@ -6,7 +6,6 @@
 static DIDraw didraws[6];
 static DIDraw sdidraws[6];
 static u8 hitlag_prev[6];
-static u8 hitlag_counter[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
@@ -2430,7 +2429,6 @@ void DIDraw_Init()
         }
 
         hitlag_prev[i] = 0;
-        hitlag_counter[i] = 0;
     }
 }
 void DIDraw_Update()
@@ -2802,23 +2800,22 @@ void DIDraw_Update()
                 // if hitlag goes from 0 to greater than 0, free old and restart counters
                 if (hitlag_prev[ply] == 0 && fighter_data->dmg.hitlag_frames > 0)
                 {
-                    hitlag_counter[ply] = 0;
+                    sdidraw->num[ply] = 0;
                     sdidraw->vertices[ply] = calloc(sizeof(Vec2) * fighter_data->dmg.hitlag_frames);
                 }
                 
                 // only draw sdi for a maximum of 10 frames
-                if (hitlag_counter[ply] < 10){
-                    sdidraw->vertices[ply][hitlag_counter[ply]].X = fighter_data->coll_data.topN_Curr.X;
-                    sdidraw->vertices[ply][hitlag_counter[ply]].Y = fighter_data->coll_data.topN_Curr.Y + fighter_data->coll_data.ecbCurr_left.Y;
-                    hitlag_counter[ply]++;
-                    sdidraw->num[ply] = hitlag_counter[ply];
+                if (sdidraw->num[ply] < 10){
+                    sdidraw->vertices[ply][sdidraw->num[ply]].X = fighter_data->coll_data.topN_Curr.X;
+                    sdidraw->vertices[ply][sdidraw->num[ply]].Y = fighter_data->coll_data.topN_Curr.Y + fighter_data->coll_data.ecbCurr_left.Y;
+                    sdidraw->num[ply]++;
                 }
             } 
             // if not in hitstun, then zero out sdidraw
             else if (fighter_data->flags.hitstun == 0)
             {
                 // reset hitlag frame counter
-                hitlag_counter[ply] = 0;
+                sdidraw->num[ply] = 0;
 
                 if (sdidraw->vertices[ply] != 0)
                 {
