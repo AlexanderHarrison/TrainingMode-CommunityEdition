@@ -103,6 +103,9 @@ void Lab_ChangeAdvCounterLogic(GOBJ *menu_gobj, int value);
 void Lab_ChangeInputs(GOBJ *menu_gobj, int value);
 void Lab_ChangeAlterInputsFrame(GOBJ *menu_gobj, int value);
 int Lab_SetAlterInputsMenuOptions(GOBJ *menu_gobj);
+void DIDraw_Init(void);
+void DIDraw_Update(void);
+void DIDraw_GX(void);
 
 // ACTIONS #################################################
 

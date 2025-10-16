@@ -239,8 +239,13 @@ typedef struct DIDraw
 {
     int num[2];        // number of vertices
     Vec2 *vertices[2]; // pointer to vertex to draw
-    GXColor color;     // color of this vertex
 } DIDraw;
+typedef struct SDIDraw
+{
+    int num[2];        // number of vertices
+    int cap[2];        // capacity of vertices
+    Vec2 *vertices[2]; // pointer to vertex to draw
+} SDIDraw;
 typedef struct DIDrawCalculate
 {
     Vec2 pos;       // position of vertices
@@ -439,7 +444,6 @@ void Lab_ChangeSlot3ChanceCPU (GOBJ *menu_gobj, int _new_val);
 void Lab_ChangeSlot4ChanceCPU (GOBJ *menu_gobj, int _new_val);
 void Lab_ChangeSlot5ChanceCPU (GOBJ *menu_gobj, int _new_val);
 void Lab_ChangeSlot6ChanceCPU (GOBJ *menu_gobj, int _new_val);
-void DIDraw_GX();
 int Record_GetEndFrame(void);
 int Record_GetCurrFrame(void);
 int Record_GetSlot(int ply);

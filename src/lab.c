@@ -4,6 +4,7 @@
 
 // Static Variables
 static DIDraw didraws[6];
+static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
@@ -2406,7 +2407,7 @@ int Update_CheckAdvance()
 
     return isAdvance;
 }
-void DIDraw_Init()
+void DIDraw_Init(void)
 {
     // Create DIDraw GOBJ
     GOBJ *didraw_gobj = GObj_Create(0, 0, 0);
@@ -2420,10 +2421,14 @@ void DIDraw_Init()
         {
             didraws[i].num[j] = 0;
             didraws[i].vertices[j] = 0;
+
+            sdidraws[i].num[j] = 0;
+            sdidraws[i].cap[j] = 0;
+            sdidraws[i].vertices[j] = 0;
         }
     }
 }
-void DIDraw_Update()
+void DIDraw_Update(void)
 {
     static ECBSize ecb_size_def = {
         .topY = 9,
@@ -2441,6 +2446,50 @@ void DIDraw_Update()
 
             FighterData *fighter_data = fighter->userdata;
             int ply = fighter_data->ply;
+            
+            // SDI DISPLAY ---------------------------------------------------
+            
+            SDIDraw *sdidraw = &sdidraws[ply];
+
+            if (IsHitlagVictim(fighter))
+            { 
+                int hitlag_left = fighter_data->dmg.hitlag_frames;
+                int hitlag_passed = sdidraw->num[ply];
+                int total_hitlag = hitlag_left + hitlag_passed;
+
+                // realloc if undersized.
+                if (total_hitlag > sdidraw->cap[ply]) {
+                    Vec2 *vertices = calloc(sizeof(Vec2) * total_hitlag);
+                    if (sdidraw->vertices[ply]) {
+                        memcpy(vertices, sdidraw->vertices[ply], sdidraw->num[ply] * sizeof(Vec2));
+                        HSD_Free(sdidraw->vertices[ply]);
+                    }
+                    sdidraw->vertices[ply] = vertices;
+                    sdidraw->cap[ply] = total_hitlag;
+                }
+                
+                sdidraw->vertices[ply][hitlag_passed] = (Vec2) {
+                    .X = fighter_data->phys.pos.X,
+                    .Y = fighter_data->phys.pos.Y,
+                };
+                
+                // only actually draw if there was SDI
+                if (
+                    hitlag_passed == 0
+                    || sdidraw->vertices[ply][hitlag_passed].X != sdidraw->vertices[ply][hitlag_passed-1].X
+                    || sdidraw->vertices[ply][hitlag_passed].Y != sdidraw->vertices[ply][hitlag_passed-1].Y
+                ) {
+                    sdidraw->num[ply]++;
+                }
+            }
+            else if (fighter_data->flags.hitstun == 0)
+            {
+                // don't show after histun ends
+                sdidraw->num[ply] = 0;
+            }
+            
+            // DI DISPLAY ---------------------------------------------------
+            
             DIDraw *didraw = &didraws[ply];
 
             // if in hitlag and hitstun simulate and update trajectory
@@ -2769,26 +2818,6 @@ void DIDraw_Update()
                 {
                     didraw->vertices[ply][i + 2].X = DICollData[i].pos.X;
                     didraw->vertices[ply][i + 2].Y = DICollData[i].pos.Y + ((DICollData[i].ECBLeftY + DICollData[i].ECBTopY) / 2);
-
-                    // get vertex color
-                    static GXColor airColor = {0, 138, 255, 255};
-                    static GXColor groundColor = {255, 255, 255, 255};
-                    static GXColor ceilColor = {255, 0, 0, 255};
-                    static GXColor wallColor = {0, 255, 0, 255};
-                    GXColor *color;
-                    if ((ecb.envFlags & ECB_GROUND) != 0)
-                        color = &groundColor;
-                    else if ((ecb.envFlags & ECB_CEIL) != 0)
-                        color = &ceilColor;
-                    else if ((ecb.envFlags & (ECB_WALLLEFT | ECB_WALLRIGHT)) != 0)
-                        color = &wallColor;
-                    else
-                        color = &airColor;
-                    // set vertex color
-                    didraw->color.r = color->r;
-                    didraw->color.g = color->g;
-                    didraw->color.b = color->b;
-                    didraw->color.a = color->a;
                 }
 
                 // free the collision info
@@ -2814,6 +2843,7 @@ void DIDraw_Update()
         for (int i = 0; i < 6; i++)
         {
             DIDraw *didraw = &didraws[i];
+            SDIDraw *sdidraw = &sdidraws[i];
 
             // all subchars
             for (int j = 0; j < 2; j++)
@@ -2824,11 +2854,13 @@ void DIDraw_Update()
                     didraw->num[j] = 0;
                     didraw->vertices[j] = 0;
                 }
+
+                sdidraw->num[j] = 0;
             }
         }
     }
 }
-void DIDraw_GX()
+void DIDraw_GX(void)
 {
     // if toggle enabled
     if (LabOptions_General[OPTGEN_DI].val == 1)
@@ -2839,7 +2871,48 @@ void DIDraw_GX()
             // for each subchar
             for (int j = 0; j < 2; j++)
             {
+                // SDI DISPLAY -------------------------------------------
+                
+                SDIDraw *sdidraw = &sdidraws[i];
+
+                // if it exists
+                if (sdidraw->num[j] > 1) {
+                    int vertex_num = sdidraw->num[j];
+                    Vec2 *vertices = sdidraw->vertices[j];
+                
+                    // alloc prim
+                    PRIM_DrawMode draw_mode = {
+                        .line_width = 31,
+                        .z_compare_enable = false,
+                        .z_update_enable = true,
+                        .z_logic_eq = true,
+                        .z_logic_lt = true,
+                        .shape = PRIM_SHAPE_LINE_STRIP,
+                    };
+                    PRIM_BlendMode blend_mode = { 0 };
+                    PRIM_NEW(vertex_num + vertex_num - 2, draw_mode, blend_mode);
+
+                    // draw each
+                    for (int k = 1;;)
+                    {
+                        // alternate yellow/orange so it's easier to see individual inputs
+                        PRIM_DRAW(vertices[k-1].X, vertices[k-1].Y, 0, 0xffff00ff);
+                        PRIM_DRAW(vertices[k].X, vertices[k].Y, 0, 0xffff00ff);
+                        if (++k >= vertex_num) break;
+
+                        PRIM_DRAW(vertices[k-1].X, vertices[k-1].Y, 0, 0xffa500ff);
+                        PRIM_DRAW(vertices[k].X, vertices[k].Y, 0, 0xffa500ff);
+                        if (++k >= vertex_num) break;
+                    }
+    
+                    // close
+                    PRIM_CLOSE();
+                }
+
+                // DI DISPLAY --------------------------------------------
+                
                 DIDraw *didraw = &didraws[i];
+                
                 // if it exists
                 if (didraw->num[j] != 0)
                 {
