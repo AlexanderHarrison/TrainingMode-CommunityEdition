@@ -4,10 +4,10 @@
 
 // Static Variables
 static DIDraw didraws[6];
-static DIDraw sdidraws[10];
-static u8 hitlag_prev[2];
-static u8 hitlag_counter[2];
-static u8 sdidraw_duration[2];
+static DIDraw sdidraws[6];
+static u8 hitlag_prev[6];
+static u8 hitlag_counter[6];
+static u8 sdidraw_duration[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData rec_data;
@@ -2430,7 +2430,7 @@ void DIDraw_Init()
     }
     
     // init sdidraw pointers
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 6; i++)
     {
         // for each subchar
         for (int j = 0; j < 2; j++)
@@ -2441,7 +2441,7 @@ void DIDraw_Init()
     }
 
     // init counters used for managing sdi draw
-    for (int i = 0; i < 2; i++){
+    for (int i = 0; i < 6; i++){
         hitlag_prev[i] = 0;
         hitlag_counter[i] = 0;
         sdidraw_duration[i] = 0;
@@ -2900,7 +2900,7 @@ void DIDraw_Update()
             }
         }
         // all slots for sdi draw
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 6; i++)
         {
             DIDraw *sdidraw = &sdidraws[i];
 
@@ -2958,7 +2958,7 @@ void DIDraw_GX()
             }
         }
         // draw each
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 6; i++)
         {
             // for each subchar
             for (int j = 0; j < 2; j++)
