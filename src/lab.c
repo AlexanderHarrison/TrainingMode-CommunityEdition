@@ -2779,26 +2779,6 @@ void DIDraw_Update()
                 {
                     didraw->vertices[ply][i + 2].X = DICollData[i].pos.X;
                     didraw->vertices[ply][i + 2].Y = DICollData[i].pos.Y + ((DICollData[i].ECBLeftY + DICollData[i].ECBTopY) / 2);
-
-                    // get vertex color
-                    static GXColor airColor = {0, 138, 255, 255};
-                    static GXColor groundColor = {255, 255, 255, 255};
-                    static GXColor ceilColor = {255, 0, 0, 255};
-                    static GXColor wallColor = {0, 255, 0, 255};
-                    GXColor *color;
-                    if ((ecb.envFlags & ECB_GROUND) != 0)
-                        color = &groundColor;
-                    else if ((ecb.envFlags & ECB_CEIL) != 0)
-                        color = &ceilColor;
-                    else if ((ecb.envFlags & (ECB_WALLLEFT | ECB_WALLRIGHT)) != 0)
-                        color = &wallColor;
-                    else
-                        color = &airColor;
-                    // set vertex color
-                    didraw->color.r = color->r;
-                    didraw->color.g = color->g;
-                    didraw->color.b = color->b;
-                    didraw->color.a = color->a;
                 }
 
                 // free the collision info
@@ -2832,12 +2812,6 @@ void DIDraw_Update()
                     sdidraw->vertices[ply][hitlag_counter[ply]].Y = fighter_data->coll_data.topN_Curr.Y + fighter_data->coll_data.ecbCurr_left.Y;
                     hitlag_counter[ply]++;
                     sdidraw->num[ply] = hitlag_counter[ply];
-
-                    // set vertex color (unsure if this does anything?)
-                    sdidraw->color.r = 255;
-                    sdidraw->color.g = 255;
-                    sdidraw->color.b = 0;
-                    sdidraw->color.a = 255;
                 }
             } 
             // if not in hitstun, then zero out sdidraw
