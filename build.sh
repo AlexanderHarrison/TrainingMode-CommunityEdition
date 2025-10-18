@@ -90,6 +90,7 @@ mex_build "evFunction" "build/powershield.dat" "src/powershield.c" &
 mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
 mex_build "evFunction" "build/fc.dat" "src/fc.c" "dats/ledgedash.dat" &
 mex_build "evFunction" "build/sweetspot.dat" "src/sweetspot.c" &
+mex_build "evFunction" "build/eggs.dat" "src/eggs.c" &
 
 # wait for compilation to finish
 wait
@@ -122,6 +123,7 @@ ${gc_fst} fs TM-CE.iso \
     insert TM/edgeguard.dat build/edgeguard.dat \
     insert TM/fc.dat build/fc.dat \
     insert TM/sweetspot.dat build/sweetspot.dat \
+    insert TM/eggs.dat build/eggs.dat \
     insert codes.gct build/codes.gct \
     insert Start.dol build/Start.dol \
     insert opening.bnr opening.bnr
