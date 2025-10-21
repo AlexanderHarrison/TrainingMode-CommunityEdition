@@ -69,17 +69,63 @@ static void GetLedgePositions(Vec2 coords_out[2]) {
 
 #define OptEnabled(opt) (((opt_flags) & (1u << (opt))) != 0)
 
+#define CMN_FALL_MIN_DISTANCE 20.0f
+
 void Recovery_Think(GOBJ *cpu, u32 opt_flags) {
     if (ledge_positions[0].X == 0.0f)
         GetLedgePositions(ledge_positions);
         
     FighterData *cpu_data = cpu->userdata;
-    ThinkFn think_fn = ThinkFnLookup[cpu_data->kind];
+    cpu_data->cpu.ai = 15; // noact
     
+    // Common thinking -----------------------
+    
+    float x = cpu_data->phys.pos.X;
+    int state = cpu_data->state_id;
+    
+    // if falling on stage, don't do anything
+    if (
+        (ASID_FALL <= state && state <= ASID_FALLAERIALB)
+        || (ASID_JUMPF <= state && state <= ASID_JUMPAERIALB)
+    ) {
+        float lx = ledge_positions[0].X;
+        float rx = ledge_positions[1].X;
+        
+        // if withing stage, at greater than CMN_FALL_MIN_DISTANCE units from ledge, just drop down.
+        if (lx + CMN_FALL_MIN_DISTANCE <= x && x <= rx - CMN_FALL_MIN_DISTANCE) {
+            cpu_data->cpu.lstickX = 0;
+            cpu_data->cpu.lstickY = 0;
+            return;
+        
+        // if within stage, but not greater than CMN_FALL_MIN_DISTANCE units from ledge, drift inwards.
+        } else if (lx <= x && x <= rx) {
+            cpu_data->cpu.lstickX = -127 * sign(x);
+            cpu_data->cpu.lstickY = 0;
+            return;
+        } 
+    }
+    
+    // normal getup
+    if (state == ASID_CLIFFWAIT && cpu_data->TM.state_frame == 2) {
+        cpu_data->cpu.lstickX = -127 * sign(x);
+        cpu_data->cpu.lstickY = 0;
+        return;
+    }
+    
+    // angel platform
+    if (state == ASID_REBIRTHWAIT) {
+        cpu_data->cpu.lstickX = 0;
+        cpu_data->cpu.lstickY = -127;
+        return;
+    }
+    
+    // Character specific thinking ------------
+    
+    ThinkFn think_fn = ThinkFnLookup[cpu_data->kind];
     if (think_fn) {
         think_fn(cpu, opt_flags);
     } else {
-        // TODO
+        cpu_data->cpu.ai = 0;
     }
 }
 
@@ -324,7 +370,7 @@ static EventMenu RecMenu_Marth = {
     .options = RecOptions_Marth,
 };
 
-static EventMenu *RecoveryMenus[] = {
+EventMenu *RecoveryMenus[] = {
     0, // MARIO
     &RecMenu_Fox,
     &RecMenu_Falcon,
@@ -356,7 +402,12 @@ static EventMenu *RecoveryMenus[] = {
 
 // Helper FNs ---------------------------------------------
 
-u32 RecoveryOptFlagsFromMenu(EventMenu *menu) {
+u32 RecoveryMenuOptFlags(GOBJ *cpu) {
+    FighterData *cpu_data = cpu->userdata;
+    EventMenu *menu = RecoveryMenus[cpu_data->kind];
+    if (menu == 0)
+        return 0;
+
     u32 opt_flags = 0;
     for (u32 opt = 0; opt < (u32)menu->option_num; ++opt)
         opt_flags |= (u32)menu->options[opt].val << opt;
@@ -400,31 +451,6 @@ static bool IsAirActionable(GOBJ *fighter) {
 
     return (ASID_JUMPF <= state && state <= ASID_FALLAERIALB)
         || state == ASID_DAMAGEFALL;
-}
-
-static bool IsGroundActionable(GOBJ *fighter) {
-    FighterData *data = fighter->userdata;
-
-    // ensure grounded
-    if (data->phys.air_state == 1)
-        return false;
-
-    int state = data->state_id;
-
-    if (InHitstunAnim(state) && HitstunEnded(fighter))
-        return true;
-
-    if (state == ASID_LANDING && data->state.frame >= data->attr.normal_landing_lag)
-        return true;
-        
-    return state == ASID_WAIT
-        || state == ASID_WALKSLOW
-        || state == ASID_WALKMIDDLE
-        || state == ASID_WALKFAST
-        || state == ASID_RUN
-        || state == ASID_SQUATWAIT
-        || state == ASID_OTTOTTOWAIT
-        || state == ASID_GUARD;
 }
 
 static float Vec2_Distance(Vec2 *a, Vec2 *b) {
@@ -595,7 +621,13 @@ static void Think_Spacies(GOBJ *cpu, u32 opt_flags) {
                 (pos.Y < 0.f && distance_to_ledgegrab > upb_distance)
     
                 // otherwise, random chance to upb
-                || (distance_to_ledgegrab < upb_distance && HSD_Randi(SP_UPB_CHANCE) == 0)
+                || (
+                    distance_to_ledgegrab < upb_distance
+                    && (
+                        pos.X < ledge_positions[0].X
+                        || pos.X > ledge_positions[1].X
+                    ) && HSD_Randi(SP_UPB_CHANCE) == 0
+                )
             )
         ) {
             cpu_data->cpu.lstickY = 127;
@@ -651,6 +683,12 @@ static void Think_Spacies(GOBJ *cpu, u32 opt_flags) {
         };
         Vec2_Normalize(&vec_to_target);
         
+        // place angles barely inside deadzone outside of deadzone
+        if (-0.2875f < vec_to_target.X && vec_to_target.X <= -0.1375f)
+            vec_to_target.X = -0.2875f;
+        else if (0.2875f > vec_to_target.X && vec_to_target.X >= 0.1375f)
+            vec_to_target.X = 0.2875f;
+
         cpu_data->cpu.lstickX = (s8)(vec_to_target.X * 127.f);
         cpu_data->cpu.lstickY = (s8)(vec_to_target.Y * 127.f);
         

@@ -23,8 +23,8 @@ static EventMenu LabMenu_OSDs;
 
 #define AUTORESTORE_DELAY 20
 #define INTANG_COLANIM 10
-#define STICK_DEADZONE 0.2
-#define TRIGGER_DEADZONE 0.2
+#define STICK_DEADZONE 0.2750f
+#define TRIGGER_DEADZONE 0.2f
 
 #define CPUMASHRNG_MED 35
 #define CPUMASHRNG_HIGH 55
@@ -1851,6 +1851,7 @@ enum cpu_option
     OPTCPU_SET_POS,
     OPTCPU_CTRL_BY,
     OPTCPU_FREEZE,
+    OPTCPU_RECOVERY,
 
     OPTCPU_COUNT
 };
@@ -2053,6 +2054,12 @@ static EventOption LabOptions_CPU[OPTCPU_COUNT] = {
         .name = "Freeze CPU",
         .desc = {"Freeze the CPU and their hitboxes."},
         .OnSelect = Lab_FreezeCPU,
+    },
+    {
+        .kind = OPTKIND_MENU,
+        .menu = 0, // Set in Event_Init
+        .name = "Recovery Options",
+        .desc = {"Alter the CPU's recovery options."},
     }
 };
 

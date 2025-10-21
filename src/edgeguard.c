@@ -32,6 +32,31 @@ static void UpdateCameraBox(GOBJ *fighter) {
     Match_CorrectCamera();
 }
 
+static bool IsGroundActionable(GOBJ *fighter) {
+    FighterData *data = fighter->userdata;
+
+    // ensure grounded
+    if (data->phys.air_state == 1)
+        return false;
+
+    int state = data->state_id;
+
+    if (InHitstunAnim(state) && HitstunEnded(fighter))
+        return true;
+
+    if (state == ASID_LANDING && data->state.frame >= data->attr.normal_landing_lag)
+        return true;
+        
+    return state == ASID_WAIT
+        || state == ASID_WALKSLOW
+        || state == ASID_WALKMIDDLE
+        || state == ASID_WALKFAST
+        || state == ASID_RUN
+        || state == ASID_SQUATWAIT
+        || state == ASID_OTTOTTOWAIT
+        || state == ASID_GUARD;
+}
+
 static void Exit(GOBJ *menu) {
     stc_match->state = 3;
     Match_EndVS();
@@ -306,7 +331,6 @@ void Event_Think(GOBJ *menu) {
     if (pad->down & HSD_BUTTON_DPAD_LEFT)
         reset_timer = 0;
         
-    EventMenu *rec_menu = Options_Main[OPT_MAIN_RECOVERY].menu;
-    u32 opt_flags = RecoveryOptFlagsFromMenu(rec_menu);
+    u32 opt_flags = RecoveryMenuOptFlags(cpu);
     Recovery_Think(cpu, opt_flags);
 }

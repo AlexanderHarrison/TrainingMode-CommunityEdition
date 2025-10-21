@@ -1,4 +1,5 @@
 #include "lab.h"
+#include "recovery.c"
 
 #include <stddef.h>
 
@@ -1012,20 +1013,9 @@ static int IsHitlagVictim(GOBJ *character) {
     return data->flags.hitlag && (InHitstunAnim(state) || state == ASID_GUARDSETOFF);
 }
 
-static int InHitstunAnim(int state) {
-    return ASID_DAMAGEHI1 <= state && state <= ASID_DAMAGEFLYROLL;
-}
-
 static int InShieldStun(int state) {
     return state == ASID_GUARDSETOFF;
 } 
-
-static int HitstunEnded(GOBJ *character) {
-    FighterData *data = character->userdata;
-    float hitstun;
-    memcpy(&hitstun, &data->state_var.state_var1, sizeof(float));
-    return hitstun == 0.0;
-}
 
 static int in_tumble_anim(int state) {
     return state == ASID_DAMAGEFALL || (ASID_DAMAGEFLYHI <= state && state <= ASID_DAMAGEFLYROLL);
@@ -2254,9 +2244,9 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
             CPUResetVars();
             goto CPULOGIC_START;
         }
-
-        // recover with CPU AI
-        cpu_data->cpu.ai = 0;
+        
+        u32 opt_flags = RecoveryMenuOptFlags(cpu);
+        Recovery_Think(cpu, opt_flags);
 
         break;
     }
@@ -5764,6 +5754,11 @@ void Event_Init(GOBJ *gobj)
 
     // Init runtime options...
     
+    // recovery options
+    EventMenu *recovery_menu = RecoveryMenus[cpu_data->kind];
+    LabOptions_CPU[OPTCPU_RECOVERY].menu = recovery_menu;
+    LabOptions_CPU[OPTCPU_RECOVERY].disable = recovery_menu == 0;
+    
     // advanced counter options
     for (int i = 0; i < ADV_COUNTER_COUNT; ++i) {
         memcpy(
@@ -5772,7 +5767,7 @@ void Event_Init(GOBJ *gobj)
             sizeof(LabOptions_AdvCounter_Default)
         );
     }
-
+    
     // overlays
     memcpy(LabOptions_OverlaysHMN, LabOptions_OverlaysDefault, sizeof(LabOptions_OverlaysDefault));
     memcpy(LabOptions_OverlaysCPU, LabOptions_OverlaysDefault, sizeof(LabOptions_OverlaysDefault));
