@@ -1287,10 +1287,10 @@ static void Think_Marth(GOBJ *cpu, u32 opt_flags) {
         if (cpu_data->TM.state_frame == 3) {
             float curl; // -1 = full curl backwards, 1 = full curl forwards
             
-            if (stc_stage->kind != GRKIND_BATTLE && vec_to_ledgegrab.X * dir < 10.f) {
+            if (stc_stage->kind == GRKIND_BATTLE && vec_to_ledgegrab.X * dir < 5.f) {
                 curl = -1.f;
             } else if (vec_to_ledgegrab.X * dir < MT_UPB_CURLED_DISTANCE && vec_to_ledgegrab.Y < MT_UPB_CURLED_HEIGHT) {
-                curl = HSD_Randf() * 0.5f + 0.5f;
+                curl = HSD_Randf() * 0.3f + 0.7f;
             } else if (vec_to_ledgegrab.X * dir > MT_UPB_CURLED_DISTANCE) {
                 curl = 1.f;
             } else if (vec_to_ledgegrab.Y > MT_UPB_STRAIGHT_HEIGHT) {
@@ -1301,11 +1301,11 @@ static void Think_Marth(GOBJ *cpu, u32 opt_flags) {
                 
                 // similar function to sqrt but easier to compute
                 curl = (-(curl*curl) + 2.f * fabs(curl)) * sign(curl);
-                
-                // curl starts from the opposite diagonal notch
-                if (curl < 0.f)
-                    curl /= 2.f;
             }
+            
+            // curl starts from the opposite diagonal notch
+            if (curl < 0.f)
+                curl /= 2.f;
             
             float ang = curl * M_PI / 2.f;
             cpu_data->cpu.lstickX = (127.f * sin(ang)) * dir;
