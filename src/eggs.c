@@ -357,7 +357,7 @@ void Event_Think(GOBJ *event)
     }
 
     // After 1 minute and not in free practice
-    if (stc_match->time_frames == 360 && stc_match->match.timer != MATCH_TIMER_COUNTUP)
+    if (stc_match->time_frames == 3600 && stc_match->match.timer != MATCH_TIMER_COUNTUP)
     {   
         int event_id = stc_memcard->EventBackup.event;
         Events_SetEventAsPlayed(event_id); // I don't know why this doesn't work, but it really should
