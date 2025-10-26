@@ -477,22 +477,6 @@ EventDesc EscapeSheik = {
     .matchData = 0,
 };
 
-EventDesc Eggs = {
-    .eventName = "Eggs-ercise\n",
-    .eventDescription = "Break the eggs! Only strong hits will\nbreak them. DPad down = free practice.",
-    .eventFile = 0,
-    .jumpTableIndex = JUMP_EGGS,
-    .CSSType = SLCHRKIND_EVENT,
-    .allowed_characters = { .hmn = -1, .cpu = -1 },
-    .cpuKind = -1,
-    .stage = -1,
-    .disable_hazards = true,
-    .force_sopo = false,
-    .scoreType = SCORETYPE_KO,
-    .callbackPriority = 3,
-    .matchData = 0,
-};
-
 static EventMatchData Eggs_MatchData = {
     .timer = MATCH_TIMER_COUNTDOWN,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -508,8 +492,8 @@ static EventMatchData Eggs_MatchData = {
     .timerSeconds = 60,
 };
 
-EventDesc Eggs2 = {
-    .eventName = "Eggs-ercise 2\n",
+EventDesc Eggs = {
+    .eventName = "Eggs-ercise \n",
     .eventDescription = "Break the eggs! Only strong hits will\nbreak them. Start = more options.",
     .eventFile = "eggs",
     .jumpTableIndex = -1,
@@ -582,7 +566,6 @@ EventDesc Ledgestall = {
 // Minigames
 static EventDesc *Minigames_Events[] = {
     &Eggs,
-    &Eggs2,
     &Multishine,
     &Reaction,
     &Ledgestall,

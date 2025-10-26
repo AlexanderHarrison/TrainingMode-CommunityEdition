@@ -19,7 +19,6 @@
     bl AmsahTech
     bl AttackOnShield
     bl ComboTraining
-    bl Eggs
     bl EscapeSheik
     bl GrabMashOut
     bl LedgeStall
