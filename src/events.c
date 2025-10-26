@@ -510,7 +510,7 @@ static EventMatchData Eggs_MatchData = {
 
 EventDesc Eggs2 = {
     .eventName = "Eggs-ercise 2\n",
-    .eventDescription = "Break the eggs! Only strong hits will\nbreak them. DPad down = free practice.",
+    .eventDescription = "Break the eggs! Only strong hits will\nbreak them. Start = more options.",
     .eventFile = "eggs",
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
