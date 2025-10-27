@@ -2869,4 +2869,6 @@ void Match_InitEffects();
 void Match_IndexAuxAnim(CharacterKind c_kind, HSD_Archive *archive, int anim_kind);
 void Match_ClearAuxAnim();
 char *Match_GetVIWaitFilename(CharacterKind c_kind);
+
+void MatchInfo_0x0010_store(int unk);
 #endif

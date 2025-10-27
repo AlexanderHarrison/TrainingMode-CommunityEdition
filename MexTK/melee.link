@@ -168,6 +168,11 @@
 80278800:Effect_SpawnItEffectLookup
 8005FDDC:Effect_SpawnSync
 80067624:Effect_CheckQueue
+80289158:Egg_Destroy
+8015CF5C:Events_GetSavedScore
+8015CEb4:Events_SetEventAsPlayed
+8015CF70:Events_StoreEventScore
+8016CF4C:Event_Retry
 8006A360:Fighter_UpdateAnim
 8006AD10:Fighter_UpdateIASA
 8006B82C:Fighter_UpdatePhys
@@ -785,6 +790,7 @@
 80036E20:Match_IndexAuxAnim
 800852B0:Match_ClearAuxAnim
 8031C99C:Match_GetVIWaitFilename
+8016B350:MatchInfo_0x0010_store
 8037E708:MatToQuat
 8001B6F8:Memcard_CheckStatus
 8001BB48:Memcard_ReqSaveCreate

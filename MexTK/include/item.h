@@ -1050,4 +1050,6 @@ float Item_GetDistanceFromPointSquared(GOBJ *item, Vec3 *position);
 void Item_DestroyAndRemovedGrabbed(GOBJ *item, int flag, float damage);
 bool Item_RemoveFighterReference(GOBJ *item, GOBJ *fighter);
 void Item_ClearHitlagFlag(GOBJ *item);
+
+void Egg_Destroy(GOBJ *egg_gobj);
 #endif

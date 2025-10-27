@@ -26,10 +26,10 @@ void ChangeHitDisplay(GOBJ *menu_gobj, int value)
     while (this_fighter != 0)
     {
         // get data
-        FighterData *thisFighterData = this_fighter->userdata;
+        FighterData *this_fighter_data = this_fighter->userdata;
 
         // toggle
-        thisFighterData->show_hit = value;
+        this_fighter_data->show_hit = value;
 
         // get next fighter
         this_fighter = this_fighter->next;
@@ -45,7 +45,7 @@ void StartFreePractice(GOBJ *gobj) {
     stc_match->match.timer = MATCH_TIMER_COUNTUP;
 }
 
-static void Egg_OnChangeSize(GOBJ *menu, int value)
+void Egg_OnChangeSize(GOBJ *menu, int value)
 {
     if (egg_gobj != 0)
     {
@@ -102,7 +102,7 @@ GOBJ *Egg_Spawn(void)
     }
     
     // random Y velocity on spawn
-    Vec3 rand_velocity = {0, Options_Main[OPT_VELOCITY].val * 0.5, 0};
+    Vec3 rand_velocity = {0, (2 + HSD_Randf()) * Options_Main[OPT_VELOCITY].val, 0};
     SpawnItem item_egg = {
         .it_kind = ITEM_EGG,
         .pos = coll_pos,
@@ -191,8 +191,8 @@ void Event_Think(GOBJ *event)
         if (fighter != 0)
         {
             // reset stale move table
-            int *staleMoveTable = Fighter_GetStaleMoveTable(i);
-            memset(staleMoveTable, 0, 0x2C);
+            int *stale_move_table = Fighter_GetStaleMoveTable(i);
+            memset(stale_move_table, 0, 0x2C);
         }
     }
 
@@ -223,6 +223,7 @@ void Event_Think(GOBJ *event)
 
         // show egg hurtbox on hit
         egg_data->show_hit = Options_Main[OPT_COLLISION].val;
+        egg_data->show_model = !Options_Main[OPT_COLLISION].val;
 
         // set this callbacks every frame or else gets overwritten
         egg_data->it_func->OnTakeDamage = Egg_OnTakeDamage;
@@ -259,7 +260,7 @@ void Event_Think(GOBJ *event)
     }
 
     // After 1 minute and not in free practice
-    if (stc_match->time_frames == 3600 && stc_match->match.timer != MATCH_TIMER_COUNTUP)
+    if (stc_match->time_frames == 360 && stc_match->match.timer != MATCH_TIMER_COUNTUP)
     {   
         int event_id = stc_memcard->EventBackup.event;
         Events_SetEventAsPlayed(event_id); // I don't know why this doesn't work, but it really should

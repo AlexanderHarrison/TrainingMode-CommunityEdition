@@ -4,13 +4,6 @@
 #include "../MexTK/mex.h"
 #include "events.h"
 
-void *(*Events_SetEventAsPlayed)(int event_id) = (void *(*)(int event_id)) 0x8015ceb4;
-void *(*Events_StoreEventScore)(int event_id, int score) = (void *(*)(int event_id, int score)) 0x8015cf70;
-int (*Events_GetSavedScore)(int event_id) = (int (*)(int event_id)) 0x8015cf5c;
-void *(*MatchInfo_0x0010_store)(int unk) = (void *(*)(int unk)) 0x8016b350;
-void *(*Egg_Destroy)(GOBJ *egg_gobj) = (void *(*)(GOBJ *egg_gobj)) 0x80289158;
-void *(*Event_Retry)(void) = (void *(*)(void)) 0x8016cf4c;
-
 static int egg_counter = 0;
 static int high_score = 0;
 static Vec3 coll_pos, last_coll_pos;
@@ -38,7 +31,7 @@ void StartFreePractice(GOBJ *gobj);
 GOBJ *Egg_Spawn(void);
 void Exit(GOBJ *menu);
 void Retry(GOBJ *menu);
-static void Egg_OnChangeSize(GOBJ *menu, int value);
+void Egg_OnChangeSize(GOBJ *menu, int value);
 void ChangeHitDisplay(GOBJ *menu_gobj, int value);
 void Event_Init(GOBJ *gobj);
 float RandomRange(float low, float high);
@@ -80,8 +73,7 @@ static EventOption Options_Main[OPT_COUNT] = {
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(EggOptions_SizeText) / 
-                     sizeof(*EggOptions_SizeText),
+        .value_num = countof(EggOptions_SizeText),
         .name = "Egg Scale",
         .desc = { "Adjust egg size." },
         .values = EggOptions_SizeText,
@@ -89,13 +81,10 @@ static EventOption Options_Main[OPT_COUNT] = {
         .OnChange = Egg_OnChangeSize
     },
     {
-        .kind = OPTKIND_INT,
+        .kind = OPTKIND_TOGGLE,
         .name = "Egg Spawn Velocity",
-        .desc = { "Adjust egg spawn velocity on a scale of 0-10." },
-        .val = 3,
-        .format = "%d",
-        .value_min = 0,
-        .value_num = 11,
+        .desc = { "Toggle whether eggs spawn with vertical velocity." },
+        .val = 1,
         .disable = 1
     },
     {
@@ -105,6 +94,7 @@ static EventOption Options_Main[OPT_COUNT] = {
                  "Hurtboxes: yellow=hurt, purple=ungrabbable, blue=shield.",
                  "Hitboxes: (by priority) red, green, blue, purple."},
         .disable = 1,
+        .val = 0,
         .OnChange = ChangeHitDisplay,
     },
     {
