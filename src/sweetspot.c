@@ -87,7 +87,7 @@ void Exit(GOBJ *menu);
 void Reset(int side_idx);
 
 enum menu_options {
-    OPT_DIRECTION,
+    OPT_LINES,
 };
 
 enum ledge_direction {
@@ -97,6 +97,12 @@ enum ledge_direction {
 };
 
 static EventOption Options_Main[] = {
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Enable Line Guides",
+        .desc = {"Draws horizontal lines at the ledges and at your",
+                 "Calculated ledgegrab position"},
+    },
     {
         .kind = OPTKIND_INFO,
         .name = "Help",
@@ -123,11 +129,92 @@ enum event_state {
     STATE_RESET,
 }; 
 
+static struct sideb {
+    bool attempted;
+    Vec3 pos;
+    int dir;
+} sideb = { 0 };
 static int reset_timer = 0;
 static int state = STATE_ENDLAG;
 
+void Draw_Lines() {
+    GOBJ *hmn = Fighter_GetGObj(0);
+    FighterData *hmn_data = hmn->userdata;
+    CollData *coll_data = &hmn_data->coll_data;
+
+    if (!Options_Main[OPT_LINES].val)
+        return;
+
+    COBJ *cur_cam = COBJ_GetCurrent();
+    CObj_SetCurrent(*stc_matchcam_cobj);
+
+    PRIM_DrawMode draw_mode = {
+        .line_width = 16,
+        .z_compare_enable = true,
+        .z_logic_eq = true,
+        .z_logic_lt = true,
+        .shape = PRIM_SHAPE_LINE_STRIP,
+    };
+    PRIM_BlendMode blend_mode = { 0 };
+
+    // Melee calculation for the top of the ledgegrab box
+    float ledgegrab_offset = coll_data->cliffgrab_y_offset + 0.5 * coll_data->cliffgrab_height;
+    if (hmn_data->kind == FTKIND_FOX) {
+        // Only Fox drops a small amount during sideb before moving
+        ledgegrab_offset -= 1.0 / 6.0;
+    }
+
+    float y = hmn_data->phys.pos.Y + ledgegrab_offset; 
+    float x = hmn_data->phys.pos.X; 
+    u32 color = 0x0000ffff;
+    if (sideb.attempted) {
+        x = sideb.pos.X;
+        y = sideb.pos.Y + ledgegrab_offset;
+
+        Vec2 target_ledge;
+        if (sideb.dir == 1)
+            target_ledge = ledge_positions[0];
+        else
+            target_ledge = ledge_positions[1];
+
+        float delta = y - target_ledge.Y;
+
+        if (delta <= 0) { // failure (SD)
+            color = 0xff0000ff;
+        } else if (hmn_data->state_id == ASID_CLIFFCATCH
+            || hmn_data->state_id == ASID_CLIFFWAIT) { // success
+            color = 0x00ff00ff;
+        }
+    }
+
+    // draw line at top of ledgegrab box
+    PRIM_NEW(2, draw_mode, blend_mode);
+    PRIM_DRAW(-300, y, 0, color);
+    PRIM_DRAW(300, y, 0, color);
+
+    // draw line from left edge
+    color = 0xffffffff;
+    x = ledge_positions[0].X;
+    y = ledge_positions[0].Y;
+    PRIM_NEW(2, draw_mode, blend_mode);
+    PRIM_DRAW(x, y, 0, color);
+    PRIM_DRAW(x - 100, y, 0, color);
+
+    // draw line from right edge
+    x = ledge_positions[1].X;
+    y = ledge_positions[1].Y;
+    PRIM_NEW(2, draw_mode, blend_mode);
+    PRIM_DRAW(x, y, 0, color);
+    PRIM_DRAW(x + 100, y, 0, color);
+
+    PRIM_CLOSE();
+    CObj_SetCurrent(cur_cam);
+}
+
 void Event_Init(GOBJ* gobj) {
     GetLedgePositions(ledge_positions);
+    GOBJ *draw_gobj = GObj_Create(0, 0, 0);
+    GObj_AddGXLink(draw_gobj, Draw_Lines, 3, 0);
 }
 
 void Event_Think(GOBJ *menu) {
@@ -159,6 +246,12 @@ void Event_Think(GOBJ *menu) {
     // Reset when dead
     if (hmn_data->flags.dead)
         Reset(2);
+
+    if (hmn_data->state_id == 350) { // Aerial sideb startup for fox/falco
+        sideb.attempted = true;
+        sideb.pos = hmn_data->phys.pos;
+        sideb.dir = hmn_data->facing_direction;
+    }
 
     // Begin CPU AI logic
     Fighter_ZeroCPUInputs(cpu_data);
@@ -222,6 +315,7 @@ void Reset(int side_idx) {
         assert("invalid side");
 
     event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
+    sideb.attempted = false;
 
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
