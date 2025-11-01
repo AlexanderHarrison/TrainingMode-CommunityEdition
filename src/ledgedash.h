@@ -25,8 +25,11 @@ struct LedgedashData
         GOBJ *gobj;
         Text *text_angle;
         Text *text_galint;
+        Text *text_count;
         int canvas;
         float airdodge_angle;
+        int total_count;
+        int successful_count;
     } hud;
     struct
     {
@@ -88,6 +91,7 @@ void Ledgedash_ChangeCamMode(GOBJ *gobj, int value);
 void Ledgedash_ChangeShowHUD(GOBJ *gobj, int show);
 GOBJ *Ledgedash_HitLogInit(void);
 void Ledgedash_HitLogGX(GOBJ *gobj, int pass);
+void Ledgedash_CounterBackgroundGX(void);
 void Ledgedash_FtInit(LedgedashData *event_data);
 void Ledgedash_UpdateCamera(void);
 void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn);

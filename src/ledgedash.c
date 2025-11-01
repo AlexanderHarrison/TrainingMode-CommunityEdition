@@ -322,6 +322,25 @@ void Ledgedash_HUDInit(LedgedashData *event_data)
         Text_AddSubtext(hud_text, 0, 0, "-");
     }
 
+    event_data->hud.text_count = Text_CreateText(2, canvas);
+    Text *text_count = event_data->hud.text_count;
+    Text *text_galint = event_data->hud.text_galint;
+
+    text_count->kerning = 1;
+    text_count->align = 1;
+    text_count->use_aspect = 1;
+    text_count->scale.X = text_galint->scale.X;
+    text_count->scale.Y = text_galint->scale.Y;
+    text_count->viewport_scale.X = text_galint->viewport_scale.X;
+    text_count->viewport_scale.Y = text_galint->viewport_scale.Y;
+    text_count->aspect.X = text_galint->aspect.X;
+    text_count->trans.X = text_galint->trans.X;
+    text_count->trans.Y = text_galint->trans.Y + 3;
+    Text_AddSubtext(text_count, 0, 0, "-");
+    
+    GOBJ *counter_background_gobj = GObj_Create(0, 0, 0);
+    GObj_AddGXLink(counter_background_gobj, Ledgedash_CounterBackgroundGX, 5, 0);
+
     // reset all bar colors
     JOBJ *timingbar_jobj;
     JOBJ_GetChild(hud_jobj, &timingbar_jobj, LCLJOBJ_BAR, -1); // get timing bar jobj
@@ -445,6 +464,7 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
         Text *text_galint = event_data->hud.text_galint;
         if (hmn_data->hurt.intang_frames.ledge > 0)
         {
+            event_data->hud.successful_count++;
             event_data->was_successful = true;
             matanim = event_data->assets->hudmatanim[0];
             Text_SetText(text_galint, 0, "%df", hmn_data->hurt.intang_frames.ledge);
@@ -461,6 +481,11 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
             matanim = event_data->assets->hudmatanim[1];
             Text_SetText(text_galint, 0, "-");
         }
+        event_data->hud.total_count++;
+        int success_count = event_data->hud.successful_count;
+        int total_count = event_data->hud.total_count;
+        float success_percent = (float)success_count/total_count;
+        Text_SetText(event_data->hud.text_count, 0, "%d/%d (%.1f%%)", success_count, total_count, success_percent*100);
 
         // init hitbox num
         LdshHitlogData *hitlog_data = event_data->hitlog_gobj->userdata;
@@ -532,6 +557,13 @@ void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
             int reset_idx = LdshOptions_Main[OPT_RESETDELAY].val;
             event_data->reset_timer = LdshOptions_ResetDelayFailure[reset_idx];
             event_data->was_successful = false;
+
+            // update counter hud
+            event_data->hud.total_count++;
+            int success_count = event_data->hud.successful_count;
+            int total_count = event_data->hud.total_count;
+            float success_percent = (float)success_count/total_count;
+            Text_SetText(event_data->hud.text_count, 0, "%d/%d (%.1f%%)", success_count, total_count, success_percent*100);
             SFX_PlayCommon(3);
         }
     }
@@ -697,6 +729,20 @@ void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
             diffuse = &hit_diffuse;
 
         Develop_DrawSphere(this_ldsh_hit->size, &this_ldsh_hit->pos_curr, &this_ldsh_hit->pos_prev, diffuse, &hitlog_ambient);
+    }
+}
+
+void Ledgedash_CounterBackgroundGX(void)
+{   
+    // don't render if paused
+    if (Pause_CheckStatus(1) != 2)
+    {
+        LedgedashData *event_data = event_vars->event_gobj->userdata;
+        Rect counter_background = {event_data->hud.text_count->trans.X - 4.6, event_data->hud.text_count->trans.Y + 1, 9, 2.5};
+        GXColor counter_background_color = {20, 20, 20, 30};
+        Rect *rects = &counter_background;
+        GXColor *colors = &counter_background_color;
+        event_vars->HUD_DrawRects(rects, colors, 1);
     }
 }
 
