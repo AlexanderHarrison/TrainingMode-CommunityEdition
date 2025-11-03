@@ -13432,7 +13432,7 @@
 802697d4 000001a4 802697d4 0 ItemThink_Physics
 80269978 00000124 80269978 0 ItemThink_EnvironmentCollision
 80269a9c 000000c4 80269a9c 0 ItemThink_Timeout+Camera
-80269b60 00000084 80269b60 0 ItemThink_YellowBarCollision
+80269b60 00000084 80269b60 0 ItemThink_Collision
 80269be4 00000078 80269be4 0 ItemThink_OnPlayerCollision
 80269c5c 00000044 80269c5c 0 ItemThink_HitboxCollisionLogic
 80269ca0 00000024 80269ca0 0 zz_0269ca0_
