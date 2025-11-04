@@ -9,7 +9,6 @@
     
 typedef struct FtSaveStateData_v2 {
     int is_exist;
-    // FighterData ft_data;
     int state_id;
     float facing_direction;
     float state_frame;

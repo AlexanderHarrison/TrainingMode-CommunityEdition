@@ -12,11 +12,10 @@ union ID {
     } id;
 };
 
-static bool ItemAttachBone2(ItemSaveState_v2 *st, JOBJ *item_jobj) {
+static bool ItemAttachBone(ItemSaveState_v2 *st, JOBJ *item_jobj) {
     if (item_jobj == 0)
         return false;
     
-    // OSReport("it checking %i!\n", *bone);
     ROBJ *robj = item_jobj->robj;
     if (
         robj
@@ -29,31 +28,9 @@ static bool ItemAttachBone2(ItemSaveState_v2 *st, JOBJ *item_jobj) {
         return true;
     }
     
-    if (ItemAttachBone2(st, item_jobj->child))
+    if (ItemAttachBone(st, item_jobj->child))
         return true;
-    return ItemAttachBone2(st, item_jobj->sibling);
-}
-
-static JOBJ *ItemAttachBone(char *bone, JOBJ *item_jobj) {
-    if (item_jobj == 0)
-        return 0;
-    
-    OSReport("it checking %i!\n", *bone);
-    ROBJ *robj = item_jobj->robj;
-    if (
-        robj
-        && (robj->flags & ROBJ_HAS_TYPE)
-        && (robj->flags & ROBJ_TYPE_MASK) == ROBJ_JOBJ
-    ) {
-        OSReport("it attached %i!\n", *bone);
-        return robj->u.jobj;
-    }
-    
-    (*bone)++;
-    JOBJ *child_jobj = ItemAttachBone(bone, item_jobj->child);
-    if (child_jobj)
-        return child_jobj;
-    return ItemAttachBone(bone, item_jobj->sibling);
+    return ItemAttachBone(st, item_jobj->sibling);
 }
 
 // static JOBJ *FighterAttachBone(char *bone, JOBJ *item_jobj, JOBJ *fighter_jobj) {
@@ -328,6 +305,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
 
         ItemSaveState_v2 *item_state = &savestate->item_state[item_count++];
         
+        OSReport("save item %i %p\n", item_count, item);
         item_state->is_exist = 1;
         item_state->gobj = (struct itgobjinfo) {
             .entity_class = item->entity_class,
@@ -342,41 +320,29 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             .destructor_function = item->destructor_function,
         };
         
-        // int proc_count = 0;
-        // for (GOBJProc *proc = item->proc; proc; proc = proc->next) {
-        //     item_state->gobj.proc[proc_count] = proc->cb;
-        //     item_state->gobj.proc_s_link[proc_count] = proc->s_link;
-        //     item_state->gobj.proc_flags[proc_count] = proc->flags;
-        //     proc_count++;
-            
-        //     if (proc_count == countof(item_state->gobj.proc)) {
-        //         OSReport("too many item procs!\n");
-        //         break;
-        //     }
-        // }
-        
-        // TODO: do something smarter
         int proc_count = 0;
-        GOBJProc **procs = *(GOBJProc ***)0x804D7844;
-        for (int i = 0; i < 1600; ++i) {
-            GOBJProc *proc = procs[i];
-            if (proc == 0 || proc->parentGOBJ != item) continue;
-             
-            item_state->gobj.proc[proc_count] = proc->cb;
-            item_state->gobj.proc_s_link[proc_count] = proc->s_link;
-            item_state->gobj.proc_flags[proc_count] = proc->flags;
-            proc_count++;
-            
-            if (proc_count == countof(item_state->gobj.proc)) {
-                OSReport("too many item procs!\n");
-                break;
+        GOBJProc **proc_lists = *stc_gobjproc_lookup;
+        for (int i = 0; i <= *stc_gobj_proc_num; ++i) {
+            for (GOBJProc *proc = proc_lists[i]; proc; proc = proc->next) {
+                if (proc->parentGOBJ == item) {
+                    item_state->gobj.proc[proc_count] = proc->cb;
+                    item_state->gobj.proc_s_link[proc_count] = proc->s_link;
+                    item_state->gobj.proc_flags[proc_count] = proc->flags;
+                    proc_count++;
+                    
+                    if (proc_count == countof(item_state->gobj.proc)) {
+                        OSReport("too many item procs!\n");
+                        break;
+                    }
+                }
             }
         }
+        
         ItemData *item_data = item->userdata;
 
         item_state->attached = 0;
         item_state->attached_to = 0;
-        ItemAttachBone2(item_state, item->hsd_object);
+        ItemAttachBone(item_state, item->hsd_object);
         item_state->attached = JOBJToID(item, item_state->attached);
         item_state->attached_to = JOBJToID(item_data->fighter_gobj, item_state->attached_to);
 
@@ -394,7 +360,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
         item_state->data.attacker_item = GOBJToID(item_data->attacker_item);
         item_state->data.fighter_gobj = GOBJToID(item_data->fighter_gobj);
         item_state->data.coll_data.gobj = GOBJToID(item_data->coll_data.gobj);
-        
+
         for (int i = 0; i < 4; ++i)
             item_state->data.hitbox[i].bone = JOBJToID(item, item_data->hitbox[i].bone);
 
@@ -407,13 +373,14 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
     if ((flags & Savestate_Silent) == 0) {
         SFX_PlayCommon(1);
     
-        // if not in frame advance, flash screen. I wrote it like this because the second condition kept getting optimized out
+        // if not in frame advance, flash screen.
         if (Pause_CheckStatus(0) != 1 && Pause_CheckStatus(1) != 2)
             ScreenFlash_Create(2, 0);
     }
 
     return true;
 }
+
 // use enum savestate_flags for flags
 int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
 {
@@ -432,6 +399,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
     for (u32 i = 0; i < countof(savestate->item_state); ++i) {
         ItemSaveState_v2 *item_state = &savestate->item_state[i];
         if (item_state->is_exist) {
+            OSReport("spawn item\n");
             // create item
             // adapted from Item_8026862C in decomp (Item_CreateItem in mex-land)
             struct itgobjinfo *gobj = &item_state->gobj;
@@ -460,9 +428,9 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             for (int i = 0; i < 12; ++i) {
                 void *fn = gobj->proc[i];
                 if (fn == 0) break;
-                OSReport("add proc %p\n", fn);
                 GOBJProc *proc = GObj_AddProc(item, fn, gobj->proc_s_link[i]);
                 proc->flags = gobj->proc_flags[i];
+                OSReport("add proc %p\n", fn);
             }
 
             GObj_AddUserData(item, gobj->data_kind, gobj->destructor_function, item_data);
@@ -470,10 +438,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             
             // restore jobj pointers
 
-            for (int i = 0; i < 4; ++i) {
+            for (int i = 0; i < 4; ++i)
                 item_data->hitbox[i].bone = IDToJOBJ(item, item_state->data.hitbox[i].bone);
-                OSReport("load from %p to %p\n", item_state->data.hitbox[i].bone, item_data->hitbox[i].bone);
-            }
                 
             for (int i = 0; i < 2; ++i)
                 item_data->it_hurt[i].jobj = IDToJOBJ(item, item_state->data.it_hurt[i].jobj);
@@ -517,13 +483,6 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             FtSaveStateData_v2 *ft_data = &ft_state->data[j];
             if (ft_data->is_exist)
             {
-                // GOBJ *fighter = Fighter_GetSubcharGObj(i, j);
-                // FighterData *fighter_data = fighter->userdata;
-                // memcpy(fighter_data, &ft_data->ft_data, sizeof(FighterData));
-            
-                // fighter_data->anim_curr_ARAM = 0;
-                // fighter_data->anim_persist_ARAM = 0;
-                
                 // get state
                 GOBJ *fighter = Fighter_GetSubcharGObj(i, j);
                 FighterData *fighter_data = fighter->userdata;
