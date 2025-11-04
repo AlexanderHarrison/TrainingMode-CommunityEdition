@@ -4204,8 +4204,9 @@ void Record_OnSuccessfulSave(int deleteRecordings)
     }
 
     // also save to personal savestate
-    event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
-    event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
+    
+    // event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
+    // event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
 
     // take screenshot
     snap_status = 1;
