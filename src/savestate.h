@@ -74,6 +74,10 @@ typedef struct ItemSaveState_v2 {
         void (*gx_cb)(GOBJ*, int);
         u64 cobj_links;
         void *destructor_function;
+        
+        Vec4 root_jobj_rot;
+        Vec3 root_jobj_scale;
+        Vec3 root_jobj_trans;
 
         void *proc[12];
         char proc_s_link[12];

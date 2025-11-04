@@ -320,6 +320,13 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             .destructor_function = item->destructor_function,
         };
         
+        JOBJ *item_model = item->hsd_object;
+        if (item_model) {
+            item_state->gobj.root_jobj_rot = item_model->rot;
+            item_state->gobj.root_jobj_scale = item_model->scale;
+            item_state->gobj.root_jobj_trans = item_model->trans;
+        }
+        
         int proc_count = 0;
         GOBJProc **proc_lists = *stc_gobjproc_lookup;
         for (int i = 0; i <= *stc_gobj_proc_num; ++i) {
@@ -447,6 +454,13 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             if (item_data->fighter_gobj) {
                 FighterData *ft_data = item_data->fighter_gobj->userdata;
                 Fighter_IncrementReferenceCount(ft_data->kind);
+            }
+            
+            JOBJ *item_model = item->hsd_object;
+            if (item_model) {
+                item_model->rot = gobj->root_jobj_rot;
+                item_model->scale = gobj->root_jobj_scale;
+                item_model->trans = gobj->root_jobj_trans;
             }
             
             JOBJ *attached = IDToJOBJ(item, item_state->attached);
