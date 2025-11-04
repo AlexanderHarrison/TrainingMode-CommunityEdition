@@ -7,6 +7,11 @@
 
 // VERSION 2 #####################################################
     
+typedef struct VarPtr {
+    u8 valid : 1;
+    u8 index : 7;
+} VarPtr;
+
 typedef struct FtSaveStateData_v2 {
     int is_exist;
     int state_id;
@@ -23,8 +28,8 @@ typedef struct FtSaveStateData_v2 {
     ftHit throw_hitbox[2];
     ftHit thrown_hitbox;
     struct flags flags;
-    struct fighter_var fighter_var;
-    struct state_var state_var;
+    union fighter_var fighter_var;
+    union state_var state_var;
     struct ftcmd_var ftcmd_var;
     struct dmg dmg;
     struct grab grab;
@@ -42,6 +47,9 @@ typedef struct FtSaveStateData_v2 {
     struct reflect_hit reflect_hit;
     struct absorb_hit absorb_hit;
     struct cb cb;
+
+    VarPtr fighter_var_ptrs[8];
+    VarPtr state_var_ptrs[8];
 } FtSaveStateData_v2;
 
 typedef struct FtSaveState_v2 {
@@ -75,17 +83,21 @@ typedef struct ItemSaveState_v2 {
         u64 cobj_links;
         void *destructor_function;
         
-        Vec4 root_jobj_rot;
-        Vec3 root_jobj_scale;
-        Vec3 root_jobj_trans;
-
         void *proc[12];
         char proc_s_link[12];
         char proc_flags[12];
     } gobj;
     
+    struct itjobjinfo {
+        Vec4 rot;
+        Vec3 scale;
+        Vec3 trans;
+    } jobj;
+
     JOBJ *attached;
     JOBJ *attached_to;
+    
+    VarPtr var_ptrs[16];
     
     ItemData data;
 } ItemSaveState_v2;
@@ -142,8 +154,8 @@ typedef struct FtSaveStateData_v1
     ftHit throw_hitbox[2];
     ftHit thrown_hitbox;
     struct flags flags;                // 0x2210
-    struct fighter_var fighter_var;    // 0x222c
-    struct state_var state_var;        // 0x2340
+    union fighter_var fighter_var;    // 0x222c
+    union state_var state_var;        // 0x2340
     struct ftcmd_var ftcmd_var;        // 0x2200
     struct
     {
