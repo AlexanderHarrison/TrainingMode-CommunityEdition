@@ -261,6 +261,38 @@ EventDesc Reversal = {
     .matchData = 0,
 };
 
+static EventMatchData Reversal_MatchData = {
+    .timer = MATCH_TIMER_COUNTUP,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = true,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = false,
+    .isShowScore = false,
+
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+
+EventDesc Reversal2 = {
+    .eventName = "Reversal Training 2\n",
+    .eventDescription = "Practice OoS punishes! DPad left/right\nmoves characters closer and further apart.",
+    .eventFile = "reversal",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_TRAINING,
+    .allowed_characters = { .hmn = -1, .cpu = -1 },
+    .cpuKind = -1,
+    .stage = -1,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &Reversal_MatchData,
+};
+
 EventDesc SDI = {
     .eventName = "SDI Training\n",
     .eventDescription = "Use Smash DI to escape\nFox's up-air!",
@@ -585,6 +617,7 @@ static EventDesc *General_Events[] = {
     &Combo,
     &AttackOnShield,
     &Reversal,
+    &Reversal2,
     &SDI,
     &Powershield,
     &Ledgetech,
