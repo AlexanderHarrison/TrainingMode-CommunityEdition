@@ -900,7 +900,7 @@ void InfoDisplay_Update(GOBJ *menu_gobj, EventOption menu[], GOBJ *fighter, GOBJ
                 }
                 case (INFDISP_ECBLOCK):
                 {
-                    Text_SetText(text, i, "ECB Lock: %d", fighter_data->coll_data.u.ecb_bot_lock_frames);
+                    Text_SetText(text, i, "ECB Lock: %d", fighter_data->ecb_bot_lock_frames);
                     break;
                 }
                 case (INFDISP_ECBBOT):
@@ -2565,7 +2565,7 @@ void DIDraw_Update()
                 {
 
                     // update bone positions.  If loop count < noECBUpdate-remaining hitlag fraes, use current ECB bottom Y offset
-                    if (vertices_num < (fighter_data->coll_data.u.ecb_bot_lock_frames - fighter_data->dmg.hitlag_frames))
+                    if (vertices_num < (fighter_data->ecb_bot_lock_frames - fighter_data->dmg.hitlag_frames))
                     {
 
                         ecb_size.topY = fighter_data->coll_data.ecbCurr_top.Y;

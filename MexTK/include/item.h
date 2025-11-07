@@ -515,6 +515,20 @@ struct ItDynamicBoneset
     DynamicBoneset boneset; // 0x8
 };
 
+struct ItemLinkData
+{
+    ItemLinkData *prev;
+    ItemLinkData *next;
+    Vec3 vel;
+    Vec3 pos;
+    Vec3 x20;
+    u8 x2C_flags;
+    CollData coll_data;
+    int x1CC;
+    GOBJ* x1D0_GObj;
+    JOBJ* x1D4_JObj;
+};
+
 struct ItemData
 {
     int x0;                                             // 0x0
@@ -576,6 +590,7 @@ struct ItemData
     ItDynamicBoneset dynamics_boneset[24];              // 0xd4
     int dynamics_num;                                   // 0x374
     CollData coll_data;                                 // 0x378 -> 0x518
+    int ecb_bot_lock_frames;                            // 0x514, frames until ecb bottom offset is no longer locked
     GOBJ *fighter_gobj;                                 // 0x518
     int x51c;                                           // 0x51c
     CmSubject *camera_subject;                          // 0x520
@@ -984,6 +999,7 @@ struct ItemData
 static itPublicData **stc_itPublicData = R13_OFFSET(-0x4978);
 static ItemDesc **stc_itdesc_enemies = R13_OFFSET(-0x4968);
 static HSD_ObjAllocData *stc_item_alloc_data = (void*)0x804A0BE0;
+static HSD_ObjAllocData *stc_item_link_alloc_data = (void*)0x804A0C38;
 
 /*** Functions ***/
 void Item_IndexStageItem(ItemDesc *item_desc, int index);

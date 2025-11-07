@@ -6,7 +6,23 @@
 #define EVENT_DATASIZE 512
 
 // VERSION 2 #####################################################
+
+// TODO get rid of 'is_exist' fields, store counts instead
+
+typedef struct IDInfo {
+    // for locating gobj
+    char p_link;
+    char list_idx;
     
+    // for locating jobj (unused for FighterData and GOBJ)
+    char jobj_idx;
+} IDInfo;
+
+typedef union ID {
+    void *ptr;
+    IDInfo id;
+} ID;
+
 typedef struct VarPtr {
     u8 valid : 1;
     u8 index : 7;
@@ -68,39 +84,49 @@ typedef struct FtSaveState_v2 {
 //     };
 // } StageSaveState_v2;
 
+typedef struct GOBJSaveState_v2 {
+    short entity_class;
+    char p_link;
+    char gx_link;
+    char p_priority;
+    char gx_pri;
+    char obj_kind;
+    char data_kind;
+    void (*gx_cb)(GOBJ*, int);
+    u64 cobj_links;
+    void *destructor_function;
+
+    void *proc[12];
+    char proc_s_link[12];
+    char proc_flags[12];
+} GOBJSaveState_v2;
+
+typedef struct JOBJSaveState_v2 {
+    Vec4 rot;
+    Vec3 scale;
+    Vec3 trans;
+} JOBJSaveState_v2;
+
 typedef struct ItemSaveState_v2 {
     int is_exist;
     
-    struct itgobjinfo {
-        short entity_class;
-        char p_link;
-        char gx_link;
-        char p_priority;
-        char gx_pri;
-        char obj_kind;
-        char data_kind;
-        void (*gx_cb)(GOBJ*, int);
-        u64 cobj_links;
-        void *destructor_function;
-        
-        void *proc[12];
-        char proc_s_link[12];
-        char proc_flags[12];
-    } gobj;
-    
-    struct itjobjinfo {
-        Vec4 rot;
-        Vec3 scale;
-        Vec3 trans;
-    } jobj;
+    GOBJSaveState_v2 gobj;
+    JOBJSaveState_v2 jobj;
 
     JOBJ *attached;
     JOBJ *attached_to;
-    
-    VarPtr var_ptrs[16];
-    
+
+    VarPtr var_ptrs[16]; // ItemData var GOBJ ptrs
     ItemData data;
 } ItemSaveState_v2;
+
+typedef struct ItemLinkSaveState_v2 {
+    int is_exist;
+    GOBJSaveState_v2 gobj;
+    JOBJSaveState_v2 jobj;
+    GOBJ *parent_fighter;
+    ItemLinkData data;
+} ItemLinkSaveState_v2;
 
 typedef struct Savestate_v2
 {
@@ -109,6 +135,8 @@ typedef struct Savestate_v2
     u8 event_data[EVENT_DATASIZE];
     FtSaveState_v2 ft_state[6];
     ItemSaveState_v2 item_state[8];
+    ItemLinkSaveState_v2 item_link_state[32];
+    
     // StageSaveState_v2 *stage_state;
 } Savestate_v2;
 
@@ -128,6 +156,7 @@ typedef struct FtSaveStateData_v1
     ColorOverlay color[3];
     struct input input;
     CollData coll_data;
+    int ecb_bot_lock_frames;
     struct
     {
         void *alloc;            // 0x0

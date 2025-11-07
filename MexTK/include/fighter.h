@@ -2156,6 +2156,7 @@ struct FighterData
     int x6E8;                                 // 0x6E8
     int x6EC;                                 // 0x6EC
     CollData coll_data;                       // 0x6F0 -> 0x88C
+    int ecb_bot_lock_frames;                  // 0x88C, frames until ecb bottom offset is no longer locked
     CmSubject *camera_subject;                // 0x890
     struct state
     {
