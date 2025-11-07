@@ -212,6 +212,7 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
                         memcpy(&ft_data->color, &fighter_data->color, sizeof(fighter_data->color));                            // copy color overlay
                         memcpy(&ft_data->input, &fighter_data->input, sizeof(fighter_data->input));                            // copy inputs
                         memcpy(&ft_data->coll_data, &fighter_data->coll_data, sizeof(fighter_data->coll_data));                // copy collision
+                        ft_data->ecb_bot_lock_frames = fighter_data->ecb_bot_lock_frames;
                         memcpy(&ft_data->camera_subject, fighter_data->camera_subject, sizeof(ft_data->camera_subject));       // copy camerabox
                         memcpy(&ft_data->hitbox, &fighter_data->hitbox, sizeof(fighter_data->hitbox));                         // copy hitbox
                         memcpy(&ft_data->throw_hitbox, &fighter_data->throw_hitbox, sizeof(fighter_data->throw_hitbox));       // copy hitbox
@@ -418,6 +419,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
                     JOBJ *joint_6 = thiscoll->joint_6;                                                      // 0x11c
                     JOBJ *joint_7 = thiscoll->joint_7;                                                      // 0x120
                     memcpy(&fighter_data->coll_data, &ft_data->coll_data, sizeof(fighter_data->coll_data)); // copy collision
+                    fighter_data->ecb_bot_lock_frames = ft_data->ecb_bot_lock_frames; 
                     thiscoll->gobj = gobj;
                     thiscoll->joint_1 = joint_1;
                     thiscoll->joint_2 = joint_2;
