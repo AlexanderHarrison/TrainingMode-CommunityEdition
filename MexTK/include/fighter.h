@@ -2673,7 +2673,7 @@ struct FighterData
         char flags_222B;                          // 0x222B
     } flags;                                      //
     union fighter_var {
-        GOBJ *as_gobj[52];
+        void *as_ptr[52];
         struct                                        // 0x222c
         {                                             //
             int ft_var1;                              // 0x222c
@@ -2749,7 +2749,7 @@ struct FighterData
     int x2338;                     // 0x2338
     int x233c;                     // 0x233c
     union state_var {
-        GOBJ *as_gobj[18];
+        void *as_ptr[18];
         struct                         // 0x2340
         {                              //
             int state_var1;            // 0x2340

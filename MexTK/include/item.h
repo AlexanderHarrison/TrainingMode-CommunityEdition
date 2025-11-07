@@ -337,7 +337,7 @@ struct itPublicData
 struct itData
 {
     itCommonAttr *param;  // 0x00
-    float *param_ext;     // 0x04
+    void *param_ext;      // 0x04
     void *hurtboxes;      // 0x08
     void *states;         // 0x0C
     void *model;          // 0x10
@@ -861,8 +861,7 @@ struct ItemData
     unsigned char xdd0_x01 : 1;                         // 0xdd0, 0x01
     union itvars                                        // 
     {
-        int as_int[126];
-        GOBJ *as_gobj[126];
+        void *as_ptr[126];
         struct {
             int var1;                                       // 0xdd4
             int var2;                                       // 0xdd8

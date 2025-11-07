@@ -125,6 +125,8 @@ typedef struct ItemLinkSaveState_v2 {
     GOBJSaveState_v2 gobj;
     JOBJSaveState_v2 jobj;
     GOBJ *parent_fighter;
+    GOBJ *parent_item;
+    int parent_item_attributes_jobj_desc_idx;
     ItemLinkData data;
 } ItemLinkSaveState_v2;
 
