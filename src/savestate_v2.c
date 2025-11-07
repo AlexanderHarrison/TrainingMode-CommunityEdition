@@ -1,41 +1,5 @@
 #include "events.h"
 
-// TODO: ItemLink savestate data don't use ItemData
-
-static const char *p_link_names[] = {
-    "SYS",
-    "1",
-    "2",
-    "LIGHT",
-    "ZAKO",
-    "MAP",
-    "COLL",
-    "7",
-    "FIGHTER",
-    "ITEM",
-    "ITEMLINK",
-    "EFFECT1",
-    "EFFECT2",
-    "MAPMISC",
-    "MISC",
-    "HUD",
-    "16",
-    "17",
-    "MATCHCAM",
-    "MISCCAM",
-    "HUDCAM",
-    "COINCAM",
-    "SCREENFLASHCAM",
-    "CROWDSFX",
-    "DEVTEXT",
-};
-
-void count_gobjs(void) {
-    for (int p_link = 0; p_link <= MATCHPLINK_DEVTEXT; ++p_link)
-        for (GOBJ *gobj = (*stc_gobj_lookup)[p_link]; gobj; gobj = gobj->next)
-            OSReport("plink %s %p\n", p_link_names[p_link], gobj);
-}
-
 static bool ItemAttachBone(ItemSaveState_v2 *st, JOBJ *item_jobj) {
     if (item_jobj == 0)
         return false;
@@ -302,8 +266,6 @@ static void LoadGOBJData(GOBJ *gobj, JOBJSaveState_v2 *jobj_state, GOBJSaveState
 // use enum savestate_flags for flags
 int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
 {
-    // count_gobjs();
-    
     // ensure no players are in problematic states
     if (flags & Savestate_Checks) {
         GOBJ **gobj_list = R13_PTR(-0x3E74);
@@ -451,11 +413,11 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
                     break;
                 }
     
-                GOBJ *ptr = ft_data->fighter_var.as_gobj[i];
+                GOBJ *ptr = ft_data->fighter_var.as_ptr[i];
                 GOBJ *id = GOBJToID(ptr);
                 if (id) {
                     OSReport("save fighter var ptr %p:%p at %i\n", ptr, id, i);
-                    ft_data->fighter_var.as_gobj[i] = id;
+                    ft_data->fighter_var.as_ptr[i] = id;
                     ft_data->fighter_var_ptrs[fighter_var_ptr_count++] = (VarPtr) {
                         .valid = 1,
                         .index = i,
@@ -473,11 +435,11 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
                     break;
                 }
     
-                GOBJ *ptr = ft_data->state_var.as_gobj[i];
+                GOBJ *ptr = ft_data->state_var.as_ptr[i];
                 GOBJ *id = GOBJToID(ptr);
                 if (id) {
                     OSReport("save item var ptr %p at %i\n", ptr, i);
-                    ft_data->state_var.as_gobj[i] = id;
+                    ft_data->state_var.as_ptr[i] = id;
                     ft_data->state_var_ptrs[state_var_ptr_count++] = (VarPtr) {
                         .valid = 1,
                         .index = i,
@@ -543,11 +505,11 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
                 break;
             }
 
-            GOBJ *ptr = item_state->data.item_var.as_gobj[i];
+            GOBJ *ptr = item_state->data.item_var.as_ptr[i];
             GOBJ *id = GOBJToID(ptr);
             if (id) {
                 OSReport("save itvar_ptr %p at %i\n", ptr, i);
-                item_state->data.item_var.as_gobj[i] = id;
+                item_state->data.item_var.as_ptr[i] = id;
                 item_state->var_ptrs[var_ptr_count++] = (VarPtr) {
                     .valid = 1,
                     .index = i,
@@ -613,6 +575,64 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             item_link_state->parent_fighter = GOBJToID(parent_fighter);
             item_link_state->data.x1D4_JObj = JOBJToID(parent_fighter, item_link_data->x1D4_JObj);
         }
+        
+        // find parent Item GOBJ by searching for the ItemLink ptr in vars.
+        // For some reason ItemLinks don't contain a pointer back to the controlling item.
+        ItemLinkData* item_link_data_root = item_link_data;
+        while (true) {
+            ItemLinkData *prev = item_link_data_root->prev;
+            if (prev == 0) break;
+            item_link_data_root = prev;
+        }
+        GOBJ *parent_item = 0;
+        for (GOBJ *gobj = (*stc_gobj_lookup)[MATCHPLINK_ITEM]; gobj; gobj = gobj->next) {
+            ItemData *item_data = gobj->userdata;
+            for (u32 i = 0; i < countof(item_data->item_var.as_ptr); ++i) {
+                ItemLinkData *ptr = item_data->item_var.as_ptr[i];
+                if (ptr == item_link_data_root) {
+                    parent_item = gobj;
+                    break;
+                }
+            }
+        }
+        
+        // Save and load the JOBJDesc model pointer for an ItemLink.
+        // This pointer is stored in the attributes in the parent Item.
+        // So we search through the attributes for it and save the index.
+        // Very hacky and UB, but I can't find a better way.
+        item_link_state->parent_item = 0;
+        item_link_state->parent_item_attributes_jobj_desc_idx = 0;
+        if (parent_item == 0) {
+            OSReport("Parent Item not found for ItemLink!\n");
+        } else {
+            // Find model desc index in attributes.
+            JOBJ *target_model = item_link->hsd_object;
+            if (target_model) {
+                JOBJDesc *target_model_desc = target_model->desc;
+                ItemData *parent_item_data = parent_item->userdata;
+                
+                itData *itdata = parent_item_data->itData;
+                if (itdata) {
+                    JOBJDesc **attrs = itdata->param_ext;
+                    if (attrs) {
+                        // 20 is arbitrary - TODO: check and adjust
+                        for (int i = 0; i < 20; ++i) {
+                            JOBJDesc *model_desc = attrs[i];
+                            if (model_desc == target_model_desc) {
+                                // found it!
+                                item_link_state->parent_item = GOBJToID(parent_item);
+                                item_link_state->parent_item_attributes_jobj_desc_idx = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (target_model_desc != 0 && item_link_state->parent_item == 0) {
+                    OSReport("Parent Item JOBJDesc not found for ItemLink model!\n");
+                } 
+            }
+        }
     }
 
     if ((flags & Savestate_Silent) == 0) {
@@ -634,8 +654,6 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             SFX_PlayCommon(3);
         return false;
     }
-    
-    // count_gobjs();
     
     // Enter sleep.
     // Do this before removing/spawning items to avoid double freeing items
@@ -688,8 +706,16 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         GOBJ *item_link = LoadGOBJ(&item_link_state->gobj);
         ItemLinkData *item_link_data = HSD_ObjAlloc(stc_item_link_alloc_data);
         memcpy(item_link_data, &item_link_state->data, sizeof(ItemLinkData));
+        
+        // OSReport("LOAD MODEL AT %p\n", item_link_state->model_desc);
+        GOBJ *parent_item = IDToGOBJ(item_link_state->parent_item);
+        ItemData *parent_item_data = parent_item->userdata;
+        JOBJDesc **attrs = parent_item_data->itData->param_ext;
+        JOBJ *obj = JOBJ_LoadJoint(attrs[item_link_state->parent_item_attributes_jobj_desc_idx]);
+        GObj_AddObject(item_link, R13_U8(-0x3E55), obj);
+        
         LoadGOBJData(item_link, &item_link_state->jobj, &item_link_state->gobj, item_link_data);
-
+        
         spawned_item_links[i] = item_link;
     }
 
@@ -722,10 +748,10 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             VarPtr var_ptr = item_state->var_ptrs[i];
             if (!var_ptr.valid) break;
 
-            GOBJ *id = item_state->data.item_var.as_gobj[var_ptr.index];
+            GOBJ *id = item_state->data.item_var.as_ptr[var_ptr.index];
             GOBJ *ptr = IDToGOBJ(id);
             OSReport("restore item var ptr %i %p\n", var_ptr.index, ptr);
-            item_data->item_var.as_gobj[var_ptr.index] = ptr;
+            item_data->item_var.as_ptr[var_ptr.index] = ptr;
         }
 
         // restore jobj pointers
@@ -1044,9 +1070,9 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     VarPtr var_ptr = ft_data->fighter_var_ptrs[i];
                     if (!var_ptr.valid) break;
     
-                    GOBJ *id = fighter_data->fighter_var.as_gobj[var_ptr.index];
+                    GOBJ *id = fighter_data->fighter_var.as_ptr[var_ptr.index];
                     GOBJ *ptr = IDToGOBJ(id);
-                    fighter_data->fighter_var.as_gobj[var_ptr.index] = ptr;
+                    fighter_data->fighter_var.as_ptr[var_ptr.index] = ptr;
                     OSReport("restore fighter var ptr %i %p:%p\n", var_ptr.index, ptr, id);
                 }
     
@@ -1055,9 +1081,9 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     VarPtr var_ptr = ft_data->state_var_ptrs[i];
                     if (!var_ptr.valid) break;
     
-                    GOBJ *id = fighter_data->state_var.as_gobj[var_ptr.index];
+                    GOBJ *id = fighter_data->state_var.as_ptr[var_ptr.index];
                     GOBJ *ptr = IDToGOBJ(id);
-                    fighter_data->state_var.as_gobj[var_ptr.index] = ptr;
+                    fighter_data->state_var.as_ptr[var_ptr.index] = ptr;
                     OSReport("restore state var ptr %i %p\n", var_ptr.index, ptr);
                 }
                 
