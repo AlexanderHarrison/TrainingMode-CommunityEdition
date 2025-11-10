@@ -575,9 +575,10 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             item_link_state->parent_fighter = GOBJToID(parent_fighter);
             item_link_state->data.x1D4_JObj = JOBJToID(parent_fighter, item_link_data->x1D4_JObj);
         }
-        
+
         // find parent Item GOBJ by searching for the ItemLink ptr in vars.
         // For some reason ItemLinks don't contain a pointer back to the controlling item.
+        // This is hacky and UB but I can't think of a better way.
         ItemLinkData* item_link_data_root = item_link_data;
         while (true) {
             ItemLinkData *prev = item_link_data_root->prev;
@@ -615,8 +616,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
                 if (itdata) {
                     JOBJDesc **attrs = itdata->param_ext;
                     if (attrs) {
-                        // 20 is arbitrary - TODO: check and adjust
-                        for (int i = 0; i < 20; ++i) {
+                        for (int i = 0; i < 40; ++i) {
                             JOBJDesc *model_desc = attrs[i];
                             if (model_desc == target_model_desc) {
                                 // found it!
@@ -628,7 +628,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
                     }
                 }
                 
-                if (target_model_desc != 0 && item_link_state->parent_item == 0) {
+                if (item_link_state->parent_item == 0) {
                     OSReport("Parent Item JOBJDesc not found for ItemLink model!\n");
                 } 
             }
