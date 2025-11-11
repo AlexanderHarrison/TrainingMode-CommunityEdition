@@ -145,6 +145,38 @@ EventDesc Wavedash = {
     .matchData = &Wavedash_MatchData,
 };
 
+// TechChase Training
+static EventMatchData TechChase_MatchData = {
+    .timer = MATCH_TIMER_HIDE,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = false,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = false,
+    .isShowScore = false,
+
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc TechChase = {
+    .eventName = "Tech-Chase Training\n",
+    .eventDescription = "Practice covering techs.\n",
+    .eventFile = "techchase",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_TRAINING,
+    .allowed_characters = { .hmn = -1, .cpu = -1 },
+    .cpuKind = -1,
+    .stage = -1,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &TechChase_MatchData,
+};
+
 // Float Cancel Training
 static EventMatchData FloatCancel_MatchData = {
     .timer = MATCH_TIMER_HIDE,
@@ -578,6 +610,7 @@ static EventPage Minigames_Page = {
 
 // Page 2 Events
 static EventDesc *General_Events[] = {
+    &TechChase,
     &Lab,
     &LCancel,
     &Ledgedash,

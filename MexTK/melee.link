@@ -5,6 +5,7 @@
 8008cfac:Fighter_EnterAerial
 80068E98:Fighter_Create
 800BE7E0:Fighter_Create2
+8008c3e0:FSmash_GetASForAnalogAngle
 800693AC:ActionStateChange
 8006f190:FrameSpeedChange
 8036410C:AOBJ_ReqAnim
@@ -88,6 +89,7 @@
 80041EE4:Coll_InitECB
 8004220C:Coll_SetECBScale
 8004CA6C:Coll_GetCurrGroundsFrictionMult
+80084280:EnvironmentCollision_WaitLanding
 8004CAA0:Collision_CheckCeilingCollision
 8004CB78:Collision_CheckGroundCollision
 8004CB30:Collision_CheckLeftWallCollision

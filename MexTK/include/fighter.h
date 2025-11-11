@@ -3462,4 +3462,5 @@ void Fighter_GivePersistentIntangibility(GOBJ *f, int frames);
 void Fighter_TDI(FighterData *fp);
 void Fighter_PlayQueuedDamageSounds(FighterData *fp);
 GXColor Fighter_GetPlyHUDColor(int ply); // used for lupe, pokemon stadium text color, results viewport broder
+void FSmash_GetASForAnalogAngle(GOBJ *ft);
 #endif

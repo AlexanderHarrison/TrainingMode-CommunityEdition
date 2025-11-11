@@ -36,7 +36,7 @@ static void UpdatePosition(GOBJ *fighter) {
     data->coll_data.topN_Proj = pos;
     data->coll_data.coll_test = *stc_colltest;
 
-    JOBJ* jobj = fighter->hsd_object;
+    JOBJ *jobj = fighter->hsd_object;
     jobj->trans = data->phys.pos;
     JOBJ_SetMtxDirtySub(jobj);
 
@@ -44,7 +44,7 @@ static void UpdatePosition(GOBJ *fighter) {
     Fighter_SetPosition(data->ply, data->flags.ms, &data->phys.pos);
 }
 
-static bool FindGroundNearPlayer(GOBJ* fighter, Vec3* pos, int* line_idx) {
+static bool FindGroundNearPlayer(GOBJ *fighter, Vec3 *pos, int *line_idx) {
     FighterData *data = fighter->userdata;
     float x = data->phys.pos.X;
     float y1 = data->phys.pos.Y + 10;
@@ -57,7 +57,7 @@ static bool FindGroundNearPlayer(GOBJ* fighter, Vec3* pos, int* line_idx) {
             -1, -1, -1, 0, x, y1, x, y2, 0);
 }
 
-static void PlacePlayerOnGround(GOBJ* fighter) {
+static void PlacePlayerOnGround(GOBJ *fighter) {
     FighterData *data = fighter->userdata;
 
     Vec3 pos;
@@ -68,7 +68,7 @@ static void PlacePlayerOnGround(GOBJ* fighter) {
         data->coll_data.ground_index = line_idx;
     }
     UpdatePosition(fighter);
-    ((void(*)(GOBJ*))0x80084280)(fighter); // EnvironmentCollision_WaitLanding TODO
+    EnvironmentCollision_WaitLanding(fighter);
     Fighter_SetGrounded(data);
 }
 
@@ -337,7 +337,7 @@ void Reset(int side_idx) {
 
     // cpu state
     cpu_data->gfx = 0;
-    ((void(*)(GOBJ*))0x8008c3e0)(cpu); // FSmash_GetASForAnalogAngle TODO
+    FSmash_GetASForAnalogAngle(cpu);
     Fighter_ApplyAnimation(cpu, 11, 1, 0);
     cpu_data->state.frame = 11;
     cpu_data->script.script_event_timer = 0;

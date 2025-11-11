@@ -262,6 +262,7 @@ void Shield_HitShield(GOBJ *ft);
 void GuardReflectInitIDK(GOBJ *ft);
 void GuardOnInitIDK(GOBJ *ft);
 void Animation_GuardAgain(GOBJ *ft);
+void EnvironmentCollision_WaitLanding(GOBJ *ft);
 void Coll_CopyPosToECBs(CollData *coll_data, Vec3 *pos);
 void Coll_ECBCurrToPrev(CollData *coll_data);
 void Coll_InitECB(CollData *coll_data);
