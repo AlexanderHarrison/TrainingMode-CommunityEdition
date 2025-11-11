@@ -2,12 +2,14 @@
 #include "events.h"
 
 #define INTANG_COLANIM 10
-void Exit(GOBJ *menu);
+static void Exit(GOBJ *menu);
 
 static EventMenu Menu_Main;
 static EventMenu Menu_Chances;
 
 enum {
+    OPT_CHANCE_MENU,
+    OPT_REACTION_OSD,
     OPT_INVIS,
     OPT_EXIT,
 
@@ -29,6 +31,11 @@ static EventOption Options_Main[] = {
         .menu = &Menu_Chances,
         .name = "Tech Chances",
         .desc = {"Adjust option's rates."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Reaction Frame OSD",
+        .desc = {"Check which frame you reacted on."},
     },
     {
         .kind = OPTKIND_STRING,
@@ -221,7 +228,11 @@ static void UpdateCameraBox(GOBJ *fighter) {
     subject->boundright_curr = subject->boundright_proj;
 }
 
-void Reset(void) {
+static int reset_timer = -1;
+static int missed_tech_getup_timer = -1;
+static int first_action_frame = -1;
+
+static void Reset(void) {
     event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
 
     GOBJ *hmn = Fighter_GetGObj(0);
@@ -246,6 +257,10 @@ void Reset(void) {
     UpdateCameraBox(cpu);
 
     Match_CorrectCamera();
+
+    reset_timer = -1;
+    missed_tech_getup_timer = -1;
+    first_action_frame = -1;
 }
 
 static int tech_frame_distinguishable[27] = {
@@ -278,9 +293,6 @@ static int tech_frame_distinguishable[27] = {
      7, // Roy
 };
 
-static int reset_timer = -1;
-static int missed_tech_getup_timer = -1;
-
 void Event_Think(GOBJ *menu) {
     if (event_vars->game_timer == 1) {
         event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
@@ -301,6 +313,26 @@ void Event_Think(GOBJ *menu) {
 
     int state_id = cpu_data->state_id;
     
+    // check for action
+    if (
+        Options_Main[OPT_REACTION_OSD].val
+        && ASID_DOWNSPOTD <= state_id && state_id <= ASID_PASSIVESTANDB
+        && first_action_frame == -1
+    ) {
+        HSD_Pad *engine_pad = PadGetEngine(hmn_data->pad_index);
+        
+        int input = engine_pad->held | engine_pad->stickX | engine_pad->stickY | engine_pad->substickX | engine_pad->substickY;
+        if (input != 0) {
+            first_action_frame = cpu_data->TM.state_frame;
+            int frame_distinguishable = tech_frame_distinguishable[cpu_data->kind];
+
+            event_vars->Message_Display(
+                15, hmn_data->ply, 0, 
+                "Reaction: %if\n", first_action_frame - frame_distinguishable
+            );
+        }
+    }
+    
     // set intangibility
     if (state_id == ASID_WAIT || state_id == ASID_DAMAGEFALL) {
         cpu_data->hurt.intang_frames.ledge = 1;
@@ -309,7 +341,7 @@ void Event_Think(GOBJ *menu) {
         cpu_data->hurt.intang_frames.ledge = 0;
         cpu_data->hurt.kind_game = 0;
     }
-    
+
     if (reset_timer == -1) {
         // tech if airborne
         if (cpu_data->phys.air_state == 1 && cpu_data->phys.pos.Y < 5) {
@@ -369,6 +401,7 @@ void Event_Think(GOBJ *menu) {
         else if (
             (ASID_CAPTUREPULLEDHI <= state_id && state_id <= ASID_CAPTUREFOOT)
             || (ASID_DAMAGEHI1 <= state_id && state_id <= ASID_DAMAGEFLYROLL)
+            || (cpu_data->dmg.hitlag_frames > 0 && cpu_data->flags.hitlag_victim)
         ) {
             SFX_Play(0xAD);
             reset_timer = 30;
@@ -380,7 +413,7 @@ void Event_Think(GOBJ *menu) {
     }
 }
 
-void Event_PostThink(GOBJ *menu) {
+static void Event_PostThink(GOBJ *menu) {
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
     int state_id = cpu_data->state_id;
@@ -412,7 +445,7 @@ void Event_Init(GOBJ *gobj) {
     GObj_AddProc(gobj, Event_PostThink, 20);
 }
 
-void Exit(GOBJ *menu) {
+static void Exit(GOBJ *menu) {
     stc_match->state = 3;
     Match_EndVS();
 }
