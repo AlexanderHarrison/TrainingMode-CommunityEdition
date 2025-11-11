@@ -1,20 +1,22 @@
 #include "../MexTK/mex.h"
 #include "events.h"
 
-#define INTANG_COLANIM 10
-static void Exit(GOBJ *menu);
-
 static EventMenu Menu_Main;
 static EventMenu Menu_Chances;
 
-enum {
-    OPT_CHANCE_MENU,
-    OPT_REACTION_OSD,
-    OPT_INVIS,
-    OPT_EXIT,
-
-    OPT_COUNT
-};
+static void Exit(GOBJ *menu);
+static void StartMoveCPU(GOBJ *menu);
+static void FinishMoveCPU(GOBJ *menu);
+static void StartMoveHMN(GOBJ *menu);
+static void FinishMoveHMN(GOBJ *menu);
+static void ChangeTechInPlaceChance (GOBJ *menu_gobj, int _new_val);
+static void ChangeTechAwayChance    (GOBJ *menu_gobj, int _new_val);
+static void ChangeTechTowardChance  (GOBJ *menu_gobj, int _new_val);
+static void ChangeMissTechChance    (GOBJ *menu_gobj, int _new_val);
+static void ChangeStandChance       (GOBJ *menu_gobj, int _new_val);
+static void ChangeRollAwayChance    (GOBJ *menu_gobj, int _new_val);
+static void ChangeRollTowardChance  (GOBJ *menu_gobj, int _new_val);
+static void ChangeGetupAttackChance (GOBJ *menu_gobj, int _new_val);
 
 static const char *Options_Invis[] = { "None", "Post-Reaction", "Flash" };
 enum {
@@ -25,12 +27,51 @@ enum {
     OPTINVIS_COUNT
 };
 
+static const EventOption Option_MoveCPU = {
+    .kind = OPTKIND_FUNC,
+    .name = "Move CPU",
+    .desc = {"Manually set the CPU's position."},
+    .OnSelect = StartMoveCPU,
+};
+
+static const EventOption Option_FinishMoveCPU = {
+    .kind = OPTKIND_FUNC,
+    .name = "Finish Moving CPU",
+    .desc = {"Finish setting the CPU's position."},
+    .OnSelect = FinishMoveCPU,
+};
+
+static const EventOption Option_MoveHMN = {
+    .kind = OPTKIND_FUNC,
+    .name = "Move HMN",
+    .desc = {"Manually set the HMN's position."},
+    .OnSelect = StartMoveHMN,
+};
+
+static const EventOption Option_FinishMoveHMN = {
+    .kind = OPTKIND_FUNC,
+    .name = "Finish Moving HMN",
+    .desc = {"Finish setting the HMN's position."},
+    .OnSelect = FinishMoveHMN,
+};
+
+enum {
+    OPT_CHANCE_MENU,
+    OPT_REACTION_OSD,
+    OPT_INVIS,
+    OPT_MOVE_CPU,
+    OPT_MOVE_HMN,
+    OPT_EXIT,
+
+    OPT_COUNT
+};
+
 static EventOption Options_Main[] = {
     {
         .kind = OPTKIND_MENU,
         .menu = &Menu_Chances,
         .name = "Tech Chances",
-        .desc = {"Adjust option's rates."},
+        .desc = {"Adjust tech and getup option chances."},
     },
     {
         .kind = OPTKIND_TOGGLE,
@@ -44,6 +85,8 @@ static EventOption Options_Main[] = {
         .values = Options_Invis,
         .value_num = countof(Options_Invis),
     },
+    Option_MoveCPU,
+    Option_MoveHMN,
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
@@ -73,15 +116,6 @@ enum {
 
     OPTCHANCE_COUNT
 };
-
-static void ChangeTechInPlaceChance (GOBJ *menu_gobj, int _new_val);
-static void ChangeTechAwayChance    (GOBJ *menu_gobj, int _new_val);
-static void ChangeTechTowardChance  (GOBJ *menu_gobj, int _new_val);
-static void ChangeMissTechChance    (GOBJ *menu_gobj, int _new_val);
-static void ChangeStandChance       (GOBJ *menu_gobj, int _new_val);
-static void ChangeRollAwayChance    (GOBJ *menu_gobj, int _new_val);
-static void ChangeRollTowardChance  (GOBJ *menu_gobj, int _new_val);
-static void ChangeGetupAttackChance (GOBJ *menu_gobj, int _new_val);
 
 static EventOption Options_Chances[] = {
     {
@@ -194,29 +228,14 @@ static void UpdatePosition(GOBJ *fighter) {
 static bool FindGroundNearPlayer(GOBJ *fighter, Vec3 *pos, int *line_idx) {
     FighterData *data = fighter->userdata;
     float x = data->phys.pos.X;
-    float y1 = data->phys.pos.Y + 10;
-    float y2 = data->phys.pos.Y - 100;
+    float y1 = data->phys.pos.Y + 4;
+    float y2 = data->phys.pos.Y - 4;
 
     Vec3 _line_unk;
     int _line_kind;
 
     return GrColl_RaycastGround(pos, line_idx, &_line_kind, &_line_unk,
             -1, -1, -1, 0, x, y1, x, y2, 0);
-}
-
-static void PlacePlayerOnGround(GOBJ *fighter) {
-    FighterData *data = fighter->userdata;
-
-    Vec3 pos;
-    int line_idx;
-    if (FindGroundNearPlayer(fighter, &pos, &line_idx)) {
-        data->phys.pos.X = pos.X;
-        data->phys.pos.Y = pos.Y;
-        data->coll_data.ground_index = line_idx;
-    }
-    UpdatePosition(fighter);
-    EnvironmentCollision_WaitLanding(fighter);
-    Fighter_SetGrounded(data);
 }
 
 static void UpdateCameraBox(GOBJ *fighter) {
@@ -232,6 +251,12 @@ static int reset_timer = -1;
 static int missed_tech_getup_timer = -1;
 static int first_action_frame = -1;
 
+static int hmn_pad_index;
+static int null_pad_index;
+
+static Vec3 cpu_pos = { 5, 27, 0 };
+static Vec3 hmn_pos = { -5, 0, 0 };
+
 static void Reset(void) {
     event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
 
@@ -243,16 +268,27 @@ static void Reset(void) {
     hmn_data->facing_direction = 1;
     cpu_data->facing_direction = 1;
 
-    hmn_data->phys.pos.X = 0;
-    hmn_data->phys.pos.Y = 0;
-    cpu_data->phys.pos.X = 10;
-    cpu_data->phys.pos.Y = 30;
+    hmn_data->phys.pos = hmn_pos;
+    cpu_data->phys.pos = cpu_pos;
 
     UpdatePosition(hmn);
     UpdatePosition(cpu);
-    PlacePlayerOnGround(hmn);
-    Fighter_EnterDamageFall(cpu);
     
+    Vec3 grounded_hmn_pos;
+    int ground_index;
+    if (FindGroundNearPlayer(hmn, &grounded_hmn_pos, &ground_index)) {
+        hmn_data->phys.pos = grounded_hmn_pos;
+        hmn_data->coll_data.ground_index = ground_index;
+        UpdatePosition(hmn);
+        EnvironmentCollision_WaitLanding(hmn);
+        Fighter_SetGrounded(hmn_data);
+        Fighter_EnterWait(hmn);
+    } else {
+        Fighter_EnterFall(hmn);
+    }
+
+    Fighter_EnterDamageFall(cpu);
+
     UpdateCameraBox(hmn);
     UpdateCameraBox(cpu);
 
@@ -299,11 +335,45 @@ void Event_Think(GOBJ *menu) {
         Reset();
     }
 
+    HSD_Pad *pad = PadGetMaster(hmn_pad_index);
     GOBJ *hmn = Fighter_GetGObj(0);
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *hmn_data = hmn->userdata;
     FighterData *cpu_data = cpu->userdata;
-
+    
+    // move CPU
+    if (Options_Main[OPT_MOVE_CPU].name == Option_FinishMoveCPU.name) {
+        HSD_Pad *pad = PadGetMaster(hmn_pad_index);
+        cpu_pos.X += pad->fstickX * 1.5f;
+        cpu_pos.Y += pad->fstickY * 1.5f;
+        cpu_data->phys.pos = cpu_pos;
+        UpdatePosition(cpu);
+        Fighter_EnterDamageFall(cpu);
+    
+        return;
+    }
+    
+    // move HMN
+    else if (Options_Main[OPT_MOVE_HMN].name == Option_FinishMoveHMN.name) {
+        hmn_pos.X += pad->fstickX * 1.5f;
+        hmn_pos.Y += pad->fstickY * 1.5f;
+        hmn_data->phys.pos = hmn_pos;
+        UpdatePosition(hmn);
+        
+        Vec3 grounded_hmn_pos;
+        int ground_index;
+        if (FindGroundNearPlayer(hmn, &grounded_hmn_pos, &ground_index)) {
+            hmn_data->phys.pos = grounded_hmn_pos;
+            hmn_data->coll_data.ground_index = ground_index;
+            EnvironmentCollision_WaitLanding(hmn);
+            Fighter_SetGrounded(hmn_data);
+        } else {
+            Fighter_EnterFall(hmn);
+        }
+    
+        return;
+    }
+    
     cpu_data->cpu.ai = 15;
     cpu_data->cpu.held = 0;
     cpu_data->cpu.lstickX = 0;
@@ -344,7 +414,7 @@ void Event_Think(GOBJ *menu) {
 
     if (reset_timer == -1) {
         // tech if airborne
-        if (cpu_data->phys.air_state == 1 && cpu_data->phys.pos.Y < 5) {
+        if (cpu_data->phys.air_state == 1) {
             cpu_data->input.timer_LR = 0;
             
             int rng = HSD_Randi(100);
@@ -394,7 +464,7 @@ void Event_Think(GOBJ *menu) {
 
         // fail if finished tech 
         if (state_id == ASID_WAIT) {
-            SFX_Play(0xAF);
+            // SFX_Play(0xAF);
             reset_timer = 30;
         }
         // succeed if grabbed or hit 
@@ -407,10 +477,12 @@ void Event_Think(GOBJ *menu) {
             reset_timer = 30;
         }
     }
-
-    if (reset_timer >= 0 && reset_timer-- == 0) {
+    
+    if (pad->down & HSD_BUTTON_DPAD_LEFT)
         Reset();
-    }
+
+    if (reset_timer >= 0 && reset_timer-- == 0)
+        Reset();
 }
 
 static void Event_PostThink(GOBJ *menu) {
@@ -443,6 +515,11 @@ static void Event_PostThink(GOBJ *menu) {
 
 void Event_Init(GOBJ *gobj) {
     GObj_AddProc(gobj, Event_PostThink, 20);
+    
+    GOBJ *hmn = Fighter_GetGObj(0);
+    FighterData *hmn_data = hmn->userdata;
+    hmn_pad_index = hmn_data->pad_index;
+    null_pad_index = (hmn_pad_index + 1) % 4;
 }
 
 static void Exit(GOBJ *menu) {
@@ -505,3 +582,43 @@ static void ChangeStandChance       (GOBJ *menu_gobj, int _new_val) { ReboundTec
 static void ChangeRollAwayChance    (GOBJ *menu_gobj, int _new_val) { ReboundTechChances(&Options_Chances[OPTCHANCE_GETUPSTAND], 1); }
 static void ChangeRollTowardChance  (GOBJ *menu_gobj, int _new_val) { ReboundTechChances(&Options_Chances[OPTCHANCE_GETUPSTAND], 2); }
 static void ChangeGetupAttackChance (GOBJ *menu_gobj, int _new_val) { ReboundTechChances(&Options_Chances[OPTCHANCE_GETUPSTAND], 3); }
+
+static void DisableHmnControl(void) {
+    GOBJ *hmn = Fighter_GetGObj(0);
+    FighterData *hmn_data = hmn->userdata;
+    hmn_data->pad_index = null_pad_index;
+}
+
+static void EnableHmnControl(void) {
+    GOBJ *hmn = Fighter_GetGObj(0);
+    FighterData *hmn_data = hmn->userdata;
+    hmn_data->pad_index = hmn_pad_index;
+}
+
+static void StartMoveCPU(GOBJ *menu) {
+    DisableHmnControl();
+    Reset();
+    Options_Main[OPT_MOVE_CPU] = Option_FinishMoveCPU; 
+    Options_Main[OPT_MOVE_HMN].disable = true;
+}
+
+static void FinishMoveCPU(GOBJ *menu) {
+    EnableHmnControl();
+    Reset();
+    Options_Main[OPT_MOVE_CPU] = Option_MoveCPU; 
+    Options_Main[OPT_MOVE_HMN].disable = false;
+}
+
+static void StartMoveHMN(GOBJ *menu) {
+    DisableHmnControl();
+    Reset();
+    Options_Main[OPT_MOVE_HMN] = Option_FinishMoveHMN; 
+    Options_Main[OPT_MOVE_CPU].disable = true;
+}
+
+static void FinishMoveHMN(GOBJ *menu) {
+    EnableHmnControl();
+    Reset();
+    Options_Main[OPT_MOVE_HMN] = Option_MoveHMN; 
+    Options_Main[OPT_MOVE_CPU].disable = false;
+}
