@@ -610,11 +610,11 @@ static EventPage Minigames_Page = {
 
 // Page 2 Events
 static EventDesc *General_Events[] = {
-    &TechChase,
     &Lab,
     &LCancel,
     &Ledgedash,
     &Wavedash,
+    &TechChase,
     &Combo,
     &AttackOnShield,
     &Reversal,
