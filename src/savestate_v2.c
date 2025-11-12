@@ -21,29 +21,6 @@ static bool ItemAttachBone(ItemSaveState_v2 *st, JOBJ *item_jobj) {
     return ItemAttachBone(st, item_jobj->sibling);
 }
 
-// static JOBJ *FighterAttachBone(char *bone, JOBJ *item_jobj, JOBJ *fighter_jobj) {
-//     if (fighter_jobj == 0)
-//         return false;
-    
-//     OSReport("FT checking %i!\n", *bone);
-//     ROBJ *robj = fighter_jobj->robj;
-//     if (
-//         robj
-//         && (robj->flags & ROBJ_HAS_TYPE)
-//         && (robj->flags & ROBJ_TYPE_MASK) == ROBJ_JOBJ
-//         // && robj->u.jobj == item_jobj
-//     ) {
-//         OSReport("FT attached %i!\n", *bone);
-//         return fighter_jobj;
-//     }
-    
-//     (*bone)++;
-//     JOBJ *child_jobj = FighterAttachBone(bone, item_jobj, fighter_jobj->child);
-//     if (child_jobj)
-//         return child_jobj;
-//     return FighterAttachBone(bone, item_jobj, fighter_jobj->sibling);
-// }
-
 static bool IsObjectPtr(void *ptr) {
     // ensure in valid memory
     uintptr_t addr = (uintptr_t)ptr;
@@ -407,7 +384,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             // TODO: save JOBJ pointers
             memset(ft_data->fighter_var_ptrs, 0, sizeof(ft_data->fighter_var_ptrs));
             int fighter_var_ptr_count = 0;
-            for (int i = 0; i < 126; ++i) {
+            for (int i = 0; i < 52; ++i) {
                 if (fighter_var_ptr_count == countof(ft_data->fighter_var_ptrs)) {
                     OSReport("too many itemvar ptrs!\n");
                     break;
@@ -429,7 +406,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             // TODO: save JOBJ pointers
             memset(ft_data->state_var_ptrs, 0, sizeof(ft_data->state_var_ptrs));
             int state_var_ptr_count = 0;
-            for (int i = 0; i < 126; ++i) {
+            for (int i = 0; i < 18; ++i) {
                 if (state_var_ptr_count == countof(ft_data->state_var_ptrs)) {
                     OSReport("too many itemvar ptrs!\n");
                     break;
@@ -448,7 +425,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             }
         }
     }
-    
+
     // store items
     memset(savestate->item_state, 0, sizeof(savestate->item_state));
     int item_count = 0;
