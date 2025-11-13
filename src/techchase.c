@@ -18,7 +18,7 @@ static void ChangeRollAwayChance    (GOBJ *menu_gobj, int _new_val);
 static void ChangeRollTowardChance  (GOBJ *menu_gobj, int _new_val);
 static void ChangeGetupAttackChance (GOBJ *menu_gobj, int _new_val);
 
-static const char *Options_Invis[] = { "None", "Post-Reaction", "Flash" };
+static const char *Options_Invis[] = { "None", "After Reaction", "Flash Reaction" };
 enum {
     OPTINVIS_NONE,
     OPTINVIS_POST_REACTION,
@@ -55,10 +55,15 @@ static const EventOption Option_FinishMoveHMN = {
     .OnSelect = FinishMoveHMN,
 };
 
+static float GameSpeeds[] = {1.f, 5.f/6.f, 2.f/3.f, 1.f/2.f, 1.f/4.f};
+static const char *Options_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"};
+
 enum {
     OPT_CHANCE_MENU,
     OPT_REACTION_OSD,
+    OPT_TIMING_OSD,
     OPT_INVIS,
+    OPT_SPEED,
     OPT_MOVE_CPU,
     OPT_MOVE_HMN,
     OPT_EXIT,
@@ -79,11 +84,24 @@ static EventOption Options_Main[] = {
         .desc = {"Check which frame you reacted on."},
     },
     {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Timing OSD",
+        .desc = {"Check how early or late you were."},
+        .val = true,
+    },
+    {
         .kind = OPTKIND_STRING,
         .name = "Tech Invisibility",
         .desc = {"Toggle the CPU turning invisible during tech", "animations."},
         .values = Options_Invis,
         .value_num = countof(Options_Invis),
+    },
+    {
+        .kind = OPTKIND_STRING,
+        .value_num = countof(Options_GameSpeedText),
+        .name = "Game Speed",
+        .desc = {"Change how fast the game engine runs."},
+        .values = Options_GameSpeedText,
     },
     Option_MoveCPU,
     Option_MoveHMN,
@@ -96,7 +114,7 @@ static EventOption Options_Main[] = {
 };
 
 static EventMenu Menu_Main = {
-    .name = "Tech-Chase Training",
+    .name = "Techchase Training",
     .option_num = countof(Options_Main),
     .options = Options_Main,
 };
@@ -121,7 +139,7 @@ static EventOption Options_Chances[] = {
     {
         .kind = OPTKIND_INT,
         .value_num = 101,
-        .val = 25,
+        .val = 40,
         .name = "Tech in Place Chance",
         .desc = {"Adjust the chance the CPU will tech in place."},
         .format = "%d%%",
@@ -130,7 +148,7 @@ static EventOption Options_Chances[] = {
     {
         .kind = OPTKIND_INT,
         .value_num = 101,
-        .val = 25,
+        .val = 30,
         .name = "Tech Away Chance",
         .desc = {"Adjust the chance the CPU will tech away."},
         .format = "%d%%",
@@ -139,7 +157,7 @@ static EventOption Options_Chances[] = {
     {
         .kind = OPTKIND_INT,
         .value_num = 101,
-        .val = 25,
+        .val = 30,
         .name = "Tech Toward Chance",
         .desc = {"Adjust the chance the CPU will tech toward."},
         .format = "%d%%",
@@ -148,7 +166,7 @@ static EventOption Options_Chances[] = {
     {
         .kind = OPTKIND_INT,
         .value_num = 101,
-        .val = 25,
+        .val = 0,
         .name = "Miss Tech Chance",
         .desc = {"Adjust the chance the CPU will miss tech."},
         .format = "%d%%",
@@ -250,6 +268,11 @@ static void UpdateCameraBox(GOBJ *fighter) {
 static int reset_timer = -1;
 static int missed_tech_getup_timer = -1;
 static int first_action_frame = -1;
+static bool put_out_hitbox = false;
+
+// figatree_curr->frame_num for last getup animation.
+// We can't easily request this on demand so we store it here pre-emptively.
+static int getup_option_length = 0;
 
 static int hmn_pad_index;
 static int null_pad_index;
@@ -297,6 +320,7 @@ static void Reset(void) {
     reset_timer = -1;
     missed_tech_getup_timer = -1;
     first_action_frame = -1;
+    put_out_hitbox = false;
 }
 
 static int tech_frame_distinguishable[27] = {
@@ -328,6 +352,16 @@ static int tech_frame_distinguishable[27] = {
      6, // Ganondorf
      7, // Roy
 };
+
+void Event_Update(GOBJ *menu) {
+    if (Pause_CheckStatus(1) != 2) {
+        float speed = GameSpeeds[Options_Main[OPT_SPEED].val];
+        HSD_SetSpeedEasy(speed);
+    } else {
+        HSD_SetSpeedEasy(1.0);
+    }
+
+}
 
 void Event_Think(GOBJ *menu) {
     if (event_vars->game_timer == 1) {
@@ -383,6 +417,10 @@ void Event_Think(GOBJ *menu) {
 
     int state_id = cpu_data->state_id;
     
+    // cache getup_option_length
+    if (ASID_DOWNSPOTD <= state_id && state_id <= ASID_PASSIVESTANDB)
+        getup_option_length = cpu_data->figatree_curr->frame_num;
+
     // check for action
     if (
         Options_Main[OPT_REACTION_OSD].val
@@ -397,19 +435,41 @@ void Event_Think(GOBJ *menu) {
             int frame_distinguishable = tech_frame_distinguishable[cpu_data->kind];
 
             event_vars->Message_Display(
-                15, hmn_data->ply, 0, 
+                15, hmn_data->ply, MSGCOLOR_WHITE, 
                 "Reaction: %if\n", first_action_frame - frame_distinguishable
             );
         }
     }
-    
+
     // set intangibility
-    if (state_id == ASID_WAIT || state_id == ASID_DAMAGEFALL) {
+    if (
+        (
+            // make invincible on last frame of getup/tech option
+            ASID_DOWNSPOTD <= state_id && state_id <= ASID_PASSIVESTANDB
+            && cpu_data->state.frame + 1 == cpu_data->figatree_curr->frame_num
+        )
+        || state_id == ASID_WAIT
+        || state_id == ASID_DAMAGEFALL
+    ) {
         cpu_data->hurt.intang_frames.ledge = 1;
         cpu_data->hurt.kind_game = 1;
     } else {
         cpu_data->hurt.intang_frames.ledge = 0;
         cpu_data->hurt.kind_game = 0;
+    }
+    
+    // Check for late attack and show Timing OSD
+    if (
+        Options_Main[OPT_TIMING_OSD].val
+        && state_id == ASID_WAIT 
+        && hmn_data->flags.hitbox_active
+        && !put_out_hitbox
+    ) { 
+        put_out_hitbox = true;
+        event_vars->Message_Display(
+            16, hmn_data->ply, MSGCOLOR_RED, 
+            "%if Late\n", cpu_data->TM.state_frame
+        );
     }
 
     if (reset_timer == -1) {
@@ -473,11 +533,33 @@ void Event_Think(GOBJ *menu) {
             || (ASID_DAMAGEHI1 <= state_id && state_id <= ASID_DAMAGEFLYROLL)
             || (cpu_data->dmg.hitlag_frames > 0 && cpu_data->flags.hitlag_victim)
         ) {
+            // Show Timing OSD
+            if (Options_Main[OPT_TIMING_OSD].val && !put_out_hitbox) { 
+                put_out_hitbox = true;
+                
+                int frames_taken = -1;
+                int prev_state_id = -1;
+                for (int i = 0; i < 6; ++i) {
+                    prev_state_id = cpu_data->TM.state_prev[i];
+                    if (ASID_DOWNSPOTD <= prev_state_id && prev_state_id <= ASID_PASSIVESTANDB) {
+                        frames_taken = cpu_data->TM.state_prev_frames[i];
+                        break;
+                    }
+                }
+
+                if (prev_state_id != -1) {
+                    event_vars->Message_Display(
+                        16, hmn_data->ply, MSGCOLOR_GREEN, 
+                        "%if Early\n", getup_option_length - frames_taken - 2
+                    );
+                }
+            }
+        
             SFX_Play(0xAD);
             reset_timer = 30;
         }
     }
-    
+
     if (pad->down & HSD_BUTTON_DPAD_LEFT)
         Reset();
 

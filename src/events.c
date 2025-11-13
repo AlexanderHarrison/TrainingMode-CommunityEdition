@@ -162,8 +162,8 @@ static EventMatchData TechChase_MatchData = {
     .timerSeconds = 0,
 };
 EventDesc TechChase = {
-    .eventName = "Tech-Chase Training\n",
-    .eventDescription = "Practice covering techs.\n",
+    .eventName = "Techchase Training\n",
+    .eventDescription = "Practice chasing techs! A\nuseful tool to extend combos.",
     .eventFile = "techchase",
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_TRAINING,
