@@ -38,6 +38,8 @@ typedef struct FtSaveStateData_v2 {
     struct phys phys;
     struct input input;
     CollData coll_data;
+    int ecb_bot_lock_frames;
+    int ledge_cooldown;
     ColorOverlay color[3];
     CmSubject camera_subject;
     ftHit hitbox[4];
