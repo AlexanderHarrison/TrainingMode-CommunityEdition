@@ -511,6 +511,13 @@ static void Event_PostThink(GOBJ *menu) {
             cpu_data->flags.invisible = on_reaction;
         } break;
     }
+
+    memset(&cpu_data->color[1], 0, sizeof(ColorOverlay));
+    memset(&cpu_data->color[0], 0, sizeof(ColorOverlay));
+    if (state_id == ASID_WAIT) {
+        cpu_data->color[1].hex = (GXColor) {0xF0, 0xF0, 0xF0, 0xA0};
+        cpu_data->color[1].color_enable = 1;
+    }
 }
 
 void Event_Init(GOBJ *gobj) {
