@@ -290,7 +290,7 @@ static int null_pad_index;
 
 static Vec3 cpu_pos = { 5, 27, 0 };
 static Vec3 hmn_pos = { -5, 0, 0 };
-static float cpu_facing_direction = 1;
+static float cpu_facing_direction = -1;
 static float hmn_facing_direction = 1;
 
 static void Reset(void) {
