@@ -1713,6 +1713,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         // update move instance
         if (eventData->cpu_lasthit != cpu_data->dmg.atk_instance_hurtby)
         {
+            eventData->cpu_isactionable = 0;
             eventData->cpu_countertimer = 0;
             eventData->cpu_hitnum++;
             eventData->cpu_lasthit = cpu_data->dmg.atk_instance_hurtby;
