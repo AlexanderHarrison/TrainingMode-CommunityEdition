@@ -27,9 +27,18 @@ if [[ "$(uname)" =~ "MSYS" ]]; then
     hmex="bin/hmex.exe"
     xdelta="bin/xdelta.exe"
 else
-    gc_fst="bin/gc_fst"
-    hgecko="bin/hgecko"
-    hmex="bin/hmex"
+    gc_fst="gc_fst"
+    if ! command -v gc_fst > /dev/null; then
+        gc_fst="bin/gc_fst"
+    fi
+    hgecko="hgecko"
+    if ! command -v hgekco > /dev/null; then
+        hgecko="bin/hgecko"
+    fi
+    hmex="hmex"
+    if ! command -v hmex > /dev/null; then
+        hmex="bin/hmex"
+    fi
     xdelta="xdelta3"
 fi
 
