@@ -585,8 +585,25 @@ void Event_Think(GOBJ *menu) {
     if (pad->down & HSD_BUTTON_DPAD_LEFT)
         Reset();
 
-    if (reset_timer >= 0 && reset_timer-- == 0)
-        Reset();
+    if (reset_timer >= 0 && reset_timer-- == 0) {
+        const float deadzone = 0.2750f;
+        const float triggerDeadzone = 0.3f;
+        bool busy = false;
+        if (fabs(pad->fstickX) > deadzone) busy = true;
+        if (fabs(pad->fstickY) > deadzone) busy = true;
+        if (fabs(pad->fsubstickX) > deadzone) busy = true;
+        if (fabs(pad->fsubstickY) > deadzone) busy = true;
+        if (pad->ftriggerLeft  > triggerDeadzone) busy = true;
+        if (pad->ftriggerRight > triggerDeadzone) busy = true;
+        if (pad->down != 0) busy = true;
+        if (pad->held != 0) busy = true;
+
+        if (!busy) {
+            Reset();
+        } else {
+            reset_timer++;
+        }
+    }
 }
 
 static void Event_PostThink(GOBJ *menu) {
