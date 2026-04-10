@@ -294,6 +294,27 @@ static float cpu_facing_direction = -1;
 static float hmn_facing_direction = 1;
 
 static void Reset(void) {
+    // Wait for neutral inputs
+    HSD_Pad *pad = PadGetMaster(hmn_pad_index);
+    const float deadzone = 0.2750f;
+    const float triggerDeadzone = 0.3f;
+    bool busy = false;
+    do {
+        if (fabs(pad->fstickX) > deadzone) busy = true;
+        if (fabs(pad->fstickY) > deadzone) busy = true;
+        if (fabs(pad->fsubstickX) > deadzone) busy = true;
+        if (fabs(pad->fsubstickY) > deadzone) busy = true;
+        if (pad->ftriggerLeft  > triggerDeadzone) busy = true;
+        if (pad->ftriggerRight > triggerDeadzone) busy = true;
+        if (pad->down & PAD_BUTTON_A) busy = true;
+        if (pad->down & PAD_BUTTON_B) busy = true;
+        if (pad->down & PAD_BUTTON_X) busy = true;
+        if (pad->down & PAD_BUTTON_Y) busy = true;
+        if (pad->down & PAD_TRIGGER_Z) busy = true;
+        if (pad->down & PAD_TRIGGER_L) busy = true;
+        if (pad->down & PAD_TRIGGER_R) busy = true;
+    } while (busy == true)
+
     event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
 
     GOBJ *hmn = Fighter_GetGObj(0);
