@@ -603,7 +603,11 @@ void Event_Think(GOBJ *menu) {
         if (pad->down & PAD_TRIGGER_L) busy = true;
         if (pad->down & PAD_TRIGGER_R) busy = true;
 
-        if (!busy) Reset();
+        if (!busy) {
+            Reset();
+        } else {
+            reset_timer++;
+        }
     }
 }
 
