@@ -595,13 +595,8 @@ void Event_Think(GOBJ *menu) {
         if (fabs(pad->fsubstickY) > deadzone) busy = true;
         if (pad->ftriggerLeft  > triggerDeadzone) busy = true;
         if (pad->ftriggerRight > triggerDeadzone) busy = true;
-        if (pad->down & PAD_BUTTON_A) busy = true;
-        if (pad->down & PAD_BUTTON_B) busy = true;
-        if (pad->down & PAD_BUTTON_X) busy = true;
-        if (pad->down & PAD_BUTTON_Y) busy = true;
-        if (pad->down & PAD_TRIGGER_Z) busy = true;
-        if (pad->down & PAD_TRIGGER_L) busy = true;
-        if (pad->down & PAD_TRIGGER_R) busy = true;
+        if (pad->down != 0) busy = true;
+        if (pad->held != 0) busy = true;
 
         if (!busy) {
             Reset();
