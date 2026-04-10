@@ -585,7 +585,7 @@ void Event_Think(GOBJ *menu) {
     if (pad->down & HSD_BUTTON_DPAD_LEFT)
         Reset();
 
-    if (reset_timer >= 0 && reset_timer-- == 0)
+    if (reset_timer >= 0 && reset_timer-- == 0) {
         const float deadzone = 0.2750f;
         const float triggerDeadzone = 0.3f;
         bool busy = false;
@@ -604,6 +604,7 @@ void Event_Think(GOBJ *menu) {
         if (pad->down & PAD_TRIGGER_R) busy = true;
 
         if (!busy) Reset();
+    }
 }
 
 static void Event_PostThink(GOBJ *menu) {
