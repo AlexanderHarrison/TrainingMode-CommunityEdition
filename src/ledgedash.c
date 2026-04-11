@@ -351,8 +351,13 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
              action = LDACT_CLIFFWAIT;
 
         // look for release
-        else if (state_id == ASID_FALL)
+        else if (state_id == ASID_FALL) {
             action = LDACT_FALL;
+
+            // look for fastfall
+            if (hmn_data->flags.is_fastfall)
+                action = LDACT_FASTFALL;
+        }
 
         // look for jump
         else if (
@@ -662,6 +667,7 @@ void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
             {40, 40, 40, 180},
             {120, 120, 120, 180},
             {128, 255, 128, 180},
+            {80, 160, 80, 180},
             {52, 202, 228, 180},
             {230, 22, 198, 180},
             {255, 255, 255, 180},
@@ -671,6 +677,7 @@ void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
         static char *names[] = {
             "Cliffwait",
             "Fall",
+            "Fastfall",
             "Jump",
             "Airdodge",
             "Attack",
