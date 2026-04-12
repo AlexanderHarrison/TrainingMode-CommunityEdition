@@ -74,6 +74,7 @@ enum ldsh_action
     LDACT_NONE,
     LDACT_CLIFFWAIT,
     LDACT_FALL,
+    LDACT_FASTFALL,
     LDACT_JUMP,
     LDACT_AIRDODGE,
     LDACT_ATTACK,
