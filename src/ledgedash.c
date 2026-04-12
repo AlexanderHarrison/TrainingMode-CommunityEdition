@@ -351,13 +351,8 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
              action = LDACT_CLIFFWAIT;
 
         // look for release
-        else if (state_id == ASID_FALL) {
-            action = LDACT_FALL;
-
-            // look for fastfall
-            if (hmn_data->flags.is_fastfall)
-                action = LDACT_FASTFALL;
-        }
+        else if (state_id == ASID_FALL)
+            action = hmn_data->flags.is_fastfall ? LDACT_FASTFALL : LDACT_FALL;
 
         // look for jump
         else if (
