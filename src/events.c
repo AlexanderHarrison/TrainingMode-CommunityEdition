@@ -1030,8 +1030,18 @@ void EventInit(int page, int eventID, MatchInit *matchData)
     }
 };
 
+void StartOSDs(void)
+{
+    // Add OSD callback
+    // Very low priority of 20, runs after everything else
+    GOBJ *osd_gobj = GObj_Create(0, 7, 0);
+    GObj_AddProc(osd_gobj, OSD_Think, 20);
+}
+
 void EventLoad(void)
 {
+    StartOSDs();
+
     // get this event
     int page = stc_memcard->TM_EventPage;
     int eventID = stc_memcard->EventBackup.event;
@@ -1058,10 +1068,6 @@ void EventLoad(void)
     GObj_AddUserData(gobj, 4, HSD_Free, userdata);
     GObj_AddProc(gobj, cb, pri);
     
-    // Add OSD callback
-    // Very low priority of 20, runs after everything else
-    GObj_AddProc(gobj, OSD_Think, 20);
-
     // store pointer to the event's data
     *(EventDesc **)userdata = event_desc;
 

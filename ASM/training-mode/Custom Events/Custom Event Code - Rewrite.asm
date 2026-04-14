@@ -179,6 +179,7 @@ MultishineLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl MultishineThink
@@ -302,6 +303,7 @@ ReactionLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl ReactionThink
@@ -567,6 +569,7 @@ LedgeStallLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl LedgeStallThink
@@ -1109,6 +1112,7 @@ SDITrainingLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     bl InitializeHighScore
 
@@ -1587,6 +1591,7 @@ ReversalLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl ReversalThink
@@ -2368,6 +2373,7 @@ ShieldDropLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl ShieldDropThink
@@ -2619,6 +2625,7 @@ AttackOnShieldLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl AttackOnShieldThink
@@ -3036,6 +3043,7 @@ LedgetechLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     bl InitializeHighScore
 
@@ -3549,6 +3557,7 @@ AmsahTechLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl AmsahTechThink
@@ -3942,6 +3951,7 @@ ComboTrainingLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl ComboTrainingThink
@@ -5675,6 +5685,7 @@ WaveshineSDILoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl WaveshineSDIThink
@@ -6133,6 +6144,7 @@ SlideOffLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl SlideOffThink
@@ -6756,6 +6768,7 @@ GrabMashOutLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl GrabMashOutThink
@@ -7098,6 +7111,7 @@ LedgetechCounterLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl LedgetechCounterThink
@@ -7677,6 +7691,7 @@ EscapeSheikLoad:
     blrl
 
     backup
+    rtocbl r12, TM_StartOSDs
 
     # Schedule Think
     bl EscapeSheikThink

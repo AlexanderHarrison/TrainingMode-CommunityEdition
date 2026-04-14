@@ -24,3 +24,4 @@ GetScoreType
 GetPageEventOffset
 GetJumpTableOffset
 GetEventCharList
+StartOSDs

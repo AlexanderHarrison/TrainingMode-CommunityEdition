@@ -183,6 +183,7 @@
     ENTRY TM_GetPageEventOffset
     ENTRY TM_GetJumpTableOffset
     ENTRY TM_GetEventCharList
+    ENTRY TM_StartOSDs
 
     # TmDt Data Pointers
     .set TM_Data, TM_tmFunction - 0x4
