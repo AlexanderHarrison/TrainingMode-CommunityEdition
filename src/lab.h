@@ -1450,7 +1450,7 @@ static const char *LabValues_CharacterRng_Misfire[] =
 static const char *LabValues_CharacterRng_Hammer[] =
     { "Default", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
 static const char *LabValues_CharacterRng_NanaThrow[] =
-    { "Default", "Forward Throw", "Backward Throw", "Up Throw", "Down Throw" };
+    { "Default", "Forward Throw", "Backward Throw", "Up Throw", "Down Throw", "Forward/Down Throw" };
     
 static EventOption LabOptions_CharacterRngPeach[] = {
     {
