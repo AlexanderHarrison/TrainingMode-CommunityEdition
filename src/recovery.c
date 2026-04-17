@@ -120,7 +120,7 @@ void Recovery_Think(GOBJ *cpu, u32 opt_flags) {
     }
     
     // normal getup
-    if (state == ASID_CLIFFWAIT && cpu_data->TM.state_frame == 2) {
+    if (state == ASID_CLIFFWAIT && cpu_data->TM.state_frame >= 2) {
         cpu_data->cpu.lstickX = -127 * sign(x);
         cpu_data->cpu.lstickY = 0;
         return;
