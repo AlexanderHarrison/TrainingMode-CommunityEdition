@@ -6711,6 +6711,11 @@ static HitboxTrail *HitboxTrails_Add(void) {
     return trail;
 }
 
+void HitboxTrails_Clear(void) {
+    memset(hitbox_trails, 0, sizeof(hitbox_trails));
+    hitbox_trail_i = 0;
+}
+
 static GXColor HitboxTrails_Color(int dmg) {
     u8 r = 255;
     u8 g = 128 - (u8)(dmg * 10) / 2;
@@ -6721,6 +6726,14 @@ static GXColor HitboxTrails_Color(int dmg) {
 void HitboxTrails_Think(void) {
     if (!LabOptions_HitboxTrails[OPTHITBOXTRAILS_ENABLED].val)
         return;
+
+    // detect savestate load: if game_timer went backwards, clear stale trail entries
+    static int prev_game_timer = -1;
+    int cur_timer = event_vars->game_timer;
+    if (cur_timer < prev_game_timer) {
+        HitboxTrails_Clear();
+    }
+    prev_game_timer = cur_timer;
 
     for (int ply = 0; ply < 4; ++ply) {
         GOBJ *ft = Fighter_GetGObj(ply);

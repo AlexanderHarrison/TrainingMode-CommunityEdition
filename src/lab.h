@@ -113,6 +113,7 @@ void ActionLog_GX(GOBJ *gobj, int pass);
 void ActionLog_Think(void);
 void HitboxTrails_GX(GOBJ *gobj, int pass);
 void HitboxTrails_Think(void);
+void HitboxTrails_Clear(void);
 void DIDraw_Init(void);
 void DIDraw_Reset(int ply);
 void DIDraw_Update(void);
