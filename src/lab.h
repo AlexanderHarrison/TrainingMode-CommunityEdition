@@ -113,6 +113,7 @@ void ActionLog_GX(GOBJ *gobj, int pass);
 void ActionLog_Think(void);
 void HitboxTrails_GX(GOBJ *gobj, int pass);
 void HitboxTrails_Think(void);
+void HitboxTrails_Clear(void);
 void DIDraw_Init(void);
 void DIDraw_Reset(int ply);
 void DIDraw_Update(void);
@@ -1915,8 +1916,8 @@ typedef struct HitboxTrail {
     int frame_created;
 } HitboxTrail;
 
-static u32 hitbox_trail_i;
-static HitboxTrail hitbox_trails[64];
+extern u32 hitbox_trail_i;
+extern HitboxTrail hitbox_trails[64];
 
 enum hitbox_trails_option
 {

@@ -593,6 +593,10 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
         match->time_frames = savestate->frame;
         event_vars->game_timer = savestate->frame;
 
+        // clear stale hitbox trail entries so they don't replay after reload
+        if (event_vars->HitboxTrails_Clear)
+            event_vars->HitboxTrails_Clear();
+
         // update timer
         int frames = match->time_frames - 1; // this is because the scenethink function runs once before the gobj procs do
         match->time_seconds = frames / 60;

@@ -4,6 +4,8 @@
 #include <stddef.h>
 
 // Static Variables
+u32 hitbox_trail_i;
+HitboxTrail hitbox_trails[64];
 static DIDraw didraws[6];
 static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
@@ -5925,6 +5927,8 @@ void Event_Init(GOBJ *gobj)
     GObj_AddProc(gobj, Event_PostThink, 20);
     GObj_AddGXLink(gobj, HitboxTrails_GX, 5, 0);
 
+    event_vars->HitboxTrails_Clear = HitboxTrails_Clear;
+
     // Init runtime options...
     
     // recovery options
@@ -6709,6 +6713,11 @@ static HitboxTrail *HitboxTrails_Add(void) {
     HitboxTrail *trail = &hitbox_trails[hitbox_trail_i];
     hitbox_trail_i = (hitbox_trail_i + 1) % countof(hitbox_trails);
     return trail;
+}
+
+void HitboxTrails_Clear(void) {
+    memset(hitbox_trails, 0, sizeof(hitbox_trails));
+    hitbox_trail_i = 0;
 }
 
 static GXColor HitboxTrails_Color(int dmg) {

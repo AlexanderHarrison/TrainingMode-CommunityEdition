@@ -264,6 +264,7 @@ typedef struct EventVars
     void (*HUD_DrawText)(const char *text, Rect *pos, float size);
     void (*HUD_DrawActionLogBar)(u8 *action_log, GXColor *color_lookup, int log_count);
     void (*HUD_DrawActionLogKey)(char **action_names, GXColor *action_colors, int action_count);
+    void (*HitboxTrails_Clear)(void);
 } EventVars;
 #define event_vars_ptr_loc ((EventVars**)0x803d7054)
 #define event_vars (*event_vars_ptr_loc)
