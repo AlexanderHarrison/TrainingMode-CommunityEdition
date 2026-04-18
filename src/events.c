@@ -1368,7 +1368,7 @@ void Event_IncTimer(GOBJ *gobj)
 void TM_CreateWatermark(void)
 {
     // create text canvas
-    int canvas = Text_CreateCanvas(10, 0, 9, 13, 0, 14, 0, 19);
+    int canvas = Text_CreateCanvas(10, 0, 9, 13, 0, 14, 0, 10);
     
     // create text
     Text *text = Text_CreateText(10, canvas);
