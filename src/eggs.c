@@ -3,6 +3,7 @@
 
 static int egg_counter = 0;
 static int high_score = 0;
+static int accumulated_damage = 0;
 static Vec3 coll_pos, last_coll_pos;
 static GOBJ *egg_gobj;
 static CmSubject *cam;
@@ -120,6 +121,7 @@ GOBJ *Egg_Spawn(void)
 
     last_coll_pos = coll_pos;
 
+    accumulated_damage = 0;
     return Item_CreateItem2(&item_egg);
 }
 
@@ -127,8 +129,8 @@ int Egg_OnTakeDamage(GOBJ *gobj)
 {
     // gfx and sfx
     ItemData *egg_data = egg_gobj->userdata;
-    int damage = egg_data->dmg.recent;
-    if (damage >= Options_Main[OPT_DAMAGETHRESHOLD].val){
+    accumulated_damage += egg_data->dmg.recent;
+    if (accumulated_damage >= Options_Main[OPT_DAMAGETHRESHOLD].val){
         Effect_SpawnSync(1232, gobj, egg_data->pos);
         Item_PlayOnDestroySFXAgain(egg_data, 244, 127, 64);
         
