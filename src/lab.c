@@ -4629,6 +4629,9 @@ void Record_Restart(Savestate_v1 *savestate, int flags) {
 
     CPUResetVars();
 
+    hitbox_trail_i = 0;
+    memset(hitbox_trails, 0, sizeof(hitbox_trails));
+
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     
