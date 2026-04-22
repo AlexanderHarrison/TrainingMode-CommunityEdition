@@ -1910,18 +1910,17 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         eventData->cpu_state = CPUSTATE_TDI;
     }
     // check for shield hit
-    if ((cpu_state == ASID_GUARDSETOFF) || ((cpu_data->kind == 0xE) && (cpu_state == 344)))
+    if (cpu_state == ASID_GUARDSETOFF || (cpu_data->kind == FTKIND_YOSHI && cpu_state == 344))
     {
-        Fighter_ZeroCPUInputs(cpu_data);
-
         // check if new shield hit
         if (eventData->cpu_lastshieldstun != cpu_data->atk_instance)
         {
             eventData->cpu_lastshieldstun = cpu_data->atk_instance;
-            eventData->cpu_hitnum++;
+            CPUOnHit();
         }
 
         // Keep holding shield during hitstop/hitlag. Prevents nana from dropping shield.
+        Fighter_ZeroCPUInputs(cpu_data);
         cpu_data->cpu.held |= PAD_TRIGGER_R;
         cpu_data->input.held |= PAD_TRIGGER_R;
         cpu_data->input.trigger = 1.0f;
