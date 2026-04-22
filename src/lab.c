@@ -1774,73 +1774,69 @@ void CPUOnHit(void) {
 
     // decide SDI direction ------------------------------------
     
-    if (custom_di) {
-        custom_di = &stc_tdi_vals[HSD_Randi(stc_tdi_val_num)];
-        int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
-        eventData->cpu_tdi_lstick_x = (int)(custom_di->lstickX * 127.f) * dir_factor;
-        eventData->cpu_tdi_lstick_y = (int)(custom_di->lstickY * 127.f);
-    } else {
-        int sdi_kind = LabOptions_CPU[OPTCPU_SDIDIR].val;
-        switch (sdi_kind) {
-            case (SDIDIR_AUTO):
+    if (custom_di) goto SDI_AUTO;
+
+    int sdi_kind = LabOptions_CPU[OPTCPU_SDIDIR].val;
+    switch (sdi_kind) {
+        case (SDIDIR_AUTO):
+        SDI_AUTO:
+        {
+            eventData->cpu_sdi_lstick_x = eventData->cpu_tdi_lstick_x;
+            eventData->cpu_sdi_lstick_y = eventData->cpu_tdi_lstick_y;
+            break;
+        }
+        case (SDIDIR_RANDOM):
+        {
+            // when grounded, only left right
+            if (cpu_data->phys.air_state == 0)
             {
-                eventData->cpu_sdi_lstick_x = eventData->cpu_tdi_lstick_x;
-                eventData->cpu_sdi_lstick_y = eventData->cpu_tdi_lstick_y;
-                break;
-            }
-            case (SDIDIR_RANDOM):
-            {
-                // when grounded, only left right
-                if (cpu_data->phys.air_state == 0)
-                {
-                    eventData->cpu_sdi_lstick_x = HSD_Randi(2) ? -127 : 127;
-                    eventData->cpu_sdi_lstick_y = 0;
-                }
-                // when airborne, any direction
-                else
-                {
-                    float angle = HSD_Randf() * (2.f * M_PI);
-                    eventData->cpu_sdi_lstick_x = cos(angle) * 127.f;
-                    eventData->cpu_sdi_lstick_y = sin(angle) * 127.f;
-                }
-                break;
-            }
-            case (SDIDIR_AWAY):
-            {
-                eventData->cpu_sdi_lstick_x = -127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
+                eventData->cpu_sdi_lstick_x = HSD_Randi(2) ? -127 : 127;
                 eventData->cpu_sdi_lstick_y = 0;
-                break;
             }
-            case (SDIDIR_TOWARD):
+            // when airborne, any direction
+            else
             {
-                eventData->cpu_sdi_lstick_x = 127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
-                eventData->cpu_sdi_lstick_y = 0;
-                break;
+                float angle = HSD_Randf() * (2.f * M_PI);
+                eventData->cpu_sdi_lstick_x = cos(angle) * 127.f;
+                eventData->cpu_sdi_lstick_y = sin(angle) * 127.f;
             }
-            case (SDIDIR_LEFT):
-            {
-                eventData->cpu_sdi_lstick_x = -127;
-                eventData->cpu_sdi_lstick_y = 0;
-                break;
-            }
-            case (SDIDIR_RIGHT):
-            {
-                eventData->cpu_sdi_lstick_x = 127;
-                eventData->cpu_sdi_lstick_y = 0;
-                break;
-            }
-            case (SDIDIR_UP):
-            {
-                eventData->cpu_sdi_lstick_x = 0;
-                eventData->cpu_sdi_lstick_y = 127;
-                break;
-            }
-            case (SDIDIR_DOWN):
-            {
-                eventData->cpu_sdi_lstick_x = 0;
-                eventData->cpu_sdi_lstick_y = -127;
-                break;
-            }
+            break;
+        }
+        case (SDIDIR_AWAY):
+        {
+            eventData->cpu_sdi_lstick_x = -127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
+            eventData->cpu_sdi_lstick_y = 0;
+            break;
+        }
+        case (SDIDIR_TOWARD):
+        {
+            eventData->cpu_sdi_lstick_x = 127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
+            eventData->cpu_sdi_lstick_y = 0;
+            break;
+        }
+        case (SDIDIR_LEFT):
+        {
+            eventData->cpu_sdi_lstick_x = -127;
+            eventData->cpu_sdi_lstick_y = 0;
+            break;
+        }
+        case (SDIDIR_RIGHT):
+        {
+            eventData->cpu_sdi_lstick_x = 127;
+            eventData->cpu_sdi_lstick_y = 0;
+            break;
+        }
+        case (SDIDIR_UP):
+        {
+            eventData->cpu_sdi_lstick_x = 0;
+            eventData->cpu_sdi_lstick_y = 127;
+            break;
+        }
+        case (SDIDIR_DOWN):
+        {
+            eventData->cpu_sdi_lstick_x = 0;
+            eventData->cpu_sdi_lstick_y = -127;
+            break;
         }
     }
 }
@@ -1871,7 +1867,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
 
     // if first throw frame, run hit logic
     int is_thrown = IsThrown(cpu);
-    if (is_thrown == 1 && eventData->cpu_isthrown == 0)
+    if (is_thrown && !eventData->cpu_isthrown)
         CPUOnHit();
     eventData->cpu_isthrown = is_thrown;
 
@@ -2061,7 +2057,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         if (eventData->cpu_lasthit != cpu_data->dmg.atk_instance_hurtby) {
             eventData->cpu_lasthit = cpu_data->dmg.atk_instance_hurtby;
 
-            if (cpu_data->flags.hitlag)
+            if (cpu_data->flags.hitlag && !eventData->cpu_isthrown)
                 CPUOnHit();
         }
 
