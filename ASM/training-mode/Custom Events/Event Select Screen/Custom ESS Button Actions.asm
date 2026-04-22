@@ -82,12 +82,24 @@ EndTriggerRHard:
     bl StoreHelpGObjPtr
     .long 0
     .long 0
+    .long 0
 StoreHelpGObjPtr:
     mflr r29
     lwz r4, 0x0(r29)
     cmpwi r4, 0
     beq NotInHelp
 
+    lbz r4, 0x8(r29)
+    cmpwi r4, 0
+    beq CheckCloseHelp
+    subi r4, r4, 1
+    stb r4, 0x8(r29)
+    lwz r4, 0xC(r3)
+    andi. r4, r4, 0x20
+    beq CheckCloseHelp
+    li r28, 0
+
+CheckCloseHelp:
     lwz r4, 0x8(r3) # down
     or r4, r4, r27
     or r4, r4, r28
@@ -161,6 +173,12 @@ CloseHelp:
     b exit
     
 OpenHelp:
+    lwz r4, 0xC(r3)
+    andi. r4, r4, 0x20
+    bne OpenHelp_Create
+    li r4, 15
+    stb r4, 0x8(r29)
+OpenHelp_Create:
     li r3, 0
     li r4, 0
     li r5, 0
