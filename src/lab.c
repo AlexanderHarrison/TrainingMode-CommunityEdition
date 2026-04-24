@@ -8,7 +8,7 @@ static DIDraw didraws[6];
 static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
-static RecData rec_data;
+static RecData_v1 rec_data;
 static Savestate_v2 *rec_state;
 static _HSD_ImageDesc snap_image = {0};
 static _HSD_ImageDesc resized_image = {
@@ -69,21 +69,21 @@ static bool did_player_miss_lcancel[2] = {false, false};
 
 // Menu Callbacks
 
-RecInputData *Lab_GetAlteringRecording(void) {
+RecInputData_v1 *Lab_GetAlteringRecording(void) {
     int ply = LabOptions_SlotManagement[OPTSLOT_PLAYER].val;
     int slot = LabOptions_SlotManagement[OPTSLOT_SRC].val;
-    RecInputData **rec_list = ply == PLAYER_HMN ? rec_data.hmn_inputs : rec_data.cpu_inputs;
+    RecInputData_v1 **rec_list = ply == PLAYER_HMN ? rec_data.hmn_inputs : rec_data.cpu_inputs;
     return rec_list[slot];
 }
 
 RecInputs *Lab_GetAlteringInputs(void) {
-    RecInputData *rec = Lab_GetAlteringRecording();
+    RecInputData_v1 *rec = Lab_GetAlteringRecording();
     int frame_idx = LabOptions_AlterInputs[OPTINPUT_FRAME].val - 1;
     return &rec->inputs[frame_idx];
 }
 
 void Lab_ChangeAlterInputsFrame(GOBJ *menu_gobj, int value) {
-    RecInputData *rec = Lab_GetAlteringRecording();
+    RecInputData_v1 *rec = Lab_GetAlteringRecording();
     int frame = LabOptions_AlterInputs[OPTINPUT_FRAME].val;
     if (rec->num < frame)
         rec->num = frame;
@@ -1451,7 +1451,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
         } else {
             rec_idx = recSlot-1;
         }
-        RecInputData *data = rec_data.cpu_inputs[rec_idx];
+        RecInputData_v1 *data = rec_data.cpu_inputs[rec_idx];
 
         if (data->start_frame < 0 || frame >= data->num) {
             stc_rndm_counter_slot = -1;
@@ -3555,7 +3555,7 @@ void Record_CopySlot(GOBJ *menu_gobj) {
     int target_slot = LabOptions_SlotManagement[OPTSLOT_DST].val;
     if (copy_slot == target_slot) return;
 
-    RecInputData **data;
+    RecInputData_v1 **data;
     EventOption *chances;
     if (player == PLAYER_HMN) {
         data = rec_data.hmn_inputs;
@@ -3567,7 +3567,7 @@ void Record_CopySlot(GOBJ *menu_gobj) {
 
     chances[target_slot].disable = chances[copy_slot].disable;
     chances[target_slot].val = chances[copy_slot].val;
-    memcpy(data[target_slot], data[copy_slot], sizeof(RecInputData));
+    memcpy(data[target_slot], data[copy_slot], sizeof(RecInputData_v1));
 
     s16 *values[REC_SLOTS];
     int value_count = EnabledSlotChances(chances, values);
@@ -3578,7 +3578,7 @@ void Record_DeleteSlot(GOBJ *menu_gobj) {
     int player = LabOptions_SlotManagement[OPTSLOT_PLAYER].val;
     int delete_slot = LabOptions_SlotManagement[OPTSLOT_SRC].val;
 
-    RecInputData **data;
+    RecInputData_v1 **data;
     EventOption *chances;
     if (player == PLAYER_HMN) {
         data = rec_data.hmn_inputs;
@@ -3593,8 +3593,8 @@ void Record_DeleteSlot(GOBJ *menu_gobj) {
     data[delete_slot]->num = 0;
 }
 
-void InitInputSlot(RecInputData **data) {
-    *data = calloc(sizeof(RecInputData));
+void InitInputSlot(RecInputData_v1 **data) {
+    *data = calloc(sizeof(RecInputData_v1));
     (*data)->start_frame = -1;
     (*data)->num = 0;
 }
@@ -3810,8 +3810,8 @@ void Record_Think(GOBJ *rec_gobj)
     int hmn_slot = Record_GetSlot(0);
     int cpu_slot = Record_GetSlot(1);
 
-    RecInputData *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
-    RecInputData *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
+    RecInputData_v1 *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
+    RecInputData_v1 *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
     int hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
     int cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
     
@@ -3971,7 +3971,7 @@ static void Record_ClampPad(s8 *store_x, s8 *store_y, s8 prev_raw_x, s8 prev_raw
 }
 
 // assumes rec_mode_cpu
-void Record_Update(int ply, RecInputData *input_data, RecInputData *rerecord_input_data, int rec_mode)
+void Record_Update(int ply, RecInputData_v1 *input_data, RecInputData_v1 *rerecord_input_data, int rec_mode)
 {
     GOBJ *fighter = Fighter_GetGObj(ply);
     FighterData *fighter_data = fighter->userdata;
@@ -4147,7 +4147,7 @@ int Record_RemakeState(void)
         
         for (int ply = 0; ply < 2; ++ply) {
             for (int slot = 0; slot < REC_SLOTS; ++slot) {
-                RecInputData *input_data;
+                RecInputData_v1 *input_data;
                 if (ply == 0)
                     input_data = rec_data.hmn_inputs[slot];
                 else
@@ -4173,7 +4173,7 @@ void Record_ResaveState(GOBJ *menu_gobj)
     // change start frame
     for (int ply = 0; ply < 2; ++ply) {
         for (int slot = 0; slot < REC_SLOTS; ++slot) {
-            RecInputData *input_data;
+            RecInputData_v1 *input_data;
             if (ply == 0)
                 input_data = rec_data.hmn_inputs[slot];
             else
@@ -4192,7 +4192,7 @@ void Record_PruneState(GOBJ *menu_gobj)
     // change start frame
     for (int ply = 0; ply < 2; ++ply) {
         for (int slot = 0; slot < REC_SLOTS; ++slot) {
-            RecInputData *input_data;
+            RecInputData_v1 *input_data;
             if (ply == 0)
                 input_data = rec_data.hmn_inputs[slot];
             else
@@ -4266,9 +4266,9 @@ void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
     {
         int prev_slot = LabOptions_Record[OPTREC_HMNSLOT].val_prev;
         if (prev_slot != 0)
-            memcpy(rec_data.hmn_inputs[prev_slot - 1], rec_data.hmn_rerecord_inputs, sizeof(RecInputData));
+            memcpy(rec_data.hmn_inputs[prev_slot - 1], rec_data.hmn_rerecord_inputs, sizeof(RecInputData_v1));
 
-        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData));
+        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData_v1));
     }
 
     // reload save
@@ -4290,9 +4290,9 @@ void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
     {
         int prev_slot = LabOptions_Record[OPTREC_CPUSLOT].val_prev;
         if (prev_slot != 0)
-            memcpy(rec_data.cpu_inputs[prev_slot - 1], rec_data.cpu_rerecord_inputs, sizeof(RecInputData));
+            memcpy(rec_data.cpu_inputs[prev_slot - 1], rec_data.cpu_rerecord_inputs, sizeof(RecInputData_v1));
 
-        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData));
+        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData_v1));
     }
 
     // reload save
@@ -4329,11 +4329,11 @@ void Record_ChangeHMNMode(GOBJ *menu_gobj, int value)
 {
     // copy rerecorded slot
     if (LabOptions_Record[OPTREC_HMNMODE].val == RECMODE_HMN_RERECORD)
-        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData));
+        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData_v1));
     
     // copy back rerecorded slot
     if (LabOptions_Record[OPTREC_HMNMODE].val_prev == RECMODE_HMN_RERECORD)
-        memcpy(rec_data.hmn_inputs[Record_GetSlot(0)], rec_data.hmn_rerecord_inputs, sizeof(RecInputData));
+        memcpy(rec_data.hmn_inputs[Record_GetSlot(0)], rec_data.hmn_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_HMN_PLAYBACK || value == RECMODE_HMN_RERECORD)
         Record_LoadSavestate(rec_state);
@@ -4343,11 +4343,11 @@ void Record_ChangeCPUMode(GOBJ *menu_gobj, int value)
 {
     // copy rerecorded slot
     if (LabOptions_Record[OPTREC_CPUMODE].val == RECMODE_CPU_RERECORD)
-        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData));
+        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData_v1));
     
     // copy back rerecorded slot
     if (LabOptions_Record[OPTREC_CPUMODE].val_prev == RECMODE_CPU_RERECORD)
-        memcpy(rec_data.cpu_inputs[Record_GetSlot(1)], rec_data.cpu_rerecord_inputs, sizeof(RecInputData));
+        memcpy(rec_data.cpu_inputs[Record_GetSlot(1)], rec_data.cpu_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_CPU_PLAYBACK || value == RECMODE_CPU_RERECORD)
         Record_LoadSavestate(rec_state);
@@ -4369,7 +4369,7 @@ void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
 
     Record_LoadSavestate(rec_state);
 }
-int Record_GetRandomSlot(RecInputData **input_data, EventOption slot_menu[])
+int Record_GetRandomSlot(RecInputData_v1 **input_data, EventOption slot_menu[])
 {
     s16 *chances[REC_SLOTS];
     int chance_count = EnabledSlotChances(slot_menu, chances);
@@ -4416,7 +4416,7 @@ int Record_PastLastInput(int ply)
 {
     int slot = Record_GetSlot(ply);
     int curr_frame = Record_GetCurrFrame();
-    RecInputData *inputs;
+    RecInputData_v1 *inputs;
     if (ply == 0)
         inputs = rec_data.hmn_inputs[slot];
     else
@@ -4434,8 +4434,8 @@ int Record_GetEndFrame(void)
     int cpu_slot = Record_GetSlot(1);
     int curr_frame = Record_GetCurrFrame();
 
-    RecInputData *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
-    RecInputData *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
+    RecInputData_v1 *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
+    RecInputData_v1 *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
 
     // get what frame the longest recording ends on (savestate frame + recording start frame + recording time)
     int hmn_end_frame = 0;
@@ -4446,7 +4446,7 @@ int Record_GetEndFrame(void)
         cpu_end_frame = (cpu_inputs->start_frame + cpu_inputs->num);
 
     // find the larger recording
-    RecInputData *input_data = hmn_inputs;
+    RecInputData_v1 *input_data = hmn_inputs;
     if (cpu_end_frame > hmn_end_frame)
         input_data = cpu_inputs;
 
@@ -4482,8 +4482,8 @@ void Record_OnSuccessfulSave(int deleteRecordings)
         for (int i = 0; i < REC_SLOTS; i++)
         {
             // clear data
-            memset(rec_data.hmn_inputs[i], 0, sizeof(RecInputData));
-            memset(rec_data.cpu_inputs[i], 0, sizeof(RecInputData));
+            memset(rec_data.hmn_inputs[i], 0, sizeof(RecInputData_v1));
+            memset(rec_data.cpu_inputs[i], 0, sizeof(RecInputData_v1));
 
             // init frame this recording starts on
             rec_data.hmn_inputs[i]->start_frame = -1;
@@ -4566,7 +4566,6 @@ void Record_MemcardLoad(int slot, int file_no)
     {
 
         // setup load
-        MemcardSave memcard_save;
         memcard_save.data = HSD_MemAlloc(file_size);
         memcard_save.x4 = 3;
         memcard_save.size = file_size;
@@ -4583,7 +4582,6 @@ void Record_MemcardLoad(int slot, int file_no)
         // if file loaded successfully
         if (memcard_status == 0)
         {
-
             // enable other options
             for (u32 i = 1; i < countof(LabOptions_Record); i++)
             {
@@ -4592,34 +4590,24 @@ void Record_MemcardLoad(int slot, int file_no)
 
             // take screenshot
             snap_status = 1;
+            
+            ParsedExportData_v2 export_data = ExportData_Import(memcard_save.data);
+            ExportData_ApplyEvents(&export_data);
+            ExportData_Free(&export_data);
 
-            // begin unpacking
-            u8 *transfer_buf = memcard_save.data;
-            ExportHeader *header = (ExportHeader *)transfer_buf;
-            u8 *compressed_recording = transfer_buf + header->lookup.ofst_recording;
-            ExportMenuSettings *menu_settings = (ExportMenuSettings *)(transfer_buf + header->lookup.ofst_menusettings);
-
-            // decompress
-            RecordingSave *loaded_recsave = calloc(sizeof(RecordingSave) * 1.06);
-            lz77Decompress(compressed_recording, (u8 *)loaded_recsave);
-
-            // copy buffer to savestate
-            memcpy(rec_state, &loaded_recsave->savestate, sizeof(Savestate_v2));
-            event_vars->savestate_saved_while_mirrored = false;
-            event_vars->loaded_mirrored = false;
-
+            /*
             // restore controller indices
             rec_state->ft_state[0].playerblock.controller = stc_hmn_controller;
             rec_state->ft_state[1].playerblock.controller = stc_cpu_controller;
-
+        
             // load state
             Record_LoadSavestate(rec_state);
 
             // copy recordings
             for (int i = 0; i < REC_SLOTS; i++)
             {
-                memcpy(rec_data.hmn_inputs[i], &loaded_recsave->hmn_inputs[i], sizeof(RecInputData));
-                memcpy(rec_data.cpu_inputs[i], &loaded_recsave->cpu_inputs[i], sizeof(RecInputData));
+                memcpy(rec_data.hmn_inputs[i], &loaded_recsave->hmn_inputs[i], sizeof(RecInputData_v1));
+                memcpy(rec_data.cpu_inputs[i], &loaded_recsave->cpu_inputs[i], sizeof(RecInputData_v1));
             }
 
             HSD_Free(loaded_recsave);
@@ -4635,6 +4623,7 @@ void Record_MemcardLoad(int slot, int file_no)
             // save to personal savestate
             event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
             event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
+            */
         }
 
         HSD_Free(memcard_save.data);
@@ -4833,13 +4822,34 @@ void ImageScale(RGB565 *out_img, RGB565 *in_img, int OutWidth, int OutHeight, in
         }
     }
 }
+
+void ExportData_ApplyEvent(void *data, u8 event) {
+    switch (event) {
+        case RecEvent_Null: break;
+        case RecEvent_MatchInit: break; // saved, but not actually used in v1!
+        case RecEvent_Savestate_v1: {
+        } break;
+        default: break;
+    }
+}
+
+void ExportData_ApplyEvents(ParsedExportData_v2 *ed) {
+    u32 event_count = ed->event_count;
+    u8 *cursor = ed->event_data_stream;
+    for (u32 event_idx = 0; event_idx < event_count; ++event_idx) {
+        u8 event = ed->events[event_idx];
+        ExportData_ApplyEvent(cursor, event);
+        cursor += ed->event_sizes[event];
+    }
+};
+
 void Export_Init(GOBJ *menu_gobj)
 {
     MenuData *menu_data = menu_gobj->userdata;
 
     // create gobj
     GOBJ *export_gobj = GObj_Create(0, 0, 0);
-    ExportData *export_data = calloc(sizeof(ExportData));
+    ExportData_v1 *export_data = calloc(sizeof(ExportData_v1));
     GObj_AddUserData(export_gobj, 4, HSD_Free, export_data);
 
     // load menu joint
@@ -4861,7 +4871,7 @@ void Export_Init(GOBJ *menu_gobj)
     JOBJ_SetFlags(export_data->textbox_jobj, JOBJ_HIDDEN);
 
     // alloc a buffer for all of the recording data
-    RecordingSave *temp_rec_save = calloc(sizeof(RecordingSave));
+    RecordingSave_v1 *temp_rec_save = calloc(sizeof(RecordingSave_v1));
 
     // copy match data to buffer
     memcpy(&temp_rec_save->match_data, &stc_match->match, sizeof(MatchInit));
@@ -4870,13 +4880,13 @@ void Export_Init(GOBJ *menu_gobj)
     // copy recordings
     for (int i = 0; i < REC_SLOTS; i++)
     {
-        memcpy(&temp_rec_save->hmn_inputs[i], rec_data.hmn_inputs[i], sizeof(RecInputData));
-        memcpy(&temp_rec_save->cpu_inputs[i], rec_data.cpu_inputs[i], sizeof(RecInputData));
+        memcpy(&temp_rec_save->hmn_inputs[i], rec_data.hmn_inputs[i], sizeof(RecInputData_v1));
+        memcpy(&temp_rec_save->cpu_inputs[i], rec_data.cpu_inputs[i], sizeof(RecInputData_v1));
     }
 
     // compress all recording data
-    u8 *recording_buffer = calloc(sizeof(RecordingSave));
-    int compress_size = Export_Compress(recording_buffer, (u8 *)temp_rec_save, sizeof(RecordingSave));
+    u8 *recording_buffer = calloc(sizeof(RecordingSave_v1));
+    int compress_size = Export_Compress(recording_buffer, (u8 *)temp_rec_save, sizeof(RecordingSave_v1));
     HSD_Free(temp_rec_save); // free original data buffer
 
     // resize screenshot
@@ -4893,11 +4903,11 @@ void Export_Init(GOBJ *menu_gobj)
     OSTicksToCalendarTime(OSGetTime(), &td);
 
     // alloc a buffer to transfer to memcard
-    stc_transfer_buf_size = sizeof(ExportHeader) + img_size + sizeof(ExportMenuSettings) + compress_size;
+    stc_transfer_buf_size = sizeof(ExportHeader_v1) + img_size + sizeof(ExportMenuSettings_v1) + compress_size;
     stc_transfer_buf = calloc(stc_transfer_buf_size);
 
     // init header
-    ExportHeader *header = (ExportHeader *)stc_transfer_buf;
+    ExportHeader_v1 *header = (ExportHeader_v1 *)stc_transfer_buf;
     header->metadata.version = REC_VERS;
     header->metadata.image_width = RESIZE_WIDTH;
     header->metadata.image_height = RESIZE_HEIGHT;
@@ -4914,15 +4924,15 @@ void Export_Init(GOBJ *menu_gobj)
     header->metadata.hour = td.hour;
     header->metadata.minute = td.min;
     header->metadata.second = td.sec;
-    header->lookup.ofst_screenshot = sizeof(ExportHeader);
-    header->lookup.ofst_recording = sizeof(ExportHeader) + img_size;
-    header->lookup.ofst_menusettings = sizeof(ExportHeader) + img_size + compress_size;
+    header->lookup.ofst_screenshot = sizeof(ExportHeader_v1);
+    header->lookup.ofst_recording = sizeof(ExportHeader_v1) + img_size;
+    header->lookup.ofst_menusettings = sizeof(ExportHeader_v1) + img_size + compress_size;
 
     // copy data to buffer
     // image
     memcpy(stc_transfer_buf + header->lookup.ofst_screenshot, new_img, img_size);
     // menu settings
-    ExportMenuSettings *menu_settings = (ExportMenuSettings *)(stc_transfer_buf + header->lookup.ofst_menusettings);
+    ExportMenuSettings_v1 *menu_settings = (ExportMenuSettings_v1 *)(stc_transfer_buf + header->lookup.ofst_menusettings);
     menu_settings->hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
     menu_settings->hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
     menu_settings->cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
@@ -4956,7 +4966,7 @@ void Export_Init(GOBJ *menu_gobj)
 }
 int Export_Think(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     int can_unpause = 0;
 
     switch (export_data->menu_index)
@@ -4982,7 +4992,7 @@ int Export_Think(GOBJ *export_gobj)
 }
 void Export_Destroy(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     switch (export_data->menu_index)
@@ -5014,7 +5024,7 @@ void Export_Destroy(GOBJ *export_gobj)
 }
 void Export_SelCardInit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     // show menu jobjs
@@ -5070,7 +5080,7 @@ void Export_SelCardInit(GOBJ *export_gobj)
 int Export_SelCardThink(GOBJ *export_gobj)
 {
 
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     int req_blocks = (divide_roundup(stc_transfer_buf_size, 8192) + 1);
 
@@ -5220,7 +5230,7 @@ int Export_SelCardThink(GOBJ *export_gobj)
 }
 void Export_SelCardExit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // hide menu jobjs
     JOBJ_SetFlags(export_data->memcard_jobj[0], JOBJ_HIDDEN);
@@ -5232,7 +5242,7 @@ void Export_SelCardExit(GOBJ *export_gobj)
 }
 void Export_EnterNameInit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     // show menu jobjs
@@ -5264,7 +5274,7 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     Export_EnterNameUpdateKeyboard(export_gobj);
 
     // create file details
-    ExportHeader *header = (ExportHeader *)stc_transfer_buf;
+    ExportHeader_v1 *header = (ExportHeader_v1 *)stc_transfer_buf;
     char *stage_name = stage_names[header->metadata.stage_internal];
     char *hmn_name = Fighter_GetName(header->metadata.hmn);
     char *cpu_name = Fighter_GetName(header->metadata.cpu);
@@ -5328,7 +5338,7 @@ void Export_EnterNameInit(GOBJ *export_gobj)
 int Export_EnterNameThink(GOBJ *export_gobj)
 {
 
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // get pausing players inputs
     HSD_Pad *pad = PadGetMaster(stc_hmn_controller);
@@ -5528,7 +5538,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
 }
 void Export_EnterNameExit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // hide menu jobjs
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
@@ -5542,7 +5552,7 @@ void Export_EnterNameExit(GOBJ *export_gobj)
 }
 void Export_ConfirmInit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     // create gobj
@@ -5574,7 +5584,7 @@ void Export_ConfirmInit(GOBJ *export_gobj)
 }
 int Export_ConfirmThink(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // get pausing players inputs
     HSD_Pad *pad = PadGetMaster(stc_hmn_controller);
@@ -5707,7 +5717,7 @@ int Export_ConfirmThink(GOBJ *export_gobj)
 }
 void Export_ConfirmExit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     GObj_Destroy(export_data->confirm_gobj);
     Text_Destroy(export_data->confirm_text);
@@ -5716,7 +5726,7 @@ void Export_ConfirmExit(GOBJ *export_gobj)
 }
 void Export_EnterNameUpdateKeyboard(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     Text *text_keyboard = export_data->text_keyboard;
     u8 *cursor = export_data->key_cursor;
 
@@ -5754,7 +5764,7 @@ void Export_EnterNameUpdateKeyboard(GOBJ *export_gobj)
 int Export_Process(GOBJ *export_gobj)
 {
 
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     Text *text = export_data->confirm_text;
 
     int finished = 0;
@@ -5770,7 +5780,7 @@ int Export_Process(GOBJ *export_gobj)
         save_pre_tick = OSGetTick();
 
         // create filename string
-        ExportHeader *header = (ExportHeader *)stc_transfer_buf;
+        ExportHeader_v1 *header = (ExportHeader_v1 *)stc_transfer_buf;
         char filename[32];
         sprintf(filename, tm_filename, header->metadata.month, header->metadata.day, header->metadata.year, header->metadata.hour, header->metadata.minute, header->metadata.second); // generate filename based on date, time, fighters, and stage
 
