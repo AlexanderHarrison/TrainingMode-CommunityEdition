@@ -13,7 +13,7 @@ typedef struct IDInfo {
     // for locating gobj
     char p_link;
     char list_idx;
-    
+
     // for locating jobj (unused for FighterData and GOBJ)
     char jobj_idx;
 } IDInfo;
@@ -132,6 +132,15 @@ typedef struct ItemLinkSaveState_v2 {
     ItemLinkData data;
 } ItemLinkSaveState_v2;
 
+typedef struct YoshisStorySaveState_v2 {
+    Vec3 randall_position;
+    u32 randall_timer;
+} YoshisStorySaveState_v2;
+
+typedef union StageSaveState_v2 {
+    YoshisStorySaveState_v2 yoshis_story;
+} StageSaveState_v2;
+
 typedef struct Savestate_v2
 {
     int is_exist;
@@ -140,8 +149,8 @@ typedef struct Savestate_v2
     FtSaveState_v2 ft_state[6];
     ItemSaveState_v2 item_state[8];
     ItemLinkSaveState_v2 item_link_state[32];
-    
-    // StageSaveState_v2 *stage_state;
+
+    StageSaveState_v2 stage_state;
 } Savestate_v2;
 
 // VERSION 1 #####################################################

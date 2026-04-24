@@ -1,5 +1,6 @@
 #include "../MexTK/mex.h"
 #include "events.h"
+#include "rec_data.h"
 
 // unfortunately there are static in this header that only used in labCSS or lab
 #pragma GCC diagnostic push
@@ -38,8 +39,6 @@
 #define RECCAM_COBJGXLINK (1 << REC_GXLINK)
 #define RECCAM_GXPRI 8
 // params
-#define REC_LENGTH (1 * 60 * 60)
-#define REC_SLOTS 6
 #define REC_SEEKJOINT 7
 #define REC_LEFTBOUNDJOINT 5
 #define REC_RIGHTBOUNDJOINT 6
@@ -288,76 +287,6 @@ typedef struct Controller
     Vec2 rtrig_origin;
 } Controller;
 
-typedef struct ExportData
-{
-    u16 menu_index;
-    u16 menu_state;
-    JOBJ *memcard_jobj[2];
-    JOBJ *screenshot_jobj;
-    JOBJ *textbox_jobj;
-    RGB565 *scaled_image;
-    Text *text_title;
-    Text *text_desc;
-    Text *text_misc;
-    int slot;
-    u8 is_inserted[2];
-    int free_blocks[2];
-    int free_files[2];
-    Text *text_keyboard;
-    Text *text_filename;
-    Text *text_filedetails;
-    u8 key_cursor[2];
-    u8 filename_cursor;
-    u8 caps_lock;
-    char *filename_buffer;
-    GOBJ *confirm_gobj;
-    Text *confirm_text;
-    u8 confirm_cursor;
-    u8 confirm_state;
-    int hmn_id;
-    int cpu_id;
-    int stage_id;
-} ExportData;
-typedef struct ExportMenuSettings
-{
-    u8 hmn_mode;
-    u8 hmn_slot;
-    u8 cpu_mode;
-    u8 cpu_slot;
-    u8 loop_inputs;
-    u8 auto_restore;
-} ExportMenuSettings;
-typedef struct ExportHeader
-{
-    struct rec_metadata // metadata
-    {
-        u16 version;
-        u16 image_width;
-        u16 image_height;
-        u16 image_fmt;
-        u8 hmn;
-        u8 hmn_costume;
-        u8 cpu;
-        u8 cpu_costume;
-        u16 stage_external; // instance of the stage
-        u16 stage_internal; //  unique stage
-        u8 month;
-        u8 day;
-        u16 year;
-        u8 hour;
-        u8 minute;
-        u8 second;
-        char filename[32];
-    } metadata;
-    struct // lookup
-    {
-        int ofst_screenshot;
-        int ofst_recording;
-        int ofst_menusettings;
-        // to-do, add menu data offset
-    } lookup;
-} ExportHeader;
-
 // TODO move these to lab.h
 
 void Event_Init(GOBJ *gobj);
@@ -447,14 +376,14 @@ void Record_RestoreState(GOBJ *menu_gobj);
 void Record_CObjThink(GOBJ *gobj);
 void Record_GX(GOBJ *gobj, int pass);
 void Record_Think(GOBJ *rec_gobj);
-void Record_Update(int ply, RecInputData *inputs, RecInputData *rerecord_inputs, int rec_mode);
+void Record_Update(int ply, RecInputData_v1 *inputs, RecInputData_v1 *rerecord_inputs, int rec_mode);
 void Record_SetInputs(GOBJ *fighter, RecInputs *inputs, bool mirror);
 int Record_RearrangeButtons(RecInputs *inputs);
 void Record_Restart(Savestate_v1 *savestate, int flags);
 void Record_RerollSlotRNG(void);
 void Record_LoadSavestate(Savestate_v2 *savestate);
 int Record_MenuThink(GOBJ *menu_gobj);
-int Record_GetRandomSlot(RecInputData **input_data, EventOption slot_menu[]);
+int Record_GetRandomSlot(RecInputData_v1 **input_data, EventOption slot_menu[]);
 int Record_GOBJToID(GOBJ *gobj);
 int Record_FtDataToID(FighterData *fighter_data);
 int Record_BoneToID(FighterData *fighter_data, JOBJ *bone);
@@ -598,7 +527,7 @@ typedef struct ImportData
     int file_num;         // number of displayed files on card
     int hidden_file_num;  // number of hidden files on card
     FileInfo *file_info;  // pointer to file info array
-    ExportHeader *header; // pointer to header array for the files on the current page
+    ExportMetadata *metadata; // pointer to header array for the files on the current page
     u8 page;              // file page
     struct
     {

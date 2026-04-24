@@ -143,25 +143,24 @@ struct MapData
     void *OnDestroyCB;                 // 0x1c
     int live_sfx[8];                   // 0x20, sfx ID's currently playing
     ColorOverlay color;                // 0x40
-    int xc0;                           // 0xc0
-    // pretty sure map_var actually starts here? rofl
-    int xc4; // 0xc4
-    int xc8; // 0xc8
-    int xcc; // 0xcc
-    int xd0; // 0xd0
-    int xd4; // 0xd4
-    int xd8; // 0xd8
-    int xdc; // 0xdc
+    float xc0;                         // 0xc0
     struct
     {
-        int mapVar0; // 0xe0
-        int mapVar1; // 0xe4
-        int mapVar2; // 0xe8
-        int mapVar3; // 0xec
-        int mapVar4; // 0xf0
-        int mapVar5; // 0xf4
-        int mapVar6; // 0xf8
-        int mapVar7; // 0xfc
+        int xc4; // 0xc4
+        int xc8; // 0xc8
+        int xcc; // 0xcc
+        int xd0; // 0xd0
+        int xd4; // 0xd4
+        int xd8; // 0xd8
+        int xdc; // 0xdc
+        int xe0; // 0xe0
+        int xe4; // 0xe4
+        int xe8; // 0xe8
+        int xec; // 0xec
+        int xf0; // 0xf0
+        int xf4; // 0xf4
+        int xf8; // 0xf8
+        int xfc; // 0xfc
         int x100;    // 0x100
         int x104;    // 0x104
         int x108;    // 0x108

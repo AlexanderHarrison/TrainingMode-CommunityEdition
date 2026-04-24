@@ -1536,7 +1536,7 @@ void Hazards_Disable(void)
         // set bg skip flag
         GOBJ *map_gobj = Stage_GetMapGObj(3);
         MapData *map_data = map_gobj->userdata;
-        map_data->xc4 |= 0x40;
+        map_data->map_var.xc4 |= 0x40;
 
         // remove on-go function that changes this flag
         StageOnGO *on_go = stc_stage->on_go;

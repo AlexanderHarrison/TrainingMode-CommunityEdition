@@ -10,7 +10,9 @@ static GXColor text_gold = {255, 211, 0, 255};
 
 static EventDesc *event_desc;
 
-ExportHeader *GetExportHeaderFromCard(int slot, char *fileName, void *buffer);
+// Every export version starts with the metadata, so this is agnostic to version.
+ExportMetadata *GetExportMetadataFromCard(int slot, char *fileName, void *buffer);
+
 int CSS_ID(int ext_id);
 int GetSelectedFighterIdOnCssForHmn();
 void Memcard_Wait(void);
@@ -49,8 +51,8 @@ void OnCSSLoad(HSD_Archive *archive)
         import_data.file_info[i].file_name = calloc(CARD_FILENAME_MAX);
     }
 
-    // alloc file header array
-    import_data.header = calloc(IMPORT_FILESPERPAGE * sizeof(ExportHeader));
+    // alloc file metadata array
+    import_data.metadata = calloc(IMPORT_FILESPERPAGE * sizeof(ExportMetadata));
 
     // alloc image (needs to be 32 byte aligned)
     import_data.snap.image = calloc(GXGetTexBufferSize(RESIZE_WIDTH, RESIZE_HEIGHT, 4, 0, 0)); // allocate 128 entries
@@ -110,9 +112,9 @@ void Read_Recordings()
 
                         if (hmnCSSId != -1)
                         {
-                            ExportHeader *header = GetExportHeaderFromCard(slot, card_stat.fileName, buffer);
+                            ExportMetadata *metadata = GetExportMetadataFromCard(slot, card_stat.fileName, buffer);
 
-                            if (CSS_ID(header->metadata.hmn) != hmnCSSId && CSS_ID(header->metadata.cpu) != hmnCSSId)
+                            if (CSS_ID(metadata->hmn) != hmnCSSId && CSS_ID(metadata->cpu) != hmnCSSId)
                             {
                                 import_data.hidden_file_num++;
                                 continue;
@@ -672,15 +674,15 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
     }
     Text_SetColor(import_data.filename_text, cursor, &text_gold);
 
-    // update file info text from header data
-    ExportHeader *header = &import_data.header[cursor];
+    // update file info text from metadata data
+    ExportMetadata *metadata = &import_data.metadata[cursor];
 
     // update file info text
-    Text_SetText(import_data.fileinfo_text, 0, "Stage: %s", stage_names[header->metadata.stage_internal]);
-    Text_SetText(import_data.fileinfo_text, 1, "HMN: %s", Fighter_GetName(header->metadata.hmn));
-    Text_SetText(import_data.fileinfo_text, 2, "CPU: %s", Fighter_GetName(header->metadata.cpu));
-    Text_SetText(import_data.fileinfo_text, 3, "Date: %d/%d/%d", header->metadata.month, header->metadata.day, header->metadata.year);
-    Text_SetText(import_data.fileinfo_text, 4, "Time: %d:%02d:%02d", header->metadata.hour, header->metadata.minute, header->metadata.second);
+    Text_SetText(import_data.fileinfo_text, 0, "Stage: %s", stage_names[metadata->stage_internal]);
+    Text_SetText(import_data.fileinfo_text, 1, "HMN: %s", Fighter_GetName(metadata->hmn));
+    Text_SetText(import_data.fileinfo_text, 2, "CPU: %s", Fighter_GetName(metadata->cpu));
+    Text_SetText(import_data.fileinfo_text, 3, "Date: %d/%d/%d", metadata->month, metadata->day, metadata->year);
+    Text_SetText(import_data.fileinfo_text, 4, "Time: %d:%02d:%02d", metadata->hour, metadata->minute, metadata->second);
 
 
     // check for exit
@@ -702,10 +704,10 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
     else if (down & HSD_BUTTON_Y)
     {
         // Rwing exports only swap the hmn. 
-        if (header->metadata.hmn == CKIND_ZELDA)
-            header->metadata.hmn = CKIND_SHEIK; 
-        else if (header->metadata.hmn == CKIND_SHEIK)
-            header->metadata.hmn = CKIND_ZELDA;
+        if (metadata->hmn == CKIND_ZELDA)
+            metadata->hmn = CKIND_SHEIK; 
+        else if (metadata->hmn == CKIND_SHEIK)
+            metadata->hmn = CKIND_ZELDA;
              
         SFX_PlayCommon(1);
     }
@@ -713,8 +715,8 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
     // check for select
     else if (down & HSD_BUTTON_A)
     {
-        int kind;                                               // init confirm kind
-        int vers = import_data.header[cursor].metadata.version; // get version number
+        int kind;                                        // init confirm kind
+        int vers = import_data.metadata[cursor].version; // get version number
 
         // check if version is compatible with this release
         if (vers == REC_VERS)
@@ -858,12 +860,12 @@ int Menu_SelFile_LoadPage(GOBJ *menu_gobj, int page)
                     if (CARDGetStatus(slot, file_no, &card_stat) != CARD_RESULT_READY)
                         continue;
 
-                    ExportHeader *header = GetExportHeaderFromCard(slot, file_name, buffer);
-                    if (!header)
+                    ExportMetadata *metadata = GetExportMetadataFromCard(slot, file_name, buffer);
+                    if (!metadata)
                         continue;
 
-                    memcpy(&import_data.header[i], header, sizeof(ExportHeader));
-                    Text_SetText(import_data.filename_text, i, header->metadata.filename);
+                    memcpy(&import_data.metadata[i], metadata, sizeof(ExportMetadata));
+                    Text_SetText(import_data.filename_text, i, metadata->filename);
                 }
             }
             // unmount
@@ -1067,15 +1069,15 @@ void Menu_Confirm_Think(GOBJ *menu_gobj)
             // get variables and junk
             VSMinorData *css_minorscene = *stc_css_minorscene;
             int this_file_index = (import_data.page * IMPORT_FILESPERPAGE) + import_data.cursor;
-            ExportHeader *header = &import_data.header[import_data.cursor];
+            ExportMetadata *metadata = &import_data.metadata[import_data.cursor];
             Preload *preload = Preload_GetTable();
 
             // get match data
-            u8 hmn_kind = header->metadata.hmn;
-            u8 hmn_costume = header->metadata.hmn_costume;
-            u8 cpu_kind = header->metadata.cpu;
-            u8 cpu_costume = header->metadata.cpu_costume;
-            u16 stage_kind = header->metadata.stage_external;
+            u8 hmn_kind = metadata->hmn;
+            u8 hmn_costume = metadata->hmn_costume;
+            u8 cpu_kind = metadata->cpu;
+            u8 cpu_costume = metadata->cpu_costume;
+            u16 stage_kind = metadata->stage_external;
 
             // set fighters
             css_minorscene->vs_data.match_init.playerData[0].c_kind = hmn_kind;
@@ -1253,7 +1255,8 @@ void Memcard_Wait(void)
         blr2();
     }
 }
-ExportHeader *GetExportHeaderFromCard(int slot, char *fileName, void *buffer) {
+
+ExportMetadata *GetExportMetadataFromCard(int slot, char *fileName, void *buffer) {
     CARDFileInfo card_file_info;
 
     // open card (get file info)
@@ -1268,10 +1271,10 @@ ExportHeader *GetExportHeaderFromCard(int slot, char *fileName, void *buffer) {
 
     // deobfuscate stupid melee bullshit
     Memcard_Deobfuscate(buffer, CARD_READ_SIZE);
-    ExportHeader *header = buffer + 0x90; // get to header (need to find a less hardcoded way of doing this)
+    ExportMetadata *metadata = buffer + 0x90; // get to metadata (need to find a less hardcoded way of doing this)
 
     CARDClose(&card_file_info);
-    return header;
+    return metadata;
 }
 
 // converts from external character IDs to CSSs idx - i.e. sheik/zelda popo/nana become the same.
