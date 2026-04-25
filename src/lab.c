@@ -9,7 +9,8 @@ static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData_v1 rec_data;
-static Savestate_v2 *rec_state;
+static SavestateHeader *rec_state;
+static int rec_state_savestate_version; 
 static _HSD_ImageDesc snap_image = {0};
 static _HSD_ImageDesc resized_image = {
     .format = 4,
@@ -3879,7 +3880,7 @@ void Record_Think(GOBJ *rec_gobj)
             rec_data.restore_timer++;
 
         if (rec_data.restore_timer >= AUTORESTORE_DELAY)
-            Record_LoadSavestate(rec_state);
+            Record_LoadSavestate(rec_state, rec_state_savestate_version);
     }
 
     int curr_frame = Record_GetCurrFrame();
@@ -4121,8 +4122,10 @@ void Record_InitState(GOBJ *menu_gobj)
 {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
-    if (event_vars->Savestate_Save_v2(rec_state, 0))
+    if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
+        rec_state_savestate_version = 2;
         Record_OnSuccessfulSave(1);
+    }
 }
 
 // returns time_diff
@@ -4131,8 +4134,10 @@ int Record_RemakeState(void)
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     int prev_frame = rec_state->frame;
-    if (event_vars->Savestate_Save_v2(rec_state, 0))
+    if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
+        rec_state_savestate_version = 2;
         Record_OnSuccessfulSave(0);
+    }
     int new_frame = rec_state->frame;
     int time_diff = new_frame - prev_frame;
     
@@ -4249,7 +4254,7 @@ void Record_DeleteState(GOBJ *menu_gobj)
 }
 void Record_RestoreState(GOBJ *menu_gobj)
 {
-    Record_LoadSavestate(rec_state);
+    Record_LoadSavestate(rec_state, rec_state_savestate_version);
 }
 void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
 {
@@ -4273,7 +4278,7 @@ void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
     }
 
     // reload save
-    Record_LoadSavestate(rec_state);
+    Record_LoadSavestate(rec_state, rec_state_savestate_version);
 }
 void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
 {
@@ -4297,7 +4302,7 @@ void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
     }
 
     // reload save
-    Record_LoadSavestate(rec_state);
+    Record_LoadSavestate(rec_state, rec_state_savestate_version);
 }
 
 void Record_ChangeMode_Common(void)
@@ -4337,7 +4342,7 @@ void Record_ChangeHMNMode(GOBJ *menu_gobj, int value)
         memcpy(rec_data.hmn_inputs[Record_GetSlot(0)], rec_data.hmn_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_HMN_PLAYBACK || value == RECMODE_HMN_RERECORD)
-        Record_LoadSavestate(rec_state);
+        Record_LoadSavestate(rec_state, rec_state_savestate_version);
     Record_ChangeMode_Common();
 }
 void Record_ChangeCPUMode(GOBJ *menu_gobj, int value)
@@ -4351,7 +4356,7 @@ void Record_ChangeCPUMode(GOBJ *menu_gobj, int value)
         memcpy(rec_data.cpu_inputs[Record_GetSlot(1)], rec_data.cpu_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_CPU_PLAYBACK || value == RECMODE_CPU_RERECORD)
-        Record_LoadSavestate(rec_state);
+        Record_LoadSavestate(rec_state, rec_state_savestate_version);
     Record_ChangeMode_Common();
 }
 void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
@@ -4368,7 +4373,7 @@ void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
         LabOptions_Record[OPTREC_CPUMODE].disable = 0;
     }
 
-    Record_LoadSavestate(rec_state);
+    Record_LoadSavestate(rec_state, rec_state_savestate_version);
 }
 int Record_GetRandomSlot(RecInputData_v1 **input_data, EventOption slot_menu[])
 {
@@ -4602,7 +4607,7 @@ void Record_MemcardLoad(int slot, int file_no)
             rec_state->ft_state[1].playerblock.controller = stc_cpu_controller;
         
             // load state
-            Record_LoadSavestate(rec_state);
+            Record_LoadSavestate(rec_state, rec_state_savestate_version);
 
             // copy recordings
             for (int i = 0; i < REC_SLOTS; i++)
@@ -4685,8 +4690,15 @@ void Record_Restart(Savestate_v2 *savestate, int flags) {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     
+    int flags = 0;
     if (mirror) flags |= Savestate_Mirror;
-    event_vars->Savestate_Load_v1(savestate, flags);
+
+    if (savestate_version == 1)
+        event_vars->Savestate_Load_v1((Savestate_v1*)savestate, flags);
+    else if (savestate_version == 2)
+        event_vars->Savestate_Load_v2((Savestate_v2*)savestate, flags);
+    else
+        assert("bad savestate version!");
 }
 
 void Record_LoadSavestate(Savestate_v2 *savestate) {
@@ -4761,7 +4773,7 @@ void Savestates_Update()
                 if (pad->down & loadstate_mask)
                 {
                     // load state
-                    Record_LoadSavestate(event_vars->savestate2);
+                    Record_LoadSavestate((SavestateHeader *)event_vars->savestate2, 2);
                     stc_playback_cancelled_hmn = false;
                     stc_playback_cancelled_cpu = false;
 
@@ -4844,6 +4856,11 @@ void ExportData_ApplyEvents(ParsedExportData_v2 *ed) {
     }
 };
 
+static inline void StreamAppend(u8** dst, void *src, size_t size) {
+    memcpy(*dst, src, size);
+    *dst += size;
+}
+
 void Export_Init(GOBJ *menu_gobj)
 {
     MenuData *menu_data = menu_gobj->userdata;
@@ -4871,7 +4888,79 @@ void Export_Init(GOBJ *menu_gobj)
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->textbox_jobj, JOBJ_HIDDEN);
     
-    /* TODO
+    u32 recbuffer_size = 0;
+    
+    u8 events[16] = {
+        0,
+        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
+        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
+        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
+        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
+        RecEvent_Null, RecEvent_Null, RecEvent_Null
+    };
+    
+    if (rec_state_savestate_version == 1) {
+        events[0] = RecEvent_Savestate_v1;
+    } else if (rec_state_savestate_version == 2) {
+        events[0] = RecEvent_Savestate_v2;
+    } else {
+        assert("invalid savestate version!");
+    }
+
+    u32 streamsize = 0;
+    for (u32 i = 0; i < countof(events); ++i)
+        streamsize += rec_event_data_sizes[events[i]];
+    u8 *streambuf_head = HSD_MemAlloc(streamsize);
+    u8 *streambuf = streambuf_head;
+
+    if (rec_state_savestate_version == 1) {
+        StreamAppend(&streambuf, rec_state, sizeof(RecEventData_Savestate_v1));
+    } else if (rec_state_savestate_version == 2) {
+        StreamAppend(&streambuf, rec_state, sizeof(RecEventData_Savestate_v2));
+    }
+
+    for (int i = 0; i < REC_SLOTS; i++)
+        StreamAppend(&streambuf, rec_data.hmn_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
+    for (int i = 0; i < REC_SLOTS; i++)
+        StreamAppend(&streambuf, rec_data.cpu_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
+
+    u32 buf_noncompressed_size = sizeof(ExportMetadata) + 12
+        + countof(events)*sizeof(u8)
+        + sizeof(rec_event_data_sizes);
+
+    ExportData_v2 *buf = HSD_MemAlloc(buf_noncompressed_size + streamsize); // overalloc, just in case
+
+    OSCalendarTime td;
+    OSTicksToCalendarTime(OSGetTime(), &td);
+    buf->metadata.version = REC_VERS;
+    buf->metadata.image_width = RESIZE_WIDTH;
+    buf->metadata.image_height = RESIZE_HEIGHT;
+    buf->metadata.image_fmt = 4;
+    buf->metadata.hmn = Fighter_GetExternalID(0);
+    buf->metadata.hmn_costume = Fighter_GetCostumeID(0);
+    buf->metadata.cpu = Fighter_GetExternalID(1);
+    buf->metadata.cpu_costume = Fighter_GetCostumeID(1);
+    buf->metadata.stage_external = Stage_GetExternalID();
+    buf->metadata.stage_internal = Stage_ExternalToInternal(buf->metadata.stage_external);
+    buf->metadata.month = td.mon + 1;
+    buf->metadata.day = td.mday;
+    buf->metadata.year = td.year;
+    buf->metadata.hour = td.hour;
+    buf->metadata.minute = td.min;
+    buf->metadata.second = td.sec;
+    
+    buf->event_size_count = countof(rec_event_data_sizes);
+    buf->event_count = countof(events);
+    
+    u8 *stream = buf->stream;
+    StreamAppend(&stream, rec_event_data_sizes, sizeof(rec_event_data_sizes));
+    StreamAppend(&stream, events, sizeof(events));
+    stream += ExportData_Compress(stream, streambuf_head, streamsize); // TODO what is pointer_length_width?
+    HSD_Free(streambuf); // free original data buffer
+
+    u32 buf_actual_size = (u32)(stream - (u8*)buf);
+
+    /*
 
     // alloc a buffer for all of the recording data
     RecordingSave_v1 *temp_rec_save = calloc(sizeof(RecordingSave_v1));
@@ -5778,7 +5867,6 @@ int Export_Process(GOBJ *export_gobj)
     {
     case (EXSTAT_REQSAVE):
     {
-
         int slot = export_data->slot;
 
         save_pre_tick = OSGetTick();
@@ -6589,7 +6677,7 @@ void Event_Think(GOBJ *event)
 {
     // Save a minor state at event start, so people can reset if they SD.
     // This cannot be done in Event_Init, so we do it here.
-    if (!event_vars->savestate2->is_exist) {
+    if (!event_vars->savestate2->header.is_exist) {
         event_vars->Savestate_Save_v2(event_vars->savestate2, Savestate_Silent);
         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
     }

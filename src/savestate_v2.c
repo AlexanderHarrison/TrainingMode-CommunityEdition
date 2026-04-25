@@ -270,10 +270,10 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
         }
     }
 
-    savestate->is_exist = 1;
+    savestate->header.is_exist = 1;
 
     // save frame
-    savestate->frame = event_vars->game_timer;
+    savestate->header.frame = event_vars->game_timer;
 
     // save event data
     memcpy(&savestate->event_data, event_vars->event_gobj->userdata, sizeof(savestate->event_data));
@@ -628,7 +628,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
 // use enum savestate_flags for flags
 int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
 {
-    if (!savestate->is_exist) {
+    if (!savestate->header.is_exist) {
         if ((flags & Savestate_Silent) == 0)
             SFX_PlayCommon(3);
         return false;
@@ -1138,8 +1138,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
     
     // restore frame
     Match *match = stc_match;
-    match->time_frames = savestate->frame;
-    event_vars->game_timer = savestate->frame;
+    match->time_frames = savestate->header.frame;
+    event_vars->game_timer = savestate->header.frame;
 
     // update timer
     int frames = match->time_frames - 1; // this is because the scenethink function runs once before the gobj procs do

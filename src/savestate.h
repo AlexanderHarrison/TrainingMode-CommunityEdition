@@ -3,7 +3,14 @@
 
 #include "../MexTK/mex.h"
 
+// COMMON #####################################################
+
 #define EVENT_DATASIZE 512
+
+typedef struct SavestateHeader {
+    int is_exist;
+    int frame;
+} SavestateHeader;
 
 // VERSION 2 #####################################################
 
@@ -143,8 +150,7 @@ typedef union StageSaveState_v2 {
 
 typedef struct Savestate_v2
 {
-    int is_exist;
-    int frame;
+    SavestateHeader header;
     u8 event_data[EVENT_DATASIZE];
     FtSaveState_v2 ft_state[6];
     ItemSaveState_v2 item_state[8];
@@ -336,8 +342,7 @@ typedef struct FtSaveState_v1
 
 typedef struct Savestate_v1
 {
-    int is_exist;
-    int frame;
+    SavestateHeader header;
     u8 event_data[EVENT_DATASIZE];
     FtSaveState_v1 ft_state[6];
 } Savestate_v1;

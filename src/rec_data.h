@@ -147,6 +147,7 @@ typedef struct RecordingSave_v1
 ParsedExportData_v2 ExportData_Import(u8 *transfer_buf);
 void ExportData_ApplyEvents(ParsedExportData_v2 *ed);
 void ExportData_Free(ParsedExportData_v2 *ed);
+int ExportData_Compress(u8 *dst, u8 *src, size);
 
 /*
     Instead of a big static struct, this format saves a sequence of events (much like SLP files).

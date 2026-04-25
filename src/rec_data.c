@@ -2,7 +2,6 @@
 #include "events.h"
 #include "rec_data.h"
 
-static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width);
 static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text);
 
 static u32 rec_event_data_sizes[] = {
@@ -67,6 +66,7 @@ ParsedExportData_v2 ExportData_Import(u8 *transfer_buf) {
     ExportMetadata *metadata = (ExportMetadata *)transfer_buf;
     if (metadata->version == 1) return ExportData_Import_v1(transfer_buf);
     if (metadata->version == 2) return ExportData_Import_v2(transfer_buf);
+    // TODO old/new checking
     return (ParsedExportData_v2) { 0 };
 }
 
@@ -75,17 +75,18 @@ void ExportData_Free(ParsedExportData_v2 *export_data) {
     HSD_Free(export_data->event_data_stream); // free decompressed buffer
 }
 
-static int pow_n(int x, int n)
-{
+int ExportData_Compress(u8 *dst, u8 *src, size) {
+    return lz77Compress(src, size, dst, 8); // TODO what is pointer_length_width?
+}
+
+static int pow_n(int x, int n) {
     int res = 1;
     for (; n; n--)
         res *= x;
     return res;
 }
 
-// lz77 functions credited to https://github.com/andyherbert/lz1
-static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width)
-{
+static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width) {
     u16 pointer_pos, temp_pointer_pos, output_pointer, pointer_length, temp_pointer_length;
     u32 compressed_pointer, output_size, coding_pos, output_lookahead_ref, look_behind, look_ahead;
     u16 pointer_pos_max, pointer_length_max;
@@ -135,8 +136,8 @@ static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compre
     return output_size;
 }
 
-static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text)
-{
+// lz77 functions credited to https://github.com/andyherbert/lz1
+static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text) {
     u8 pointer_length_width;
     u16 input_pointer, pointer_length, pointer_pos, pointer_length_mask;
     u32 compressed_pointer, coding_pos, pointer_offset, uncompressed_size;
