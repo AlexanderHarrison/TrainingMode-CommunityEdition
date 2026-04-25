@@ -88,8 +88,6 @@ enum custom_asid_groups
 
 // FUNCTION PROTOTYPES ##############################################################
 
-static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width);
-static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text);
 static void DistributeChances(s16 *chances[], unsigned int chance_count);
 static void ReboundChances(s16 *chances[], unsigned int chance_count, int just_changed_option);
 static int IsTechAnim(int state);

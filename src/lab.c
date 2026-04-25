@@ -4870,6 +4870,8 @@ void Export_Init(GOBJ *menu_gobj)
     JOBJ_SetFlags(export_data->memcard_jobj[1], JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->textbox_jobj, JOBJ_HIDDEN);
+    
+    /* TODO
 
     // alloc a buffer for all of the recording data
     RecordingSave_v1 *temp_rec_save = calloc(sizeof(RecordingSave_v1));
@@ -4960,6 +4962,7 @@ void Export_Init(GOBJ *menu_gobj)
 
     // initialize memcard menu
     Export_SelCardInit(export_gobj);
+    */
 
     menu_data->custom_gobj = export_gobj;            // set custom gobj
     menu_data->custom_gobj_think = Export_Think;     // set think function
@@ -5888,11 +5891,6 @@ int Export_Process(GOBJ *export_gobj)
     }
 
     return finished;
-}
-int Export_Compress(u8 *dest, u8 *source, u32 size)
-{
-    int compress_size = lz77Compress(source, size, dest, 8);
-    return compress_size;
 }
 
 static void UpdateOverlays(GOBJ *character, EventOption *overlays) {
@@ -7062,93 +7060,6 @@ static void ReboundChances(s16 *chances[], unsigned int chance_count, int just_c
 
         just_changed_option = rebound_option;
     }
-}
-
-static int pow_n(int x, int n)
-{
-    int res = 1;
-    for (; n; n--)
-        res *= x;
-    return res;
-}
-
-// lz77 functions credited to https://github.com/andyherbert/lz1
-static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width)
-{
-    u16 pointer_pos, temp_pointer_pos, output_pointer, pointer_length, temp_pointer_length;
-    u32 compressed_pointer, output_size, coding_pos, output_lookahead_ref, look_behind, look_ahead;
-    u16 pointer_pos_max, pointer_length_max;
-    pointer_pos_max = pow_n(2, 16 - pointer_length_width);
-    pointer_length_max = pow_n(2, pointer_length_width);
-
-    *((u32 *)compressed_text) = uncompressed_size;
-    *(compressed_text + 4) = pointer_length_width;
-    compressed_pointer = output_size = 5;
-
-    for (coding_pos = 0; coding_pos < uncompressed_size; ++coding_pos)
-    {
-        pointer_pos = 0;
-        pointer_length = 0;
-        for (temp_pointer_pos = 1; (temp_pointer_pos < pointer_pos_max) && (temp_pointer_pos <= coding_pos); ++temp_pointer_pos)
-        {
-            look_behind = coding_pos - temp_pointer_pos;
-            look_ahead = coding_pos;
-            for (temp_pointer_length = 0; uncompressed_text[look_ahead++] == uncompressed_text[look_behind++]; ++temp_pointer_length)
-                if (temp_pointer_length == pointer_length_max)
-                    break;
-            if (temp_pointer_length > pointer_length)
-            {
-                pointer_pos = temp_pointer_pos;
-                pointer_length = temp_pointer_length;
-                if (pointer_length == pointer_length_max)
-                    break;
-            }
-        }
-        coding_pos += pointer_length;
-        if ((coding_pos == uncompressed_size) && pointer_length)
-        {
-            output_pointer = (pointer_length == 1) ? 0 : ((pointer_pos << pointer_length_width) | (pointer_length - 2));
-            output_lookahead_ref = coding_pos - 1;
-        }
-        else
-        {
-            output_pointer = (pointer_pos << pointer_length_width) | (pointer_length ? (pointer_length - 1) : 0);
-            output_lookahead_ref = coding_pos;
-        }
-        *((u16 *)(compressed_text + compressed_pointer)) = output_pointer;
-        compressed_pointer += 2;
-        *(compressed_text + compressed_pointer++) = *(uncompressed_text + output_lookahead_ref);
-        output_size += 3;
-    }
-
-    return output_size;
-}
-
-static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text)
-{
-    u8 pointer_length_width;
-    u16 input_pointer, pointer_length, pointer_pos, pointer_length_mask;
-    u32 compressed_pointer, coding_pos, pointer_offset, uncompressed_size;
-
-    uncompressed_size = *((u32 *)compressed_text);
-    pointer_length_width = *(compressed_text + 4);
-    compressed_pointer = 5;
-
-    pointer_length_mask = pow_n(2, pointer_length_width) - 1;
-
-    for (coding_pos = 0; coding_pos < uncompressed_size; ++coding_pos)
-    {
-        input_pointer = *((u16 *)(compressed_text + compressed_pointer));
-        compressed_pointer += 2;
-        pointer_pos = input_pointer >> pointer_length_width;
-        pointer_length = pointer_pos ? ((input_pointer & pointer_length_mask) + 1) : 0;
-        if (pointer_pos)
-            for (pointer_offset = coding_pos - pointer_pos; pointer_length > 0; --pointer_length)
-                uncompressed_text[coding_pos++] = uncompressed_text[pointer_offset++];
-        *(uncompressed_text + coding_pos) = *(compressed_text + compressed_pointer++);
-    }
-
-    return coding_pos;
 }
 
 // adapted from decomp github.com/doldecomp/melee/blob/7f0e2ddb83fa974b64b05d0a7e5b374cf12c0541/src/melee/ft/ftwalljump.c

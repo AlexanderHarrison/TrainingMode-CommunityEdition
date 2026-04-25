@@ -82,7 +82,7 @@ mkdir -p build
 # compile code in parallel
 mex_build "tmFunction" "build/eventMenu.dat" "src/events.c src/menu.c src/osds.c src/savestate_v1.c src/savestate_v2.c" "dats/eventMenu.dat" &
 mex_build "cssFunction" "build/labCSS.dat" "src/lab_css.c" "dats/labCSS.dat" &
-mex_build "evFunction" "build/lab.dat" "src/lab.c" "dats/lab.dat" &
+mex_build "evFunction" "build/lab.dat" "src/lab.c src/rec_data.c" "dats/lab.dat" &
 mex_build "evFunction" "build/lcancel.dat" "src/lcancel.c" &
 mex_build "evFunction" "build/ledgedash.dat" "src/ledgedash.c" &
 mex_build "evFunction" "build/wavedash.dat" "src/wavedash.c" "dats/wavedash.dat" &
