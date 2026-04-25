@@ -47,83 +47,12 @@ typedef struct ExportMetadata {
 
 typedef struct ParsedExportData_v2 {
     ExportMetadata *metadata;
-    u16 event_size_count; // guaranteed to be a multiple of 2 (to align event_sizes to 4b)
-    u16 event_count;      // guaranteed to be a multiple of 4 (to align events to 4b)
-    u16 *event_sizes;
+    u16 event_size_count;
+    u16 event_count; // guaranteed to be a multiple of 4 (to align events to 4b)
+    u32 *event_sizes;
     u8 *events;
     u8 *event_data_stream;
 } ParsedExportData_v2;
-
-// VERSION 2 #####################################################
-
-/*
-    Instead of a big static struct, this format saves a sequence of events (much like SLP files).
-    However, instead of having the event id at the start of the event data,
-     we put them in a big array at the start of the file.
-    This allows the parser to seek to a specific event and determine whether an event exists easier.
-    It also happens to be better for cache locality.
-*/
-
-typedef struct ExportData_v2 {
-    ExportMetadata metadata;
-    u16 event_size_count; // guaranteed to be a multiple of 2 (to align event_sizes to 4b)
-    u16 event_count;      // guaranteed to be a multiple of 4 (to align events to 4b)
-    u32 compressed_event_data_stream_size;
-    u32 decompressed_event_data_stream_size;
-
-    // stream field is equivalent to these dynamically sized fields:
-    // u16 event_sizes[event_size_count];
-    // u8 events[event_count]; 
-    // u8 compressed_event_data_stream[];
-    u8 stream[];
-} ExportData_v2;
-
-typedef enum RecEvent {
-    RecEvent_Null,
-    RecEvent_MatchInit,
-    RecEvent_Savestate_v1,
-    RecEvent_Savestate_v2,
-    RecEvent_RecordingSlot_v1,
-
-    // RecEvent_InfoDisplay,
-    // RecEvent_RNGOptions,
-    // RecEvent_TDIOptions,
-    // RecEvent_TechOptions,
-    // RecEvent_ActionLog,
-    // RecEvent_CustomOSDs,
-} RecEvent;
-
-typedef struct RecEventData_MatchInit {
-    MatchInit match_init;
-} RecEventData_MatchInit;
-
-typedef struct RecEventData_Savestate_v1 {
-    Savestate_v1 savestate;
-} RecEventData_Savestate_v1;
-
-typedef struct RecEventData_Savestate_v2 {
-    Savestate_v2 savestate;
-} RecEventData_Savestate_v2;
-
-typedef struct RecEventData_RecordingSlot_v1 {
-    RecInputData_v1 rec_input_data;
-} RecEventData_RecordingSlot_v1;
-
-typedef struct RecEventData_RecordingSlot_v2 {
-    u8 ply;
-    u8 slot_idx;
-    u16 input_count;
-    RecInputs inputs[REC_LENGTH];
-} RecEventData_RecordingSlot_v2;
-
-static u32 rec_event_data_sizes[] = {
-    0,
-    sizeof(RecEventData_MatchInit),
-    sizeof(RecEventData_Savestate_v1),
-    sizeof(RecEventData_Savestate_v2),
-    sizeof(RecEventData_RecordingSlot_v1),
-    sizeof(RecEventData_RecordingSlot_v2),
-};
 
 // VERSION 1 #####################################################
 
@@ -211,5 +140,72 @@ typedef struct RecordingSave_v1
     RecInputData_v1 hmn_inputs[REC_SLOTS];
     RecInputData_v1 cpu_inputs[REC_SLOTS];
 } RecordingSave_v1;
+
+// VERSION 2 #####################################################
+
+// These work for v1 as well by converting it losslessly to the v2 format.
+ParsedExportData_v2 ExportData_Import(u8 *transfer_buf);
+void ExportData_ApplyEvents(ParsedExportData_v2 *ed);
+void ExportData_Free(ParsedExportData_v2 *ed);
+
+/*
+    Instead of a big static struct, this format saves a sequence of events (much like SLP files).
+    However, instead of having the event id at the start of the event data,
+     we put them in a big array at the start of the file.
+    This allows the parser to seek to a specific event and determine whether an event exists easier.
+    It also happens to be better for cache locality.
+*/
+
+typedef struct ExportData_v2 {
+    ExportMetadata metadata;
+    u16 event_size_count;
+    u16 event_count; // guaranteed to be a multiple of 4 (to align events to 4b)
+    u32 compressed_event_data_stream_size;
+    u32 decompressed_event_data_stream_size;
+
+    // stream field is equivalent to these dynamically sized fields:
+    // u32 event_sizes[event_size_count];
+    // u8 events[event_count]; 
+    // u8 compressed_event_data_stream[];
+    u8 stream[];
+} ExportData_v2;
+
+typedef enum RecEvent {
+    RecEvent_Null,
+    RecEvent_MatchInit,
+    RecEvent_Savestate_v1,
+    RecEvent_Savestate_v2,
+    RecEvent_RecordingSlot_v1,
+
+    // RecEvent_InfoDisplay,
+    // RecEvent_RNGOptions,
+    // RecEvent_TDIOptions,
+    // RecEvent_TechOptions,
+    // RecEvent_ActionLog,
+    // RecEvent_CustomOSDs,
+} RecEvent;
+
+typedef struct RecEventData_MatchInit {
+    MatchInit match_init;
+} RecEventData_MatchInit;
+
+typedef struct RecEventData_Savestate_v1 {
+    Savestate_v1 savestate;
+} RecEventData_Savestate_v1;
+
+typedef struct RecEventData_Savestate_v2 {
+    Savestate_v2 savestate;
+} RecEventData_Savestate_v2;
+
+typedef struct RecEventData_RecordingSlot_v1 {
+    RecInputData_v1 rec_input_data;
+} RecEventData_RecordingSlot_v1;
+
+typedef struct RecEventData_RecordingSlot_v2 {
+    u8 ply;
+    u8 slot_idx;
+    u16 input_count;
+    RecInputs inputs[REC_LENGTH];
+} RecEventData_RecordingSlot_v2;
 
 #endif
