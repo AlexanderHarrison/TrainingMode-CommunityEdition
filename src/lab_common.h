@@ -390,7 +390,6 @@ int Record_BoneToID(FighterData *fighter_data, JOBJ *bone);
 GOBJ *Record_IDToGOBJ(int id);
 FighterData *Record_IDToFtData(int id);
 JOBJ *Record_IDToBone(FighterData *fighter_data, int id);
-void Snap_CObjThink(GOBJ *gobj);
 void Record_StartExport(GOBJ *menu_gobj);
 void Record_OnSuccessfulSave(int deleteRecordings);
 void Export_Init(GOBJ *menu_gobj);

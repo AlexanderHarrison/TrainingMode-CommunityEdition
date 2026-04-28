@@ -2,15 +2,16 @@
 #include "events.h"
 #include "rec_data.h"
 
+static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width);
 static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text);
 
-static u32 rec_event_data_sizes[] = {
+u32 rec_event_data_sizes[RecEvent_Count] = {
     0,
     sizeof(RecEventData_MatchInit),
     sizeof(RecEventData_Savestate_v1),
     sizeof(RecEventData_Savestate_v2),
     sizeof(RecEventData_RecordingSlot_v1),
-    sizeof(RecEventData_RecordingSlot_v2),
+    sizeof(RecEventData_MenuSettings_Record_v1),
 };
 
 static ParsedExportData_v2 ExportData_Import_v2(u8 *transfer_buf) {
@@ -37,7 +38,7 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
 
     // decompress
     RecordingSave_v1 *recsave = calloc(sizeof(RecordingSave_v1) + 0x100);
-    lz77Decompress(compressed_recording, (u8 *)recsave);
+    u32 decompressed_size = (u32)lz77Decompress(compressed_recording, (u8 *)recsave);
 
     static u8 events[16] = {
         RecEvent_MatchInit, RecEvent_Savestate_v1,
@@ -45,8 +46,12 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
-        RecEvent_Null, RecEvent_Null,
+        RecEvent_MenuSettings_Record_v1, RecEvent_Null,
     };
+
+    // append menu settings
+    RecEventData_MenuSettings_Record_v1* record = (void*)&recsave[decompressed_size];
+    record->menu_settings = *menu_settings;
 
     return (ParsedExportData_v2) {
         .metadata = &header->metadata,
@@ -56,8 +61,7 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
         .events = events,
 
         // We can use the recsave as an event stream directly!
-        // It contains the matchinit, savestate, then 12 recording slots, all in order.
-        // TODO TODO: menu settings! where do they go?
+        // It contains the matchinit, savestate, 12 recording slots, then menu settings, all in order.
         .event_data_stream = (u8*)recsave,
     };
 }
@@ -75,7 +79,7 @@ void ExportData_Free(ParsedExportData_v2 *export_data) {
     HSD_Free(export_data->event_data_stream); // free decompressed buffer
 }
 
-int ExportData_Compress(u8 *dst, u8 *src, size) {
+int ExportData_Compress(u8 *dst, u8 *src, u32 size) {
     return lz77Compress(src, size, dst, 8); // TODO what is pointer_length_width?
 }
 
