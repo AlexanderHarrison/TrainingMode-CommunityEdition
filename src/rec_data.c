@@ -35,7 +35,7 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
     ExportHeader_v1 *header = (ExportHeader_v1 *)transfer_buf;
     u8 *compressed_recording = transfer_buf + header->lookup.ofst_recording;
     ExportMenuSettings_v1 *menu_settings = (ExportMenuSettings_v1 *)(transfer_buf + header->lookup.ofst_menusettings);
-
+    
     // decompress
     RecordingSave_v1 *recsave = calloc(sizeof(RecordingSave_v1) + 0x100);
     u32 decompressed_size = (u32)lz77Decompress(compressed_recording, (u8 *)recsave);
@@ -50,7 +50,7 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
     };
 
     // append menu settings
-    RecEventData_MenuSettings_Record_v1* record = (void*)&recsave[decompressed_size];
+    RecEventData_MenuSettings_Record_v1* record = (void*)((u8*)recsave + decompressed_size);
     record->menu_settings = *menu_settings;
 
     return (ParsedExportData_v2) {
