@@ -11,13 +11,6 @@ static GOBJ *infodisp_gobj_cpu;
 static RecData_v1 rec_data;
 static SavestateHeader *rec_state;
 static int rec_state_savestate_version; 
-static _HSD_ImageDesc snap_image = {0};
-static _HSD_ImageDesc resized_image = {
-    .format = 4,
-    .height = RESIZE_HEIGHT,
-    .width = RESIZE_WIDTH,
-};
-static u8 snap_status;
 static u8 export_status;
 static Arch_LabData *stc_lab_data;
 static char *tm_filename = "TMREC_%02d%02d%04d_%02d%02d%02d";
@@ -3678,27 +3671,6 @@ GOBJ *Record_Init()
     Memcard_InitWorkArea();
     Memcard_InitSnapshotList(HSD_MemAlloc(2112), HSD_MemAlloc(256064));
 
-    // Create snapshot cam
-    snap_image.img_ptr = 0;
-    GOBJ *snap_gobj = GObj_Create(18, 18, 0);
-    GOBJ_InitCamera(snap_gobj, Snap_CObjThink, 4);
-    GX_AllocImageData(&snap_image, EXP_SCREENSHOT_WIDTH, EXP_SCREENSHOT_HEIGHT, 4, 2006);
-    export_status = EXSTAT_NONE;
-
-    /*
-    // init dev text
-    int height = 18;
-    int width = 28;
-    int x = -50;
-    int y = 410;
-    DevText *dev_text = DevelopText_CreateDataTable(x, y, 0, width, height, HSD_MemAlloc(height * width * 2));
-    stc_devtext = dev_text;
-    DevelopText_Activate(0, dev_text);
-    dev_text->cursorBlink = 0;
-    GXColor color = {21, 20, 59, 135};
-    DevelopText_StoreBGColor(dev_text, &color);
-    DevelopText_StoreTextScale(dev_text, 7.5, 10);
-    */
     return rec_gobj;
 }
 void Record_GX(GOBJ *gobj, int pass)
@@ -4509,9 +4481,6 @@ void Record_OnSuccessfulSave(int deleteRecordings)
     
     // event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
     // event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
-
-    // take screenshot
-    snap_status = 1;
 }
 void Memcard_Wait()
 {
@@ -4594,9 +4563,6 @@ void Record_MemcardLoad(int slot, int file_no)
                 LabOptions_Record[i].disable = 0;
             }
 
-            // take screenshot
-            snap_status = 1;
-            
             ParsedExportData_v2 export_data = ExportData_Import(memcard_save.data);
             ExportData_ApplyEvents(&export_data);
             ExportData_Free(&export_data);
@@ -4706,15 +4672,6 @@ void Record_LoadSavestate(Savestate_v2 *savestate) {
     Record_RerollSlotRNG();
 }
 
-void Snap_CObjThink(GOBJ *gobj)
-{
-    if (snap_status == 1)
-    {
-        // take snap
-        HSD_ImageDescCopyFromEFB(&snap_image, 0, 0, 0);
-        snap_status = 0;
-    }
-}
 void Savestates_Update()
 {
 
@@ -4840,8 +4797,30 @@ void ExportData_ApplyEvent(void *data, u8 event) {
     switch (event) {
         case RecEvent_Null: break;
         case RecEvent_MatchInit: break; // saved, but not actually used in v1!
+
         case RecEvent_Savestate_v1: {
+            RecEventData_Savestate_v1 *state = data;
+            memcpy(rec_state, state, sizeof(Savestate_v1));
+            rec_state_savestate_version = 1;
         } break;
+
+        case RecEvent_Savestate_v2: {
+            RecEventData_Savestate_v2 *state = data;
+            memcpy(rec_state, state, sizeof(Savestate_v2));
+            rec_state_savestate_version = 2;
+        } break;
+
+        case RecEvent_RecordingSlot_v1: {
+            static int slot_idx = 0;
+            RecEventData_RecordingSlot_v1 *slot = data;
+            if (slot_idx < 6) {
+                memcpy(rec_data.hmn_inputs[slot_idx], &slot->rec_input_data, sizeof(RecInputData_v1));
+            } else if (slot_idx < 12) {
+                memcpy(rec_data.cpu_inputs[slot_idx-6], &slot->rec_input_data, sizeof(RecInputData_v1));
+            }
+            slot_idx++;
+        } break;
+
         default: break;
     }
 }
@@ -4887,8 +4866,6 @@ void Export_Init(GOBJ *menu_gobj)
     JOBJ_SetFlags(export_data->memcard_jobj[1], JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->textbox_jobj, JOBJ_HIDDEN);
-    
-    u32 recbuffer_size = 0;
     
     u8 events[16] = {
         0,
@@ -4955,10 +4932,13 @@ void Export_Init(GOBJ *menu_gobj)
     u8 *stream = buf->stream;
     StreamAppend(&stream, rec_event_data_sizes, sizeof(rec_event_data_sizes));
     StreamAppend(&stream, events, sizeof(events));
-    stream += ExportData_Compress(stream, streambuf_head, streamsize); // TODO what is pointer_length_width?
-    HSD_Free(streambuf); // free original data buffer
+    stream += ExportData_Compress(stream, streambuf_head, streamsize);
+    HSD_Free(streambuf_head); // free original data buffer
 
     u32 buf_actual_size = (u32)(stream - (u8*)buf);
+
+    stc_transfer_buf = (u8*)buf;
+    stc_transfer_buf_size = buf_actual_size;
 
     /*
 
@@ -5862,7 +5842,6 @@ int Export_Process(GOBJ *export_gobj)
 
     int finished = 0;
 
-    // if snapshot is processing, dont update
     switch (export_status)
     {
     case (EXSTAT_REQSAVE):

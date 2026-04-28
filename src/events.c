@@ -753,7 +753,6 @@ EventVars stc_event_vars = {
 };
 
 static GOBJ *stc_msgmgr;
-static Savestate_v1 *stc_savestate;
 static TipMgr stc_tipmgr;
 
 static Vec2 stc_msg_queue_offsets_vertical[] = {
@@ -1267,9 +1266,6 @@ void EventLoad(void)
     GObj_AddProc(timer_gobj, Event_IncTimer, 0);
 
     // init savestate struct
-    // stc_savestate = calloc(sizeof(Savestate_v1));
-    // stc_savestate->is_exist = 0;
-    // stc_event_vars.savestate = stc_savestate;
     stc_event_vars.savestate2 = calloc(sizeof(Savestate_v2));
 
     // disable hazards if enabled

@@ -147,7 +147,7 @@ typedef struct RecordingSave_v1
 ParsedExportData_v2 ExportData_Import(u8 *transfer_buf);
 void ExportData_ApplyEvents(ParsedExportData_v2 *ed);
 void ExportData_Free(ParsedExportData_v2 *ed);
-int ExportData_Compress(u8 *dst, u8 *src, size);
+int ExportData_Compress(u8 *dst, u8 *src, u32 size);
 
 /*
     Instead of a big static struct, this format saves a sequence of events (much like SLP files).
@@ -177,6 +177,7 @@ typedef enum RecEvent {
     RecEvent_Savestate_v1,
     RecEvent_Savestate_v2,
     RecEvent_RecordingSlot_v1,
+    RecEvent_MenuSettings_Record_v1,
 
     // RecEvent_InfoDisplay,
     // RecEvent_RNGOptions,
@@ -184,29 +185,31 @@ typedef enum RecEvent {
     // RecEvent_TechOptions,
     // RecEvent_ActionLog,
     // RecEvent_CustomOSDs,
+    RecEvent_Count
 } RecEvent;
 
-typedef struct RecEventData_MatchInit {
+extern u32 rec_event_data_sizes[RecEvent_Count];
+
+#define ALIGN_4 __attribute__((aligned(4)))
+
+typedef struct ALIGN_4 RecEventData_MatchInit {
     MatchInit match_init;
 } RecEventData_MatchInit;
 
-typedef struct RecEventData_Savestate_v1 {
+typedef struct ALIGN_4 RecEventData_Savestate_v1 {
     Savestate_v1 savestate;
 } RecEventData_Savestate_v1;
 
-typedef struct RecEventData_Savestate_v2 {
+typedef struct ALIGN_4 RecEventData_Savestate_v2 {
     Savestate_v2 savestate;
 } RecEventData_Savestate_v2;
 
-typedef struct RecEventData_RecordingSlot_v1 {
+typedef struct ALIGN_4 RecEventData_RecordingSlot_v1 {
     RecInputData_v1 rec_input_data;
 } RecEventData_RecordingSlot_v1;
 
-typedef struct RecEventData_RecordingSlot_v2 {
-    u8 ply;
-    u8 slot_idx;
-    u16 input_count;
-    RecInputs inputs[REC_LENGTH];
-} RecEventData_RecordingSlot_v2;
+typedef struct ALIGN_4 RecEventData_MenuSettings_Record_v1 {
+    ExportMenuSettings_v1 menu_settings;
+} RecEventData_MenuSettings_Record_v1;
 
 #endif
