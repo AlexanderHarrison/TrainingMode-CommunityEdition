@@ -4479,8 +4479,8 @@ void Record_OnSuccessfulSave(int deleteRecordings)
 
     // also save to personal savestate
     
-    // event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
-    // event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
+    event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
+    event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
 }
 void Memcard_Wait()
 {
@@ -4557,45 +4557,11 @@ void Record_MemcardLoad(int slot, int file_no)
         // if file loaded successfully
         if (memcard_status == 0)
         {
-            // enable other options
-            for (u32 i = 1; i < countof(LabOptions_Record); i++)
-            {
-                LabOptions_Record[i].disable = 0;
-            }
-
             ParsedExportData_v2 export_data = ExportData_Import(memcard_save.data);
             ExportData_ApplyEvents(&export_data);
             ExportData_Free(&export_data);
-
-            /*
-            // restore controller indices
-            rec_state->ft_state[0].playerblock.controller = stc_hmn_controller;
-            rec_state->ft_state[1].playerblock.controller = stc_cpu_controller;
-        
-            // load state
             Record_LoadSavestate(rec_state, rec_state_savestate_version);
-
-            // copy recordings
-            for (int i = 0; i < REC_SLOTS; i++)
-            {
-                memcpy(rec_data.hmn_inputs[i], &loaded_recsave->hmn_inputs[i], sizeof(RecInputData_v1));
-                memcpy(rec_data.cpu_inputs[i], &loaded_recsave->cpu_inputs[i], sizeof(RecInputData_v1));
-            }
-
-            HSD_Free(loaded_recsave);
-
-            // copy recording settings
-            LabOptions_Record[OPTREC_HMNMODE].val = menu_settings->hmn_mode;
-            LabOptions_Record[OPTREC_HMNSLOT].val = menu_settings->hmn_slot;
-            LabOptions_Record[OPTREC_CPUMODE].val = menu_settings->cpu_mode;
-            LabOptions_Record[OPTREC_CPUSLOT].val = menu_settings->cpu_slot;
-            LabOptions_Record[OPTREC_LOOP].val = menu_settings->loop_inputs;
-            LabOptions_Record[OPTREC_AUTORESTORE].val = menu_settings->auto_restore;
-
-            // save to personal savestate
-            event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
-            event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
-            */
+            Record_OnSuccessfulSave(false);
         }
 
         HSD_Free(memcard_save.data);
@@ -4821,19 +4787,29 @@ void ExportData_ApplyEvent(void *data, u8 event) {
             slot_idx++;
         } break;
 
+        case RecEvent_MenuSettings_Record_v1: {
+            RecEventData_MenuSettings_Record_v1 *container = data;
+            ExportMenuSettings_v1 *menu_settings = &container->menu_settings;
+            LabOptions_Record[OPTREC_HMNMODE].val = menu_settings->hmn_mode;
+            LabOptions_Record[OPTREC_HMNSLOT].val = menu_settings->hmn_slot;
+            LabOptions_Record[OPTREC_CPUMODE].val = menu_settings->cpu_mode;
+            LabOptions_Record[OPTREC_CPUSLOT].val = menu_settings->cpu_slot;
+            LabOptions_Record[OPTREC_LOOP].val = menu_settings->loop_inputs;
+            LabOptions_Record[OPTREC_AUTORESTORE].val = menu_settings->auto_restore;
+        } break;
+            
         default: break;
     }
 }
 
 void ExportData_ApplyEvents(ParsedExportData_v2 *ed) {
-    u32 event_count = ed->event_count;
     u8 *cursor = ed->event_data_stream;
-    for (u32 event_idx = 0; event_idx < event_count; ++event_idx) {
+    for (u32 event_idx = 0; event_idx < ed->event_count; ++event_idx) {
         u8 event = ed->events[event_idx];
         ExportData_ApplyEvent(cursor, event);
         cursor += ed->event_sizes[event];
     }
-};
+}
 
 static inline void StreamAppend(u8** dst, void *src, size_t size) {
     memcpy(*dst, src, size);
@@ -4866,9 +4842,16 @@ void Export_Init(GOBJ *menu_gobj)
     JOBJ_SetFlags(export_data->memcard_jobj[1], JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->textbox_jobj, JOBJ_HIDDEN);
-    
+
+    export_data->filename_buffer = calloc(32 + 2); // +2 for terminator and cursor
+    Export_SelCardInit(export_gobj);
+
+    menu_data->custom_gobj = export_gobj;            // set custom gobj
+    menu_data->custom_gobj_think = Export_Think;     // set think function
+    menu_data->custom_gobj_destroy = Export_Destroy; // set destroy function
+
     u8 events[16] = {
-        0,
+        0, // savestate event, specific version is set later
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
@@ -4925,7 +4908,7 @@ void Export_Init(GOBJ *menu_gobj)
     buf->metadata.hour = td.hour;
     buf->metadata.minute = td.min;
     buf->metadata.second = td.sec;
-    
+
     buf->event_size_count = countof(rec_event_data_sizes);
     buf->event_count = countof(events);
     
@@ -4939,103 +4922,6 @@ void Export_Init(GOBJ *menu_gobj)
 
     stc_transfer_buf = (u8*)buf;
     stc_transfer_buf_size = buf_actual_size;
-
-    /*
-
-    // alloc a buffer for all of the recording data
-    RecordingSave_v1 *temp_rec_save = calloc(sizeof(RecordingSave_v1));
-
-    // copy match data to buffer
-    memcpy(&temp_rec_save->match_data, &stc_match->match, sizeof(MatchInit));
-    // copy savestate to buffer
-    memcpy(&temp_rec_save->savestate, rec_state, sizeof(Savestate_v2));
-    // copy recordings
-    for (int i = 0; i < REC_SLOTS; i++)
-    {
-        memcpy(&temp_rec_save->hmn_inputs[i], rec_data.hmn_inputs[i], sizeof(RecInputData_v1));
-        memcpy(&temp_rec_save->cpu_inputs[i], rec_data.cpu_inputs[i], sizeof(RecInputData_v1));
-    }
-
-    // compress all recording data
-    u8 *recording_buffer = calloc(sizeof(RecordingSave_v1));
-    int compress_size = Export_Compress(recording_buffer, (u8 *)temp_rec_save, sizeof(RecordingSave_v1));
-    HSD_Free(temp_rec_save); // free original data buffer
-
-    // resize screenshot
-    int img_size = GXGetTexBufferSize(RESIZE_WIDTH, RESIZE_HEIGHT, 4, 0, 0);
-    RGB565 *orig_img = snap_image.img_ptr;
-    RGB565 *new_img = calloc(img_size);
-    export_data->scaled_image = new_img;
-    ImageScale(new_img, orig_img, RESIZE_WIDTH, RESIZE_HEIGHT, EXP_SCREENSHOT_WIDTH, EXP_SCREENSHOT_HEIGHT);
-    resized_image.img_ptr = new_img;                                            // store pointer to resized image
-    export_data->screenshot_jobj->dobj->mobj->tobj->imagedesc = &resized_image; // replace pointer to imagedesc
-
-    // get curr date
-    OSCalendarTime td;
-    OSTicksToCalendarTime(OSGetTime(), &td);
-
-    // alloc a buffer to transfer to memcard
-    stc_transfer_buf_size = sizeof(ExportHeader_v1) + img_size + sizeof(ExportMenuSettings_v1) + compress_size;
-    stc_transfer_buf = calloc(stc_transfer_buf_size);
-
-    // init header
-    ExportHeader_v1 *header = (ExportHeader_v1 *)stc_transfer_buf;
-    header->metadata.version = REC_VERS;
-    header->metadata.image_width = RESIZE_WIDTH;
-    header->metadata.image_height = RESIZE_HEIGHT;
-    header->metadata.image_fmt = 4;
-    header->metadata.hmn = Fighter_GetExternalID(0);
-    header->metadata.hmn_costume = Fighter_GetCostumeID(0);
-    header->metadata.cpu = Fighter_GetExternalID(1);
-    header->metadata.cpu_costume = Fighter_GetCostumeID(1);
-    header->metadata.stage_external = Stage_GetExternalID();
-    header->metadata.stage_internal = Stage_ExternalToInternal(header->metadata.stage_external);
-    header->metadata.month = td.mon + 1;
-    header->metadata.day = td.mday;
-    header->metadata.year = td.year;
-    header->metadata.hour = td.hour;
-    header->metadata.minute = td.min;
-    header->metadata.second = td.sec;
-    header->lookup.ofst_screenshot = sizeof(ExportHeader_v1);
-    header->lookup.ofst_recording = sizeof(ExportHeader_v1) + img_size;
-    header->lookup.ofst_menusettings = sizeof(ExportHeader_v1) + img_size + compress_size;
-
-    // copy data to buffer
-    // image
-    memcpy(stc_transfer_buf + header->lookup.ofst_screenshot, new_img, img_size);
-    // menu settings
-    ExportMenuSettings_v1 *menu_settings = (ExportMenuSettings_v1 *)(stc_transfer_buf + header->lookup.ofst_menusettings);
-    menu_settings->hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
-    menu_settings->hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
-    menu_settings->cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
-    menu_settings->cpu_slot = LabOptions_Record[OPTREC_CPUSLOT].val;
-    
-    // Recording replay versions are forwards and backwards compatible.
-    // Since we added the Re-Record option, we cannot export it because then it would crash with an invalid
-    // menu setting when importing on a version without the Re-Record setting.
-    if (menu_settings->hmn_mode > RECMODE_HMN_PLAYBACK)
-        menu_settings->hmn_mode = RECMODE_HMN_PLAYBACK;
-    if (menu_settings->cpu_mode > RECMODE_CPU_PLAYBACK)
-        menu_settings->cpu_mode = RECMODE_CPU_PLAYBACK;
-        
-    menu_settings->loop_inputs = LabOptions_Record[OPTREC_LOOP].val;
-    menu_settings->auto_restore = LabOptions_Record[OPTREC_AUTORESTORE].val;
-    // recording data
-    memcpy(stc_transfer_buf + header->lookup.ofst_recording, recording_buffer, compress_size); // compressed recording
-
-    // free compresed data buffer
-    HSD_Free(recording_buffer);
-
-    // alloc filename buffer
-    export_data->filename_buffer = calloc(32 + 2); // +2 for terminator and cursor
-
-    // initialize memcard menu
-    Export_SelCardInit(export_gobj);
-    */
-
-    menu_data->custom_gobj = export_gobj;            // set custom gobj
-    menu_data->custom_gobj_think = Export_Think;     // set think function
-    menu_data->custom_gobj_destroy = Export_Destroy; // set destroy function
 }
 int Export_Think(GOBJ *export_gobj)
 {
