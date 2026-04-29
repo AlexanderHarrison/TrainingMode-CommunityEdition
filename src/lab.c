@@ -4852,6 +4852,8 @@ void Export_Init(GOBJ *menu_gobj)
 
     u8 events[16] = {
         0, // savestate event, specific version is set later
+        
+        // Just add them all for now
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
@@ -4889,10 +4891,11 @@ void Export_Init(GOBJ *menu_gobj)
         + sizeof(rec_event_data_sizes);
 
     ExportData_v2 *buf = HSD_MemAlloc(buf_noncompressed_size + streamsize); // overalloc, just in case
+    memset(&buf->metadata, 0, sizeof(buf->metadata));
 
     OSCalendarTime td;
     OSTicksToCalendarTime(OSGetTime(), &td);
-    buf->metadata.version = REC_VERS;
+    buf->metadata.version = 2;
     buf->metadata.image_width = RESIZE_WIDTH;
     buf->metadata.image_height = RESIZE_HEIGHT;
     buf->metadata.image_fmt = 4;
@@ -4908,16 +4911,20 @@ void Export_Init(GOBJ *menu_gobj)
     buf->metadata.hour = td.hour;
     buf->metadata.minute = td.min;
     buf->metadata.second = td.sec;
-
+    
     buf->event_size_count = countof(rec_event_data_sizes);
     buf->event_count = countof(events);
     
     u8 *stream = buf->stream;
     StreamAppend(&stream, rec_event_data_sizes, sizeof(rec_event_data_sizes));
     StreamAppend(&stream, events, sizeof(events));
-    stream += ExportData_Compress(stream, streambuf_head, streamsize);
+    u32 compressed_size = (u32)ExportData_Compress(stream, streambuf_head, streamsize);
+    stream += compressed_size;
     HSD_Free(streambuf_head); // free original data buffer
 
+    buf->compressed_event_data_stream_size = compressed_size;
+    buf->decompressed_event_data_stream_size = streamsize;
+    
     u32 buf_actual_size = (u32)(stream - (u8*)buf);
 
     stc_transfer_buf = (u8*)buf;
@@ -4971,7 +4978,6 @@ void Export_Destroy(GOBJ *export_gobj)
     // free buffer allocs
     HSD_Free(stc_transfer_buf);
     HSD_Free(export_data->filename_buffer);
-    HSD_Free(export_data->scaled_image);
 
     // destroy gobj
     GObj_Destroy(export_gobj);
@@ -5793,7 +5799,7 @@ int Export_Process(GOBJ *export_gobj)
                 stc_memcard_work->is_done = 0;
             }
         }
-
+        
         // setup save
         memcpy(stc_memcard_info->file_name, &stc_save_name, sizeof(stc_save_name));
         memset(stc_memcard_info->file_desc, '\0', 32);                                                   // fill with spaces
@@ -5811,7 +5817,6 @@ int Export_Process(GOBJ *export_gobj)
     }
     case (EXSTAT_SAVEWAIT):
     {
-
         // wait to finish writing
         if (Memcard_CheckStatus() != 11)
         {
@@ -5834,7 +5839,6 @@ int Export_Process(GOBJ *export_gobj)
     }
     case (EXSTAT_DONE):
     {
-
         export_status = EXSTAT_NONE;
         finished = 1;
 

@@ -22,9 +22,6 @@
 #define TDITEXT_TEXTSCALE 1
 #define TDITEXT_TEXTZ 0
 
-// recording
-#define REC_VERS 1
-
 //Recording Version History:
 //v0 = 3.0 Alpha 1-3.
 //v1 = 3.0 Alpha 4. 
