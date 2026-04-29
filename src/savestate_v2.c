@@ -208,7 +208,6 @@ static void SaveGOBJObject(JOBJSaveState_v2 *state, GOBJ *gobj) {
     }
 }
         
-
 static GOBJ *LoadGOBJ(GOBJSaveState_v2 *state) {
     // OSReport("spawn gobj %i %i %i\n", gobj->entity_class, gobj->p_link, gobj->p_priority);
 
@@ -229,8 +228,12 @@ static GOBJ *LoadGOBJ(GOBJSaveState_v2 *state) {
 static void LoadGOBJData(GOBJ *gobj, JOBJSaveState_v2 *jobj_state, GOBJSaveState_v2 *gobj_state, void *userdata) {
     GObj_AddUserData(gobj, gobj_state->data_kind, gobj_state->destructor_function, userdata);
     
-    if (gobj->entity_class == HSD_GOBJ_CLASS_ITEM)
+    if (gobj->entity_class == HSD_GOBJ_CLASS_ITEM) {
+        Item_FindModelFromKind(gobj);
+        ItemData *i = userdata;
+        i->joint = i->itData->model->joint;
         Item_InitGObjObject(gobj);
+    }
 
     JOBJ *model = gobj->hsd_object;
     if (model) {

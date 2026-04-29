@@ -206,14 +206,6 @@ enum ItUnkKind
 
 /*** Structs ***/
 
-struct ItemModelDesc
-{
-    JOBJ *model;
-    int bone_count;
-    int bone_attach_id;
-    int bit_field;
-};
-
 struct ItemStateDesc
 {
     void *anim_joint;
@@ -334,13 +326,20 @@ struct itPublicData
     int *x14;
 };
 
+struct ItemModelDesc {
+    JOBJDesc *joint;    // 0x00
+    u32 bone_count;     // 0x04
+    int bone_attach_id; // 0x08
+    u8 bit_field;       // 0x0C
+};
+
 struct itData
 {
     itCommonAttr *param;  // 0x00
     void *param_ext;      // 0x04
     void *hurtboxes;      // 0x08
     void *states;         // 0x0C
-    void *model;          // 0x10
+    ItemModelDesc *model; // 0x10
     ItDynamics *dynamics; // 0x14
 };
 
@@ -1072,6 +1071,6 @@ float Item_GetDistanceFromPointSquared(GOBJ *item, Vec3 *position);
 void Item_DestroyAndRemoveGrabbed(GOBJ *item, int flag, float damage);
 bool Item_RemoveFighterReference(GOBJ *item, GOBJ *fighter);
 void Item_ClearHitlagFlag(GOBJ *item);
-
 void Egg_Destroy(GOBJ *egg_gobj);
+void Item_FindModelFromKind(GOBJ *item);
 #endif
