@@ -4560,8 +4560,10 @@ void Record_MemcardLoad(int slot, int file_no)
             ParsedExportData_v2 export_data = ExportData_Import(memcard_save.data);
             ExportData_ApplyEvents(&export_data);
             ExportData_Free(&export_data);
-            Record_LoadSavestate(rec_state, rec_state_savestate_version);
-            Record_OnSuccessfulSave(false);
+            if (rec_state->is_exist) {
+                Record_LoadSavestate(rec_state, rec_state_savestate_version);
+                Record_OnSuccessfulSave(false);
+            }
         }
 
         HSD_Free(memcard_save.data);

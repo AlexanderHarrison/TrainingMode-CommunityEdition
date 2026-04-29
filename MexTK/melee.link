@@ -452,6 +452,7 @@
 8008E5A4:Fighter_TDI
 80090718:Fighter_PlayQueuedDamageSounds
 80160968:Fighter_GetPlyHUDColor
+80267978:Item_FindModelFromKind
 8026AC74:Item_Throw
 802680cc:Item_InitGObjObject
 80272C90:Item_GetHeldBone
