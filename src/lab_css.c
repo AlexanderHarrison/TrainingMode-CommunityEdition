@@ -719,11 +719,11 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
         int vers = import_data.metadata[cursor].version; // get version number
 
         // check if version is compatible with this release
-        if (vers == REC_VERS)
+        if (vers == 1 || vers == 2)
             kind = CFRM_LOAD;
-        else if (vers > REC_VERS)
+        else if (vers > 2)
             kind = CFRM_NEW;
-        else if (vers < REC_VERS)
+        else if (vers < 1)
             kind = CFRM_OLD;
 
         // open confirm dialog
