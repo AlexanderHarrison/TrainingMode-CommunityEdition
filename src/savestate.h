@@ -23,6 +23,9 @@ typedef struct IDInfo {
 
     // for locating jobj (unused for FighterData and GOBJ)
     char jobj_idx;
+    
+    // is pointer to GOBJ userdata
+    char is_userdata;
 } IDInfo;
 
 typedef union ID {
