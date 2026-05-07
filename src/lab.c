@@ -4561,6 +4561,7 @@ void Record_MemcardLoad(int slot, int file_no)
             ExportData_ApplyEvents(&export_data);
             ExportData_Free(&export_data);
             if (rec_state->is_exist) {
+                bp();
                 Record_LoadSavestate(rec_state, rec_state_savestate_version);
                 Record_OnSuccessfulSave(false);
             }
@@ -6543,6 +6544,19 @@ void Event_Think_LabState_Normal(GOBJ *event) {
     }
 }
 
+static JOBJ *JOBJFindBonePtr(JOBJ *bone, char *bone_idx) {
+    if (bone == 0)
+        return 0;
+    if (*bone_idx == 0)
+        return bone;
+    (*bone_idx)--;
+    
+    JOBJ *target = JOBJFindBonePtr(bone->child, bone_idx);
+    if (target)
+        return target;
+    return JOBJFindBonePtr(bone->sibling, bone_idx);
+}
+
 // Think Function
 void Event_Think(GOBJ *event)
 {
@@ -6568,6 +6582,10 @@ void Event_Think(GOBJ *event)
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
     HSD_Pad *pad = PadGetEngine(hmn_data->pad_index);
+    
+    // char idx = 0x3c;
+    // JOBJ *j = JOBJFindBonePtr(hmn->hsd_object, &idx);
+    // OSReport("0x3c %p\n", j);
     
     // We allow negative values to track how long we have not been in lockout for.
     // If the CPU is in hitlag, do not finish the lockout. This prevents insta techs

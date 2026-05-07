@@ -23,16 +23,21 @@ static bool ItemAttachBone(ItemSaveState_v2 *st, JOBJ *item_jobj) {
 
 static bool IsObjectPtr(void *ptr) {
     // ensure in valid memory
+    // 0x80000000...0x803b7230U is code, so we can just store pointers there as-is
     uintptr_t addr = (uintptr_t)ptr;
-    if (addr < 0x80000000U || 0x81800000U <= addr)
+    if (addr < 0x803b7230U || 0x81800000U <= addr)
         return false;
     
     // ensure aligned
     if (addr & 3)
         return false;
-    
+
     return true;
 }
+
+// static bool IsObjectPtrOrNull(void *ptr) {
+//     return ptr == 0 || IsObjectPtr(ptr);
+// }
 
 static GOBJ *GOBJToID(GOBJ *gobj) {
     if (!IsObjectPtr(gobj))
@@ -59,7 +64,7 @@ static GOBJ *GOBJToID(GOBJ *gobj) {
     for (GOBJ *item = (*stc_gobj_lookup)[p_link]; item; item = item->next) {
         if (item == gobj) {
             ID pun = {
-                .id = (IDInfo) { p_link, list_idx, 0 }
+                .id = (IDInfo) { p_link, list_idx, 0, 0 }
             };
             return pun.ptr;
         }
@@ -76,12 +81,36 @@ static GOBJ *IDToGOBJ(GOBJ *gobj) {
         char list_idx = pun.id.list_idx;
         
         for (GOBJ *item = (*stc_gobj_lookup)[p_link]; item; item = item->next) {
-            if (list_idx == 0)
+            if (list_idx == 0) {
+                if (pun.id.is_userdata)
+                    item = item->userdata;
                 return item;
+            }
             list_idx--;
         }
+
+        OSReport("load: list_idx out of bounds in IDToGOBJ!\n");
     }
     
+    return 0;
+}
+
+static void *UserdataToID(void *ptr) {
+    if (!IsObjectPtr(ptr))
+        return 0;
+
+    // cycle through every single GOBJ! why not!
+    for (char p_link = 0; p_link < 64; ++p_link) {
+        char list_idx = 0;
+        for (GOBJ *item = (*stc_gobj_lookup)[p_link]; item; item = item->next) {
+            if (item->userdata == ptr) {
+                ID pun = { .id = { p_link, list_idx, 0, true } };
+                return pun.ptr;
+            }
+            list_idx++;
+        }
+    }
+
     return 0;
 }
 
@@ -149,8 +178,9 @@ static JOBJ *JOBJFindBonePtr(JOBJ *bone, char *bone_idx) {
 
 static JOBJ *JOBJToID(GOBJ *gobj, JOBJ *jobj) {
     if (jobj) {
-        ID pun = { .id = { 1, 0, 0 } }; // set as non-zero to prevent returning 0 if jobj_idx == 0
+        ID pun = { .id = { 1, 0, 0, 0 } }; // set as non-zero to prevent returning 0 if jobj_idx == 0
         JOBJFindBoneIdx(gobj->hsd_object, jobj, &pun.id.jobj_idx);
+        OSReport("found bone %u\n", pun.id.jobj_idx);
         return pun.ptr;
     }
     return 0;
@@ -243,9 +273,56 @@ static void LoadGOBJData(GOBJ *gobj, JOBJSaveState_v2 *jobj_state, GOBJSaveState
     }
 }
 
+/*static bool PotentialGOBJ(GOBJ *ptr) {
+    if (!IsObjectPtr(ptr)) return false;
+    
+    bool p = true;
+    p &= !IsObjectPtr(((u32*)ptr)[0]);
+    p &= !IsObjectPtr(((u32*)ptr)[1]);
+    p &= IsObjectPtrOrNull(ptr->next);
+    p &= IsObjectPtrOrNull(ptr->previous);
+    p &= IsObjectPtrOrNull(ptr->nextOrdered);
+    p &= IsObjectPtrOrNull(ptr->previousOrdered);
+    p &= IsObjectPtrOrNull(ptr->proc);
+    p &= IsObjectPtrOrNull(ptr->gx_cb);
+    p &= IsObjectPtrOrNull(ptr->hsd_object);
+    p &= IsObjectPtrOrNull(ptr->userdata);
+    p &= IsObjectPtrOrNull(ptr->destructor_function);
+    p &= IsObjectPtrOrNull(ptr->unk_linked_list);
+    return p;
+}
+
+static bool PotentialJOBJ(JOBJ *ptr) {
+    if (!IsObjectPtr(ptr)) return false;
+
+    bool p = true;
+    p &= IsObjectPtrOrNull(ptr->object.parent);
+    p &= IsObjectPtrOrNull(ptr->sibling);
+    p &= IsObjectPtrOrNull(ptr->parent);
+    p &= IsObjectPtrOrNull(ptr->child);
+    p &= ptr->flags >= 0; // ensure highest bit not set - not used in JOBJ flags
+    p &= IsObjectPtrOrNull(ptr->dobj);
+    p &= !IsObjectPtr(ptr->rot.X);
+    p &= !IsObjectPtr(ptr->rot.Y);
+    p &= !IsObjectPtr(ptr->rot.Z);
+    p &= !IsObjectPtr(ptr->scale.X);
+    p &= !IsObjectPtr(ptr->scale.Y);
+    p &= !IsObjectPtr(ptr->scale.Z);
+    p &= !IsObjectPtr(ptr->trans.X);
+    p &= !IsObjectPtr(ptr->trans.Y);
+    p &= !IsObjectPtr(ptr->trans.Z);
+    p &= IsObjectPtrOrNull(ptr->VEC);
+    p &= IsObjectPtrOrNull(ptr->MTX);
+    p &= IsObjectPtrOrNull(ptr->aobj);
+    p &= IsObjectPtrOrNull(ptr->robj);
+    p &= IsObjectPtrOrNull(ptr->desc);
+    return p;
+}*/
+
 // use enum savestate_flags for flags
 int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
 {
+    OSReport("START SAVE --------------------------------------\n");
     // ensure no players are in problematic states
     if (flags & Savestate_Checks) {
         GOBJ **gobj_list = R13_PTR(-0x3E74);
@@ -365,6 +442,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             memcpy(&ft_data->hitbox, &fighter_data->hitbox, sizeof(fighter_data->hitbox));
             for (u32 k = 0; k < countof(fighter_data->hitbox); k++)
             {
+                OSReport("save: ft hitbox %x -> %x\n", ft_data->hitbox[k].bone, JOBJToID(fighter, ft_data->hitbox[k].bone));
                 ft_data->hitbox[k].bone = JOBJToID(fighter, ft_data->hitbox[k].bone);
                 for (u32 l = 0; l < countof(fighter_data->hitbox->victims); l++)
                     ft_data->hitbox[k].victims[l].data = FtDataToID(ft_data->hitbox[k].victims[l].data);
@@ -471,8 +549,10 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
         item_state->data.fighter_gobj = GOBJToID(item_data->fighter_gobj);
         item_state->data.coll_data.gobj = GOBJToID(item_data->coll_data.gobj);
 
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 4; ++i) {
             item_state->data.hitbox[i].bone = JOBJToID(item, item_data->hitbox[i].bone);
+            OSReport("save: item hitbox %p\n", item_state->data.hitbox[i].bone);
+        }
 
         for (int i = 0; i < 2; ++i)
             item_state->data.it_hurt[i].jobj = JOBJToID(item, item_data->it_hurt[i].jobj);
@@ -488,14 +568,28 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             }
 
             GOBJ *ptr = item_state->data.item_var.as_ptr[i];
-            GOBJ *id = GOBJToID(ptr);
-            if (id) {
-                OSReport("save itvar_ptr %p at %i\n", ptr, i);
-                item_state->data.item_var.as_ptr[i] = id;
+            // OSReport("save: check item var %u %p\n", i, ptr);
+            
+            GOBJ *gobj_id = GOBJToID(ptr);
+            if (gobj_id) {
+                OSReport("save itvar_ptr %p at %i (GOBJ)\n", ptr, i);
+                item_state->data.item_var.as_ptr[i] = gobj_id;
                 item_state->var_ptrs[var_ptr_count++] = (VarPtr) {
                     .valid = 1,
                     .index = i,
                 };
+                continue;
+            }
+
+            void *userdata_id = UserdataToID(ptr);
+            if (userdata_id) {
+                OSReport("save itvar_ptr %p at %i (Userdata)\n", ptr, i);
+                item_state->data.item_var.as_ptr[i] = userdata_id;
+                item_state->var_ptrs[var_ptr_count++] = (VarPtr) {
+                    .valid = 1,
+                    .index = i,
+                };
+                continue;
             }
         }
     }
@@ -572,12 +666,14 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             ItemData *item_data = gobj->userdata;
             for (u32 i = 0; i < countof(item_data->item_var.as_ptr); ++i) {
                 ItemLinkData *ptr = item_data->item_var.as_ptr[i];
+                if (i == 0) OSReport("check root ptr %p\n", ptr);
                 if (ptr == item_link_data_root) {
                     parent_item = gobj;
                     break;
                 }
             }
         }
+        OSReport("searching for %x, %x\n", item_link_data_root, parent_item);
         
         // Save and load the JOBJDesc model pointer for an ItemLink.
         // This pointer is stored in the attributes in the parent Item.
@@ -593,7 +689,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             if (target_model) {
                 JOBJDesc *target_model_desc = target_model->desc;
                 ItemData *parent_item_data = parent_item->userdata;
-                
+
                 itData *itdata = parent_item_data->itData;
                 if (itdata) {
                     JOBJDesc **attrs = itdata->param_ext;
@@ -615,6 +711,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
                 } 
             }
         }
+        OSReport("save itemlink %x %x %x %x\n", GOBJToID(item_link), item_link_state->parent_fighter, item_link_state->parent_item, item_link_state->parent_item_attributes_jobj_desc_idx);
     }
 
     if ((flags & Savestate_Silent) == 0) {
@@ -631,11 +728,15 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
 // use enum savestate_flags for flags
 int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
 {
+    OSReport("START LOAD --------------------------------------\n");
+
     if (!savestate->header.is_exist) {
         if ((flags & Savestate_Silent) == 0)
             SFX_PlayCommon(3);
         return false;
     }
+    
+    OSReport("load 1\n");
     
     // Enter sleep.
     // Do this before removing/spawning items to avoid double freeing items
@@ -657,11 +758,15 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         }
     }
     
+    OSReport("load 2\n");
+    
     // remove all existing items
     for (GOBJ *item = (*stc_gobj_lookup)[MATCHPLINK_ITEM]; item; item = item->next)
         GObj_Destroy(item);
     for (GOBJ *item = (*stc_gobj_lookup)[MATCHPLINK_ITEMLINK]; item; item = item->next)
         GObj_Destroy(item);
+    
+    OSReport("load 3\n");
     
     // spawn items
     GOBJ *spawned_items[countof(savestate->item_state)];
@@ -675,9 +780,13 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         memcpy(item_data, &item_state->data, sizeof(ItemData));
         LoadGOBJData(item, &item_state->jobj, &item_state->gobj, item_data);
 
+        OSReport("load: spawned item %x %x\n", GOBJToID(item), item);
+
         spawned_items[i] = item;
     }
 
+    OSReport("load 4\n");
+    
     // spawn item links
     GOBJ *spawned_item_links[countof(savestate->item_link_state)];
     for (u32 i = 0; i < countof(savestate->item_link_state); ++i) {
@@ -688,9 +797,11 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         GOBJ *item_link = LoadGOBJ(&item_link_state->gobj);
         ItemLinkData *item_link_data = HSD_ObjAlloc(stc_item_link_alloc_data);
         memcpy(item_link_data, &item_link_state->data, sizeof(ItemLinkData));
-        
+    
         // OSReport("LOAD MODEL AT %p\n", item_link_state->model_desc);
         GOBJ *parent_item = IDToGOBJ(item_link_state->parent_item);
+        OSReport("load: parent item %x %x for %x %x\n", item_link_state->parent_item, parent_item, GOBJToID(item_link), item_link);
+
         ItemData *parent_item_data = parent_item->userdata;
         JOBJDesc **attrs = parent_item_data->itData->param_ext;
         JOBJ *obj = JOBJ_LoadJoint(attrs[item_link_state->parent_item_attributes_jobj_desc_idx]);
@@ -700,6 +811,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         
         spawned_item_links[i] = item_link;
     }
+    OSReport("load 5\n");
 
     // restore item pointers
     for (u32 i = 0; i < countof(savestate->item_state); ++i) {
@@ -738,8 +850,10 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
 
         // restore jobj pointers
 
-        for (int i = 0; i < 4; ++i)
+        for (int i = 0; i < 4; ++i) {
             item_data->hitbox[i].bone = IDToJOBJ(item, item_state->data.hitbox[i].bone);
+            OSReport("load: item hitbox %x -> %x\n", item_state->data.hitbox[i].bone, item_data->hitbox[i].bone);
+        }
             
         for (int i = 0; i < 2; ++i)
             item_data->it_hurt[i].jobj = IDToJOBJ(item, item_state->data.it_hurt[i].jobj);
@@ -754,6 +868,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         if (attached)
             JOBJ_AttachPositionRotation(attached, attached_to);
     }
+    OSReport("load 6\n");
     
     // restore item link pointers
     for (u32 i = 0; i < countof(savestate->item_link_state); ++i) {
@@ -786,6 +901,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         //     JOBJ_AttachPositionRotation(attached, attached_to);
     }
 
+    OSReport("load 7\n");
+    
     // loop through all players
     for (int i = 0; i < 6; i++)
     {
@@ -808,9 +925,13 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         // restore fighter data
         for (int j = 0; j < 2; j++)
         {
+            OSReport("load ft #%i sub %i\n", i, j);
+            
             FtSaveStateData_v2 *ft_data = &ft_state->data[j];
             if (ft_data->is_exist)
             {
+                OSReport("load ft 1\n", j);
+            
                 // get state
                 GOBJ *fighter = Fighter_GetSubcharGObj(i, j);
                 FighterData *fighter_data = fighter->userdata;
@@ -825,6 +946,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 fighter_data->state.rate = ft_data->state_rate;
                 fighter_data->state.blend = ft_data->state_blend;
 
+                OSReport("load ft 2\n", j);
+            
                 // restore phys struct
                 memcpy(&fighter_data->phys, &ft_data->phys, sizeof(fighter_data->phys)); // copy physics
                 if (flags & Savestate_Mirror)
@@ -841,6 +964,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     fighter_data->phys.nudge_vel.X *= -1;
                 }
 
+                OSReport("load ft 3\n", j);
+            
                 // restore inputs
                 memcpy(&fighter_data->input, &ft_data->input, sizeof(fighter_data->input)); // copy inputs
                 if (flags & Savestate_Mirror)
@@ -851,6 +976,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     fighter_data->input.cstick_prev.X *= -1;
                 }
 
+                OSReport("load ft 4\n", j);
+            
                 // restore coll data
                 CollData *thiscoll = &fighter_data->coll_data;
                 GOBJ *gobj = thiscoll->gobj;                                                            // 0x0
@@ -865,6 +992,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 fighter_data->ecb_bot_lock_frames = ft_data->ecb_bot_lock_frames;
                 fighter_data->ledge_cooldown = ft_data->ledge_cooldown;
         
+                OSReport("load ft 5\n", j);
+            
                 thiscoll->gobj = gobj;
                 thiscoll->joint_1 = joint_1;
                 thiscoll->joint_2 = joint_2;
@@ -913,30 +1042,31 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     }
                 }
 
+                OSReport("load ft 6\n", j);
+            
                 // restore hitboxes
                 memcpy(&fighter_data->hitbox, &ft_data->hitbox, sizeof(fighter_data->hitbox));                   // copy hitbox
                 memcpy(&fighter_data->throw_hitbox, &ft_data->throw_hitbox, sizeof(fighter_data->throw_hitbox)); // copy hitbox
                 memcpy(&fighter_data->thrown_hitbox, &ft_data->thrown_hitbox, sizeof(fighter_data->thrown_hitbox));       // copy hitbox
 
+                OSReport("load ft 7\n", j);
+            
                 // restore grab
                 memcpy(&fighter_data->grab, &ft_data->grab, sizeof(fighter_data->grab));
                 fighter_data->grab.attacker = IDToGOBJ(fighter_data->grab.attacker);
                 fighter_data->grab.victim = IDToGOBJ(fighter_data->grab.victim);
                 
+                OSReport("load ft 8\n", j);
+            
                 // restore cpu
                 memcpy(&fighter_data->cpu, &ft_data->cpu, sizeof(fighter_data->cpu)); // TODO check ptrs
 
                 memcpy(&fighter_data->wall, &ft_data->wall, sizeof(fighter_data->wall));
                 fighter_data->jab2_timer = ft_data->jab2_timer;
                 
+                OSReport("load ft 9\n", j);
+            
                 // TODO check if we can id *_bubble struct bones
-                
-                // restore items
-                // OSReport("Loading ID %p -> %p\n", ft_data->item.held, IDToGOBJ(ft_data->item.held));
-                // OSReport("Loading ID %p -> %p\n", ft_data->item.held_2, IDToGOBJ(ft_data->item.held_2));
-                // OSReport("Loading ID %p -> %p\n", ft_data->item.held_3, IDToGOBJ(ft_data->item.held_3));
-                // OSReport("Loading ID %p -> %p\n", ft_data->item.head, IDToGOBJ(ft_data->item.head));
-                // OSReport("Loading ID %p -> %p\n", ft_data->item.held_special, IDToGOBJ(ft_data->item.held_special));
                 
                 fighter_data->item = (struct item) {
                     ft_data->item.x1970,
@@ -947,11 +1077,14 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     IDToGOBJ(ft_data->item.held_special)
                 };
                 
+                OSReport("load ft 10\n", j);
+            
                 // convert pointers
 
                 for (u32 k = 0; k < countof(fighter_data->hitbox); k++)
                 {
                     fighter_data->hitbox[k].bone = IDToJOBJ(fighter, ft_data->hitbox[k].bone);
+                    OSReport("load: ft hitbox %x -> %x\n", ft_data->hitbox[k].bone, fighter_data->hitbox[k].bone);
                     for (u32 l = 0; l < countof(fighter_data->hitbox->victims); l++) // pointers to hitbox victims
                     {
                         fighter_data->hitbox[k].victims[l].data = IDToFtData(ft_data->hitbox[k].victims[l].data);
@@ -971,6 +1104,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     fighter_data->thrown_hitbox.victims[k].data = IDToFtData(ft_data->thrown_hitbox.victims[k].data);
                 }
 
+                OSReport("load ft 11\n", j);
+            
                 // restore fighter variables
                 memcpy(&fighter_data->fighter_var, &ft_data->fighter_var, sizeof(fighter_data->fighter_var)); // copy hitbox
 
@@ -978,14 +1113,19 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 fighter_data->anim_curr_ARAM = 0;
                 fighter_data->anim_persist_ARAM = 0;
 
+                OSReport("load ft 12\n", j);
+            
                 // enter backed up state
                 GOBJ *anim_source = 0;
                 if (fighter_data->flags.is_robj_child == 1)
                     anim_source = fighter_data->grab.attacker;
+                OSReport("fighter %p\n", fighter);
                 Fighter_SetAllHurtboxesNotUpdated(fighter);
                 ActionStateChange(ft_data->state_frame, ft_data->state_rate, -1, fighter, ft_data->state_id, 0, anim_source);
                 fighter_data->state.blend = 0;
 
+                OSReport("load ft 13\n", j);
+            
                 // copy physics again to work around some bugs. Notably, this fixes savestates during dash.
                 memcpy(&fighter_data->phys, &ft_data->phys, sizeof(fighter_data->phys));
                 if (flags & Savestate_Mirror)
@@ -1002,6 +1142,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     fighter_data->phys.nudge_vel.X *= -1;
                 }
 
+                OSReport("load ft 14\n", j);
+            
                 // restore state variables
                 memcpy(&fighter_data->state_var, &ft_data->state_var, sizeof(fighter_data->state_var)); // copy hitbox
 
@@ -1021,6 +1163,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 // restore hurt variables
                 memcpy(&fighter_data->hurt, &ft_data->hurt, sizeof(fighter_data->hurt)); // copy hurtbox
 
+                OSReport("load ft 15\n", j);
+            
                 // update jobj position
                 JOBJ *fighter_jobj = fighter->hsd_object;
                 fighter_jobj->trans = fighter_data->phys.pos;
@@ -1033,6 +1177,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 // remove color overlay
                 Fighter_ColAnim_Remove(fighter_data, 9);
 
+                OSReport("load ft 16\n", j);
+            
                 // restore color
                 memcpy(fighter_data->color, ft_data->color, sizeof(fighter_data->color));
 
@@ -1047,6 +1193,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 memcpy(&fighter_data->reflect_hit, &ft_data->reflect_hit, sizeof(fighter_data->reflect_hit));
                 memcpy(&fighter_data->absorb_hit, &ft_data->absorb_hit, sizeof(fighter_data->absorb_hit));
 
+                OSReport("load ft 17\n", j);
+            
                 // restore callback functions
                 memcpy(&fighter_data->cb, &ft_data->cb, sizeof(fighter_data->cb));
 
@@ -1061,6 +1209,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     OSReport("restore fighter var ptr %i %p:%p\n", var_ptr.index, ptr, id);
                 }
     
+                OSReport("load ft 18\n", j);
+            
                 // convert state var GOBJ pointers
                 for (u32 i = 0; i < countof(ft_data->state_var_ptrs); ++i) {
                     VarPtr var_ptr = ft_data->state_var_ptrs[i];
@@ -1072,6 +1222,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     OSReport("restore state var ptr %i %p\n", var_ptr.index, ptr);
                 }
                 
+                OSReport("load ft 19\n", j);
+            
                 // stop player SFX
                 SFX_StopAllFighterSFX(fighter_data);
 
@@ -1085,6 +1237,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 CmSubject *next = thiscam->next;
                 memcpy(thiscam, savedcam, sizeof(CmSubject));
     
+                OSReport("load ft 20\n", j);
+            
                 if (flags & Savestate_Mirror)
                 {
                     // These adjustments of mirroring camera are not perfect for now. Please fix this if you know suitable adjustments
@@ -1098,6 +1252,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 // update their IK
                 Fighter_UpdateIK(fighter);
 
+                OSReport("load ft 21\n", j);
+            
                 // if shield is up, update shield
                 if ((fighter_data->state_id >= ASID_GUARDON) && (fighter_data->state_id <= ASID_GUARDREFLECT))
                 {
@@ -1109,6 +1265,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     Animation_GuardAgain(fighter);
                 }
 
+                OSReport("load ft 22\n", j);
+            
                 // process dynamics
 
                 int dyn_proc_num = 45;
@@ -1118,6 +1276,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 {
                     Fighter_ProcDynamics(fighter);
                 }
+                OSReport("load ft 23\n", j);
             }
         }
 
@@ -1133,6 +1292,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             Match_CreateHUD(i);
     }
 
+    OSReport("load 8\n");
+    
     // snap camera to the new positions
     Match_CorrectCamera();
 
