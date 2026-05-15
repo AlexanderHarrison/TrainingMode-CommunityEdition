@@ -7,6 +7,7 @@
 
 static ShortcutList Lab_ShortcutList;
 static EventMenu LabMenu_General;
+static EventMenu LabMenu_Export;
 static EventMenu LabMenu_Controls;
 static EventMenu LabMenu_OverlaysHMN;
 static EventMenu LabMenu_OverlaysCPU;
@@ -50,15 +51,6 @@ typedef struct CPUAction {
     u16 randomAdv     : 1; // 0 = none, 1 = random advanced custom counter action
     bool (*custom_check)(GOBJ *);
 } CPUAction;
-
-typedef struct CustomTDI {
-    float lstickX;
-    float lstickY;
-    float cstickX;
-    float cstickY;
-    u32 reversing: 1;
-    u32 direction: 1; // 0 = left of player, 1 = right of player
-} CustomTDI;
 
 enum stick_dir
 {
@@ -853,12 +845,12 @@ enum CPU_ACTIONS
 #define SLOT_ACTIONS CPUACT_SLOT1, CPUACT_SLOT2, CPUACT_SLOT3, CPUACT_SLOT4, CPUACT_SLOT5, CPUACT_SLOT6, CPUACT_SLOT_RANDOM
 #define SLOT_NAMES "Play Slot 1", "Play Slot 2", "Play Slot 3", "Play Slot 4", "Play Slot 5", "Play Slot 6", "Play Random Slot"
 
+// Serialized!
 static u8 CPUCounterActionsGround[] = {CPUACT_NONE, CPUACT_SPOTDODGE, CPUACT_SHIELD, CPUACT_RUNUPGRAB, CPUACT_UPB, CPUACT_SIDEBTOWARD, CPUACT_SIDEBAWAY, CPUACT_DOWNB, CPUACT_NEUTRALB, CPUACT_USMASH, CPUACT_DSMASH, CPUACT_FSMASH, CPUACT_ROLLAWAY, CPUACT_ROLLTOWARDS, CPUACT_ROLLRDM, CPUACT_NAIR, CPUACT_FAIR, CPUACT_DAIR, CPUACT_BAIR, CPUACT_UAIR, CPUACT_JAB, CPUACT_FTILT, CPUACT_UTILT, CPUACT_DTILT, CPUACT_DASHATTACK, CPUACT_SHORTHOP, CPUACT_FULLHOP, CPUACT_WAVEDASH_AWAY, CPUACT_WAVEDASH_TOWARDS, CPUACT_WAVEDASH_DOWN, CPUACT_DASH_AWAY, CPUACT_DASH_TOWARDS, SLOT_ACTIONS, CPUACT_RANDOMADV, CPUACT_RANDOM};
-
 static u8 CPUCounterActionsAir[] = {CPUACT_NONE, CPUACT_AIRDODGE, CPUACT_JUMPAWAY, CPUACT_JUMPTOWARDS, CPUACT_JUMPNEUTRAL, CPUACT_UPB, CPUACT_SIDEBTOWARD, CPUACT_SIDEBAWAY, CPUACT_DOWNB, CPUACT_NEUTRALB, CPUACT_NAIR, CPUACT_FAIR, CPUACT_DAIR, CPUACT_BAIR, CPUACT_UAIR, CPUACT_FFTUMBLE, CPUACT_FFWIGGLE, SLOT_ACTIONS, CPUACT_RANDOMADV, CPUACT_RANDOM};
-
 static u8 CPUCounterActionsShield[] = {CPUACT_NONE, CPUACT_GRAB, CPUACT_SHORTHOP, CPUACT_FULLHOP, CPUACT_SPOTDODGE, CPUACT_ROLLAWAY, CPUACT_ROLLTOWARDS, CPUACT_ROLLRDM, CPUACT_USMASHOOS, CPUACT_UPB, CPUACT_DOWNB, CPUACT_NAIR, CPUACT_FAIR, CPUACT_DAIR, CPUACT_BAIR, CPUACT_UAIR, CPUACT_WAVEDASH_AWAY, CPUACT_WAVEDASH_TOWARDS, CPUACT_WAVEDASH_DOWN, SLOT_ACTIONS, CPUACT_RANDOMADV, CPUACT_RANDOM};
 
+// Serialized!
 static const char *LabValues_CounterGround[] = {"None", "Spotdodge", "Shield", "Grab", "Up B", "Side B Toward", "Side B Away", "Down B", "Neutral B", "Up Smash", "Down Smash", "Forward Smash", "Roll Away", "Roll Towards", "Roll Random", "Neutral Air", "Forward Air", "Down Air", "Back Air", "Up Air", "Jab", "Forward Tilt", "Up Tilt", "Down Tilt", "Dash Attack", "Short Hop", "Full Hop", "Wavedash Away", "Wavedash Towards", "Wavedash Down", "Dash Back", "Dash Through", SLOT_NAMES, "Random Advanced", "Random"};
 static const char *LabValues_CounterAir[] = {"None", "Airdodge", "Jump Away", "Jump Towards", "Jump Neutral", "Up B", "Side B Toward", "Side B Away", "Down B", "Neutral B", "Neutral Air", "Forward Air", "Down Air", "Back Air", "Up Air", "Tumble Fastfall", "Wiggle Fastfall", SLOT_NAMES, "Random Advanced", "Random"};
 static const char *LabValues_CounterShield[] = {"None", "Grab", "Short Hop", "Full Hop", "Spotdodge", "Roll Away", "Roll Towards", "Roll Random", "Up Smash", "Up B", "Down B", "Neutral Air", "Forward Air", "Down Air", "Back Air", "Up Air", "Wavedash Away", "Wavedash Towards", "Wavedash Down", SLOT_NAMES, "Random Advanced", "Random"};
@@ -880,13 +872,12 @@ enum lab_option
     OPTLAB_INFODISP_CPU,
     OPTLAB_CHAR_RNG,
     OPTLAB_STAGE,
-    OPTLAB_HELP,
+    OPTLAB_CONTROLS,
+    OPTLAB_EXPORT,
     OPTLAB_EXIT,
 
     OPTLAB_COUNT
 };
-
-static const char *LabOptions_CheckBox[] = {"", "X"};
 
 static EventOption LabOptions_Main[OPTLAB_COUNT] = {
     {
@@ -942,6 +933,13 @@ static EventOption LabOptions_Main[OPTLAB_COUNT] = {
         .desc = {"Change controls for lab options."}
     },
     {
+        .kind = OPTKIND_MENU,
+        .menu = &LabMenu_Export,
+        .name = "Exporting",
+        .desc = {"Export recording and settings to a memory card",
+                 "for later use or to share with others."},
+    },
+    {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
         .desc = {"Return to the Event Select Screen."},
@@ -953,6 +951,102 @@ static EventMenu LabMenu_Main = {
     .name = "Main Menu",
     .option_num = sizeof(LabOptions_Main) / sizeof(EventOption),
     .options = LabOptions_Main,
+    .shortcuts = &Lab_ShortcutList,
+};
+
+// EXPORT MENU --------------------------------------------------------------
+
+enum export_option
+{
+    OPTEXP_EXPORT,
+    OPTEXP_RECORDING,
+    OPTEXP_SETTINGS_RECORDING,
+    OPTEXP_SETTINGS_BEHAVIOR,
+    OPTEXP_SETTINGS_DI,
+    OPTEXP_SETTINGS_TECH,
+    OPTEXP_SETTINGS_CHARACTER_RNG,
+    OPTEXP_SETTINGS_INFO_DISPLAY,
+    OPTEXP_SETTINGS_ACTION_LOG,
+    OPTEXP_SETTINGS_CUSTOM_OSDS,
+    OPTEXP_SETTINGS_OVERLAYS,
+
+    OPTEXP_COUNT
+};
+
+
+static EventOption LabOptions_Export[OPTEXP_COUNT] = {
+    {
+        .kind = OPTKIND_FUNC,
+        .OnSelect = Export_StartExport,
+        .name = "Export",
+        .desc = {"Export data."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Recording",
+        .desc = {"Export recording savestate and playback slots."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Recording Settings",
+        .desc = {"Export settings in the Record Menu."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Behavior Settings",
+        .desc = {"Export CPU behaviour and counter actions."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "DI Settings",
+        .desc = {"Export CPU DI settings."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Tech Settings",
+        .desc = {"Export CPU Tech settings."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Character RNG",
+        .desc = {"Export character RNG settings."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Info Display",
+        .desc = {"Export the info display."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Action Log",
+        .desc = {"Export the Action Log."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Custom OSDs",
+        .desc = {"Export Custom OSDs."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 0,
+        .name = "Overlays",
+        .desc = {"Export overlays."},
+    },
+};
+
+static EventMenu LabMenu_Export = {
+    .name = "Exporting",
+    .option_num = countof(LabOptions_Export),
+    .options = LabOptions_Export,
     .shortcuts = &Lab_ShortcutList,
 };
 
@@ -1261,6 +1355,7 @@ static EventMenu LabMenu_General = {
 
 // INFO DISPLAY MENU --------------------------------------------------------------
 
+// Serialized! Do not remove or re-order entries!
 enum infdisp_rows
 {
     INFDISP_NONE,
@@ -1314,8 +1409,8 @@ enum info_disp_option
 
 #define OPTINF_ROW_COUNT (OPTINF_COUNT - OPTINF_ROW1)
 
+// Serialized! Do not remove or re-order entries!
 static const char *LabValues_InfoDisplay[INFDISP_COUNT] = {"None", "Position", "State Name", "State Frame", "Velocity - Self", "Velocity - KB", "Velocity - Total", "Engine LStick", "System LStick", "Engine CStick", "System CStick", "Engine Trigger", "System Trigger", "Ledgegrab Timer", "Intangibility Timer", "Hitlag", "Hitstun", "Shield Health", "Shield Stun", "Grip Strength", "ECB Lock", "ECB Bottom", "Jumps", "Walljumps", "Can Walljump", "Jab Counter", "Line Info", "Blastzone Left/Right", "Blastzone Up/Down"};
-
 static const char *LabValues_InfoSizeText[] = {"Small", "Medium", "Large"};
 static float LabValues_InfoSizes[] = {0.7, 0.85, 1.0};
 
@@ -1452,6 +1547,7 @@ static EventMenu LabMenu_InfoDisplayCPU = {
 
 // CHARACTER RNG MENU --------------------------------------------------------
 
+// Serialized!
 static const char *LabValues_CharacterRng_Turnip[] =
     { "Default", "Regular Turnip", "Winky Turnip", "Dot Eyes Turnip", "Stitch Face Turnip", "Mr. Saturn", "Bob-omb", "Beam Sword" };
 static const char *LabValues_CharacterRng_PeachFSmash[] =
@@ -1964,6 +2060,7 @@ static EventMenu LabMenu_HitboxTrails = {
 
 // CPU MENU --------------------------------------------------------------
 
+// Serialized!
 enum cpu_behave
 {
     CPUBEHAVE_STAND,
@@ -1975,14 +2072,7 @@ enum cpu_behave
     CPUBEHAVE_COUNT
 };
 
-enum cpu_sdi
-{
-    CPUSDI_RANDOM,
-    CPUSDI_NONE,
-
-    CPUSDI_COUNT
-};
-
+// Serialized!
 enum cpu_tdi
 {
     CPUTDI_RANDOM,
@@ -1992,11 +2082,11 @@ enum cpu_tdi
     CPUTDI_CUSTOM,
     CPUTDI_RANDOM_CUSTOM,
     CPUTDI_NONE,
-    CPUTDI_NUM,
 
     CPUTDI_COUNT
 };
 
+// Serialized!
 enum cpu_shield_angle
 {
     CPUSHIELDANG_NONE,
@@ -2008,6 +2098,7 @@ enum cpu_shield_angle
     CPUSHIELDANG_COUNT
 };
 
+// Serialized!
 enum cpu_tech
 {
     CPUTECH_RANDOM,
@@ -2019,6 +2110,7 @@ enum cpu_tech
     CPUTECH_COUNT
 };
 
+// Serialized!
 enum cpu_getup
 {
     CPUGETUP_RANDOM,
@@ -2029,6 +2121,7 @@ enum cpu_getup
 
     CPUGETUP_COUNT
 };
+
 enum cpu_state
 {
     CPUSTATE_START,
@@ -2044,6 +2137,7 @@ enum cpu_state
     CPUSTATE_COUNT
 };
 
+// Serialized!
 enum cpu_mash
 {
     CPUMASH_NONE,
@@ -2062,6 +2156,7 @@ enum cpu_grab_release
     CPUGRABRELEASE_COUNT
 };
 
+// Serialized!
 enum cpu_inf_shield {
     CPUINFSHIELD_OFF,
     CPUINFSHIELD_UNTIL_HIT,
@@ -2070,6 +2165,7 @@ enum cpu_inf_shield {
     CPUINFSHIELD_COUNT
 };
 
+// Serialized!
 enum asdi
 {
     ASDI_AUTO,
@@ -2083,6 +2179,7 @@ enum asdi
     ASDI_COUNT
 };
 
+// Serialized!
 enum sdi_dir
 {
     SDIDIR_AUTO,
@@ -2144,8 +2241,6 @@ static const char *LabValues_CPUBehave[] = {"Stand", "Shield", "Crouch", "Jump",
 static const char *LabValues_TDI[] = {"Random", "Inwards", "Outwards", "Natural", "Custom", "Random Custom", "None"};
 static const char *LabValues_ASDI[] = {"Auto", "Away", "Towards", "Left", "Right", "Up", "Down"};
 static const char *LabValues_SDIDir[] = {"Auto", "Random", "Away", "Towards", "Left", "Right", "Up", "Down"};
-static const char *LabValues_Tech[] = {"Random", "In Place", "Away", "Towards", "None"};
-static const char *LabValues_Getup[] = {"Random", "Stand", "Away", "Towards", "Attack"};
 static const char *LabValues_GrabEscape[] = {"None", "Medium", "High", "Perfect"};
 static const char *LabValues_GrabRelease[] = {"Grounded", "Airborn"};
 static const char *LabValues_CPUControlledBy[] = {"None", "Port 1", "Port 2", "Port 3", "Port 4"};
@@ -2367,6 +2462,7 @@ enum advanced_counter_option {
     OPTCTR_COUNT,
 };
 
+// Serialized!
 enum counter_logic {
     CTRLOGIC_DEFAULT,
     CTRLOGIC_DISABLED,
@@ -2478,19 +2574,24 @@ static EventMenu LabMenu_AdvCounter = {
 
 // TECH MENU --------------------------------------------------------------
 
+// Serialized!
 enum tech_trap {
     TECHTRAP_NONE,
     TECHTRAP_EARLIEST,
     TECHTRAP_LATEST,
 };
 
+// Serialized!
 enum tech_lockout {
     TECHLOCKOUT_EARLIEST,
     TECHLOCKOUT_LATEST,
 };
 
-static const char *LabOptions_TechTrap[] = {"Off", "Earliest Tech Input", "Latest Tech Input"};
-static const char *LabOptions_TechLockout[] = {"Earliest Tech Input", "Latest Tech Input"};
+// Serialized!
+static const char *LabValues_TechTrap[] = {"Off", "Earliest Tech Input", "Latest Tech Input"};
+static const char *LabValues_TechLockout[] = {"Earliest Tech Input", "Latest Tech Input"};
+static const char *LabValues_Tech[] = {"Random", "In Place", "Away", "Towards", "None"};
+static const char *LabValues_Getup[] = {"Random", "Stand", "Away", "Towards", "Attack"};
 
 static int tech_frame_distinguishable[27] = {
      8, // Mario
@@ -2584,20 +2685,20 @@ static EventOption LabOptions_Tech[OPTTECH_COUNT] = {
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_TechTrap)/sizeof(*LabOptions_TechTrap),
+        .value_num = countof(LabValues_TechTrap),
         .name = "Simulate Tech Trap",
         .desc = {"Set a window where the CPU cannot tech",
                  "after being hit out of tumble."},
-        .values = LabOptions_TechTrap,
+        .values = LabValues_TechTrap,
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_TechLockout)/sizeof(*LabOptions_TechLockout),
+        .value_num = countof(LabValues_TechLockout),
         .name = "Tech Lockout",
         .desc = {"Prevent the CPU from teching in succession.",
                  "Earliest - as little lockout as possible",
                  "Latest - as much lockout as possible."},
-        .values = LabOptions_TechLockout,
+        .values = LabValues_TechLockout,
     },
     {
         .kind = OPTKIND_INT,
@@ -2846,6 +2947,7 @@ static EventMenu LabMenu_SlotChancesCPU = {
 
 // RECORDING MENU --------------------------------------------------------------
 
+// Serialized!
 enum autorestore
 {
     AUTORESTORE_NONE,
@@ -2855,6 +2957,7 @@ enum autorestore
     AUTORESTORE_COUNT
 };
 
+// Serialized!
 enum rec_mode_hmn
 {
     RECMODE_HMN_OFF,
@@ -2865,6 +2968,7 @@ enum rec_mode_hmn
     RECMODE_COUNT
 };
 
+// Serialized!
 enum rec_mode_cpu
 {
     RECMODE_CPU_OFF,
@@ -2874,6 +2978,32 @@ enum rec_mode_cpu
     RECMODE_CPU_RERECORD,
 
     RECMODE_CPU_COUNT
+};
+
+// Serialized!
+enum rec_playback_counter
+{
+    PLAYBACKCOUNTER_OFF,
+    PLAYBACKCOUNTER_ENDS,
+    PLAYBACKCOUNTER_ON_HIT_CPU,
+    PLAYBACKCOUNTER_ON_HIT_HMN,
+    PLAYBACKCOUNTER_ON_HIT_EITHER,
+};
+
+// Serialized!
+enum rec_mirror
+{
+    OPTMIRROR_OFF,
+    OPTMIRROR_ON,
+    OPTMIRROR_RANDOM,
+};
+
+// Serialized!
+enum rec_takeover_target
+{
+    TAKEOVER_HMN,
+    TAKEOVER_CPU,
+    TAKEOVER_NONE,
 };
 
 enum rec_option
@@ -2895,42 +3025,18 @@ enum rec_option
    OPTREC_SLOTMANAGEMENT,
    OPTREC_HMNCHANCE,
    OPTREC_CPUCHANCE,
-   OPTREC_EXPORT,
 
    OPTREC_COUNT
 };
 
-enum rec_playback_counter
-{
-    PLAYBACKCOUNTER_OFF,
-    PLAYBACKCOUNTER_ENDS,
-    PLAYBACKCOUNTER_ON_HIT_CPU,
-    PLAYBACKCOUNTER_ON_HIT_HMN,
-    PLAYBACKCOUNTER_ON_HIT_EITHER,
-};
-
-enum rec_mirror
-{
-    OPTMIRROR_OFF,
-    OPTMIRROR_ON,
-    OPTMIRROR_RANDOM,
-};
-
-enum rec_takeover_target
-{
-    TAKEOVER_HMN,
-    TAKEOVER_CPU,
-    TAKEOVER_NONE,
-};
-
-// Aitch: Please be aware that the order of these options is important.
-// The option idx will be serialized when exported, so loading older replays could load the wrong option if we reorder/remove options.
+// Serialized!
 static const char *LabValues_RecordSlot[] = {"Random", "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6"};
 static const char *LabValues_HMNRecordMode[] = {"Off", "Record", "Playback", "Re-Record"};
 static const char *LabValues_CPURecordMode[] = {"Off", "Control", "Record", "Playback", "Re-Record"};
 static const char *LabValues_AutoRestore[] = {"Off", "Playback Ends", "CPU Counters"};
 static const char *LabValues_PlaybackCounterActions[] = {"Off", "After Playback Ends", "On CPU Hit", "On HMN Hit", "On Any Hit"};
-static const char *LabOptions_ChangeMirroredPlayback[] = {"Off", "On", "Random"};
+static const char *LabValues_ChangeMirroredPlayback[] = {"Off", "On", "Random"};
+static const char *LabValues_TakeoverTarget[] = {"HMN", "CPU", "None"};
 
 static const EventOption Record_Save = {
     .kind = OPTKIND_FUNC,
@@ -2947,8 +3053,6 @@ static const EventOption Record_Load = {
              "start the sequence from the beginning."},
     .OnSelect = Record_RestoreState,
 };
-
-static const char *LabOptions_TakeoverTarget[] = {"HMN", "CPU", "None"};
 
 static EventOption LabOptions_Record[OPTREC_COUNT] = {
     // swapped between Record_Save and Record_Load
@@ -2995,13 +3099,13 @@ static EventOption LabOptions_Record[OPTREC_COUNT] = {
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_ChangeMirroredPlayback) / 4,
+        .value_num = sizeof(LabValues_ChangeMirroredPlayback) / 4,
         .name = "Mirrored Playback",
         .desc = {"Playback with mirrored the recorded inputs,",
                  "positions and facing directions.",
                  "(!) This works properly only on symmetrical ",
                  "stages."},
-        .values = LabOptions_ChangeMirroredPlayback,
+        .values = LabValues_ChangeMirroredPlayback,
         .OnChange = Record_ChangeMirroredPlayback,
     },
     {
@@ -3032,11 +3136,11 @@ static EventOption LabOptions_Record[OPTREC_COUNT] = {
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num = sizeof(LabOptions_TakeoverTarget) / 4,
+        .value_num = sizeof(LabValues_TakeoverTarget) / 4,
         .name = "Playback Takeover",
         .desc = {"Which character to takeover when",
                  "inputting during playback."},
-        .values = LabOptions_TakeoverTarget,
+        .values = LabValues_TakeoverTarget,
     },
     {
         .kind = OPTKIND_FUNC,
@@ -3077,13 +3181,6 @@ static EventOption LabOptions_Record[OPTREC_COUNT] = {
         .name = "Set CPU Chances",
         .desc = {"Set various randomization settings for the CPU."},
         .menu = &LabMenu_SlotChancesCPU,
-    },
-    {
-        .kind = OPTKIND_FUNC,
-        .name = "Export",
-        .desc = {"Export the recording to a memory card",
-                 "for later use or to share with others."},
-        .OnSelect = Export_Init,
     },
 };
 
@@ -3236,52 +3333,38 @@ static EventOption LabOptions_AlterInputs[OPTINPUT_COUNT] = {
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "A",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "B",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "X",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Y",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "Z",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "L",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
     {
-        .kind = OPTKIND_STRING,
+        .kind = OPTKIND_TOGGLE,
         .name = "R",
-        .value_num = 2,
-        .values = LabOptions_CheckBox,
         .OnChange = Lab_ChangeInputs,
     },
 };
@@ -3294,6 +3377,7 @@ static EventMenu LabMenu_AlterInputs = {
 
 // OVERLAY MENU --------------------------------------------------------------
 
+// Serialized!
 #define OVERLAY_COLOUR_COUNT 11
 static const char *LabValues_OverlayNames[OVERLAY_COLOUR_COUNT] = { 
     "None", "Red", "Green", "Blue", "Yellow", "White", "Black", 
@@ -3308,6 +3392,7 @@ typedef struct Overlay {
     GXColor color;
 } Overlay;
 
+// Serialized!
 static Overlay LabValues_OverlayColours[OVERLAY_COLOUR_COUNT] = {
     { .color = { 0  , 0  , 0  , 0   } },
     { .color = { 255, 20 , 20 , 180 } },

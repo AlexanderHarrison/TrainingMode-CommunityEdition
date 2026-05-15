@@ -2573,7 +2573,7 @@ int Update_CheckAdvance()
 
             int curr_frame = Record_GetCurrFrame();
             if (rec_state->is_exist == 1 && (timer_dec == 1 || timer_dec > 30)) {
-                Record_Restart(rec_state, Savestate_Silent);
+                Record_Restart(rec_state, rec_state_savestate_version, Savestate_Silent);
                 if (curr_frame > 0) {
                     stc_recording_target_frame = curr_frame - 1;
                     event_vars->flags |= EventVarsFlag_ForceGameLoop;
@@ -4557,11 +4557,16 @@ void Record_MemcardLoad(int slot, int file_no)
         // if file loaded successfully
         if (memcard_status == 0)
         {
-            ParsedExportData_v2 export_data = ExportData_Import(memcard_save.data);
-            ExportData_ApplyEvents(&export_data);
-            ExportData_Free(&export_data);
+            ParsedExportData_v2 ed = ExportData_Import(memcard_save.data);
+
+            for (u32 event_idx = 0; event_idx < ed.event_count; ++event_idx) {
+                u32 event = ed.events[event_idx];
+                u32 event_offset = ed.event_offsets[event_idx];
+                ExportData_ApplyEvent(ed.event_data_stream + event_offset, event);
+            }
+
+            ExportData_Free(&ed);
             if (rec_state->is_exist) {
-                bp();
                 Record_LoadSavestate(rec_state, rec_state_savestate_version);
                 Record_OnSuccessfulSave(false);
             }
@@ -4602,7 +4607,7 @@ void Record_RerollSlotRNG(void) {
     }
 }
 
-void Record_Restart(Savestate_v2 *savestate, int flags) {
+void Record_Restart(SavestateHeader *savestate, int savestate_version, int flags) {
     int mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
     if (mirror == OPTMIRROR_RANDOM)
         mirror = HSD_Randi(2);
@@ -4625,7 +4630,6 @@ void Record_Restart(Savestate_v2 *savestate, int flags) {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     
-    int flags = 0;
     if (mirror) flags |= Savestate_Mirror;
 
     if (savestate_version == 1)
@@ -4636,8 +4640,8 @@ void Record_Restart(Savestate_v2 *savestate, int flags) {
         assert("bad savestate version!");
 }
 
-void Record_LoadSavestate(Savestate_v2 *savestate) {
-    Record_Restart(savestate, 0);
+void Record_LoadSavestate(SavestateHeader *savestate, int savestate_version) {
+    Record_Restart(savestate, savestate_version, 0);
     Record_RerollSlotRNG();
 }
 
@@ -4762,7 +4766,18 @@ void ImageScale(RGB565 *out_img, RGB565 *in_img, int OutWidth, int OutHeight, in
     }
 }
 
-void ExportData_ApplyEvent(void *data, u8 event) {
+static void Export_ApplySetting(EventOption *opt, s16 value) {
+    s16 value_num = opt->kind == OPTKIND_TOGGLE ? 2 : opt->value_num;
+    s16 value_min = opt->value_min;
+    s16 value_max = value_min + value_num - 1;
+    if (value < value_min || value_max < value) return;
+    opt->val = value;
+    if (opt->OnChange) opt->OnChange(event_vars->menu_gobj, opt->val);
+}
+
+void ExportData_ApplyEvent(void *data, u32 event) {
+    #define fallthrough __attribute__((fallthrough));
+
     switch (event) {
         case RecEvent_Null: break;
         case RecEvent_MatchInit: break; // saved, but not actually used in v1!
@@ -4790,27 +4805,30 @@ void ExportData_ApplyEvent(void *data, u8 event) {
             slot_idx++;
         } break;
 
-        case RecEvent_MenuSettings_Record_v1: {
-            RecEventData_MenuSettings_Record_v1 *container = data;
-            ExportMenuSettings_v1 *menu_settings = &container->menu_settings;
-            LabOptions_Record[OPTREC_HMNMODE].val = menu_settings->hmn_mode;
-            LabOptions_Record[OPTREC_HMNSLOT].val = menu_settings->hmn_slot;
-            LabOptions_Record[OPTREC_CPUMODE].val = menu_settings->cpu_mode;
-            LabOptions_Record[OPTREC_CPUSLOT].val = menu_settings->cpu_slot;
-            LabOptions_Record[OPTREC_LOOP].val = menu_settings->loop_inputs;
-            LabOptions_Record[OPTREC_AUTORESTORE].val = menu_settings->auto_restore;
-        } break;
-            
-        default: break;
-    }
-}
+        case RecEvent_MenuSettings_Record_v2: {
+            RecEventData_MenuSettings_Record_v2 *set = data;
+            Export_ApplySetting(&LabOptions_Record[OPTREC_MIRRORED_PLAYBACK], set->mirror);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_PLAYBACK_COUNTER], set->cpu_counter);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_STARTPAUSED], set->start_paused);
+            Export_ApplySetting(&LabOptions_SlotChancesHMN[OPTSLOTCHANCE_PERCENT], set->hmn_random_percent);
+            Export_ApplySetting(&LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT], set->cpu_random_percent);
 
-void ExportData_ApplyEvents(ParsedExportData_v2 *ed) {
-    u8 *cursor = ed->event_data_stream;
-    for (u32 event_idx = 0; event_idx < ed->event_count; ++event_idx) {
-        u8 event = ed->events[event_idx];
-        ExportData_ApplyEvent(cursor, event);
-        cursor += ed->event_sizes[event];
+            // TODO array here
+            // Export_ApplySetting(set, size, &LabOptions_Record[OPTREC_], hmn_slot_chance_count);
+            // Export_ApplySetting(set, size, &LabOptions_Record[OPTREC_], start_paused);
+        } fallthrough; // apply v1 afterwards
+
+        case RecEvent_MenuSettings_Record_v1: {
+            RecEventData_MenuSettings_Record_v1 *set = data;
+            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNMODE], set->hmn_mode);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNSLOT], set->hmn_slot);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUMODE], set->cpu_mode);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUSLOT], set->cpu_slot);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_LOOP], set->loop_inputs);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_AUTORESTORE], set->auto_restore);
+        } break;
+        
+        default: break;
     }
 }
 
@@ -4819,7 +4837,178 @@ static inline void StreamAppend(u8** dst, void *src, size_t size) {
     *dst += size;
 }
 
-void Export_Init(GOBJ *menu_gobj)
+static void Export_CreateExportFile(void)
+{
+    #define EXPORT_MAX_EVENTS 64
+    
+    u32 events[EXPORT_MAX_EVENTS];
+    u32 event_offsets[EXPORT_MAX_EVENTS];
+    u32 event_count = 0;
+    
+    // find events to be saved --------------------------------------
+    
+    if (!rec_state->is_exist) LabOptions_Export[OPTEXP_RECORDING].val = false;
+
+    if (LabOptions_Export[OPTEXP_RECORDING].val) {
+        if (rec_state_savestate_version == 1) {
+            events[event_count++] = RecEvent_Savestate_v1;
+        } else if (rec_state_savestate_version == 2) {
+            events[event_count++] = RecEvent_Savestate_v2;
+        } else {
+            assert("invalid savestate version!");
+        }
+
+        for (u32 i = 0; i < REC_SLOTS; ++i)
+            if (rec_data.hmn_inputs[i].start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+        for (u32 i = 0; i < REC_SLOTS; ++i)
+            if (rec_data.cpu_inputs[i].start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_RECORDING].val)       events[event_count++] = RecEvent_MenuSettings_Record_v2;
+    if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val)        events[event_count++] = RecEvent_MenuSettings_BehaviorOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val)              events[event_count++] = RecEvent_MenuSettings_TDIOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val)            events[event_count++] = RecEvent_MenuSettings_TechOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val)   events[event_count++] = RecEvent_MenuSettings_RNGControl;
+    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val)    events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
+    if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val)      events[event_count++] = RecEvent_MenuSettings_ActionLog;
+    if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
+    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
+
+    // alloc event buffer --------------------------------------
+
+    u32 eventbuf_size = 0;
+    for (u32 i = 0; i < event_count; ++i) {
+        event_offsets[i] = eventbuf_size;
+        eventbuf_size += rec_event_data_sizes[events[i]];
+    }
+    u8 *eventbuf = HSD_MemAlloc(eventbuf_size + 32);
+    memset(eventbuf, 0, eventbuf_size + 32);
+
+    // write events --------------------------------------
+    
+    u32 event_write_i = 0;
+
+    if (LabOptions_Export[OPTEXP_RECORDING].val) {
+        // copy savestate
+        if (rec_state_savestate_version == 1) {
+            RecEventData_Savestate_v1 *dst = eventbuf + event_offsets[event_write_i++];
+            memcpy(dst, rec_state, sizeof(RecEventData_Savestate_v1));
+        } else if (rec_state_savestate_version == 2) {
+            RecEventData_Savestate_v2 *dst = eventbuf + event_offsets[event_write_i++];
+            memcpy(dst, rec_state, sizeof(RecEventData_Savestate_v2));
+        }
+
+        // copy recording slots
+        for (u32 i = 0; i < REC_SLOTS; ++i) {
+            if (rec_data.hmn_inputs[i].start_frame >= 0) {
+                RecEventData_RecordSlot_v2 *dst = eventbuf + event_offsets[event_write_i++];
+                dst->ply = 0;
+                dst->slot_idx = i;
+                dst->input_count = (u16)rec_data.hmn_inputs[i].num;
+                memcpy(dst->inputs, rec_state.hmn_inputs[i].inputs, sizeof(dst->inputs));
+            }
+        }
+        for (u32 i = 0; i < REC_SLOTS; ++i) {
+            if (rec_data.cpu_inputs[i].start_frame >= 0) {
+                RecEventData_RecordSlot_v2 *dst = eventbuf + event_offsets[event_write_i++];
+                dst->ply = 1;
+                dst->slot_idx = i;
+                dst->input_count = (u16)rec_data.cpu_inputs[i].num;
+                memcpy(dst->inputs, rec_state.cpu_inputs[i].inputs, sizeof(dst->inputs));
+            }
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_RECORDING].val) {
+        RecEventData_MenuSettings_Record_v2 *dst = eventbuf + event_offsets[event_write_i++];
+        dst->v1.hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
+        dst->v1.hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
+        dst->v1.cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
+        dst->v1.cpu_slot = LabOptions_Record[OPTREC_CPUSLOT].val;
+        dst->v1.loop_inputs = LabOptions_Record[OPTREC_LOOP].val;
+        dst->v1.auto_restore = LabOptions_Record[OPTREC_AUTORESTORE].val;
+        dst->mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
+        dst->cpu_counter = LabOptions_Record[OPTREC_PLAYBACK_COUNTER].val;
+        dst->start_paused = LabOptions_Record[OPTREC_STARTPAUSED].val;
+        dst->hmn_random_percent = LabOptions_Record[OPTREC_STARTPAUSED].val;
+        
+        // CONTINUE HERE
+        
+        RETURN
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val)        events[event_count++] = RecEvent_MenuSettings_BehaviorOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val)              events[event_count++] = RecEvent_MenuSettings_TDIOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val)            events[event_count++] = RecEvent_MenuSettings_TechOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val)   events[event_count++] = RecEvent_MenuSettings_RNGControl;
+    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val)    events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
+    if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val)      events[event_count++] = RecEvent_MenuSettings_ActionLog;
+    if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
+    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
+
+    /*u32 event_offsets[countof(events)];
+    u32 eventbuf_size = 0;
+    for (u32 i = 0; i < countof(events); ++i) {
+        event_offsets[i] = eventbuf_size;
+        eventbuf_size += rec_event_data_sizes[events[i]];
+    }
+    u8 *eventbuf_head = HSD_MemAlloc(eventbuf_size);
+    u8 *eventbuf = eventbuf_head;
+
+    if (rec_state_savestate_version == 1) {
+        StreamAppend(&eventbuf, rec_state, sizeof(RecEventData_Savestate_v1));
+    } else if (rec_state_savestate_version == 2) {
+        StreamAppend(&eventbuf, rec_state, sizeof(RecEventData_Savestate_v2));
+    }
+
+    for (int i = 0; i < REC_SLOTS; i++)
+        StreamAppend(&eventbuf, rec_data.hmn_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
+    for (int i = 0; i < REC_SLOTS; i++)
+        StreamAppend(&eventbuf, rec_data.cpu_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
+
+    u32 buf_noncompressed_size = sizeof(ExportMetadata) + 12
+        + countof(events)*sizeof(u32)*2;
+
+    ExportData_v2 *buf = HSD_MemAlloc(buf_noncompressed_size + eventbuf_size); // overalloc, just in case
+    memset(&buf->metadata, 0, sizeof(buf->metadata));
+
+    OSCalendarTime td;
+    OSTicksToCalendarTime(OSGetTime(), &td);
+    buf->metadata.version = 2;
+    buf->metadata.image_width = RESIZE_WIDTH;
+    buf->metadata.image_height = RESIZE_HEIGHT;
+    buf->metadata.image_fmt = 4;
+    buf->metadata.enable_hazards = !event_vars->event_desc->disable_hazards;
+    buf->metadata.hmn = Fighter_GetExternalID(0);
+    buf->metadata.hmn_costume = Fighter_GetCostumeID(0);
+    buf->metadata.cpu = Fighter_GetExternalID(1);
+    buf->metadata.cpu_costume = Fighter_GetCostumeID(1);
+    buf->metadata.stage_external = Stage_GetExternalID();
+    buf->metadata.stage_internal = Stage_ExternalToInternal(buf->metadata.stage_external);
+    buf->metadata.month = td.mon + 1;
+    buf->metadata.day = td.mday;
+    buf->metadata.year = td.year;
+    buf->metadata.hour = td.hour;
+    buf->metadata.minute = td.min;
+    buf->metadata.second = td.sec;
+
+    buf->event_count = countof(events);
+
+    u8 *stream = buf->stream;
+    StreamAppend(&stream, events, sizeof(events));
+    StreamAppend(&stream, event_offsets, sizeof(event_offsets));
+    u32 compressed_size = (u32)ExportData_Compress(stream, eventbuf_head, eventbuf_size);
+    stream += compressed_size;
+    HSD_Free(eventbuf_head); // free original data buffer
+
+    buf->compressed_event_data_stream_size = compressed_size;
+    buf->decompressed_event_data_stream_size = eventbuf_size;
+
+    stc_transfer_buf = (u8*)buf;
+    stc_transfer_buf_size = (u32)(stream - (u8*)buf);*/
+}
+
+void Export_StartExport(GOBJ *menu_gobj)
 {
     MenuData *menu_data = menu_gobj->userdata;
 
@@ -4853,86 +5042,9 @@ void Export_Init(GOBJ *menu_gobj)
     menu_data->custom_gobj_think = Export_Think;     // set think function
     menu_data->custom_gobj_destroy = Export_Destroy; // set destroy function
 
-    u8 events[16] = {
-        0, // savestate event, specific version is set later
-        
-        // Just add them all for now
-        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
-        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
-        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
-        RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
-        RecEvent_Null, RecEvent_Null, RecEvent_Null
-    };
-    
-    if (rec_state_savestate_version == 1) {
-        events[0] = RecEvent_Savestate_v1;
-    } else if (rec_state_savestate_version == 2) {
-        events[0] = RecEvent_Savestate_v2;
-    } else {
-        assert("invalid savestate version!");
-    }
-
-    u32 streamsize = 0;
-    for (u32 i = 0; i < countof(events); ++i)
-        streamsize += rec_event_data_sizes[events[i]];
-    u8 *streambuf_head = HSD_MemAlloc(streamsize);
-    u8 *streambuf = streambuf_head;
-
-    if (rec_state_savestate_version == 1) {
-        StreamAppend(&streambuf, rec_state, sizeof(RecEventData_Savestate_v1));
-    } else if (rec_state_savestate_version == 2) {
-        StreamAppend(&streambuf, rec_state, sizeof(RecEventData_Savestate_v2));
-    }
-
-    for (int i = 0; i < REC_SLOTS; i++)
-        StreamAppend(&streambuf, rec_data.hmn_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
-    for (int i = 0; i < REC_SLOTS; i++)
-        StreamAppend(&streambuf, rec_data.cpu_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
-
-    u32 buf_noncompressed_size = sizeof(ExportMetadata) + 12
-        + countof(events)*sizeof(u8)
-        + sizeof(rec_event_data_sizes);
-
-    ExportData_v2 *buf = HSD_MemAlloc(buf_noncompressed_size + streamsize); // overalloc, just in case
-    memset(&buf->metadata, 0, sizeof(buf->metadata));
-
-    OSCalendarTime td;
-    OSTicksToCalendarTime(OSGetTime(), &td);
-    buf->metadata.version = 2;
-    buf->metadata.image_width = RESIZE_WIDTH;
-    buf->metadata.image_height = RESIZE_HEIGHT;
-    buf->metadata.image_fmt = 4;
-    buf->metadata.hmn = Fighter_GetExternalID(0);
-    buf->metadata.hmn_costume = Fighter_GetCostumeID(0);
-    buf->metadata.cpu = Fighter_GetExternalID(1);
-    buf->metadata.cpu_costume = Fighter_GetCostumeID(1);
-    buf->metadata.stage_external = Stage_GetExternalID();
-    buf->metadata.stage_internal = Stage_ExternalToInternal(buf->metadata.stage_external);
-    buf->metadata.month = td.mon + 1;
-    buf->metadata.day = td.mday;
-    buf->metadata.year = td.year;
-    buf->metadata.hour = td.hour;
-    buf->metadata.minute = td.min;
-    buf->metadata.second = td.sec;
-    
-    buf->event_size_count = countof(rec_event_data_sizes);
-    buf->event_count = countof(events);
-    
-    u8 *stream = buf->stream;
-    StreamAppend(&stream, rec_event_data_sizes, sizeof(rec_event_data_sizes));
-    StreamAppend(&stream, events, sizeof(events));
-    u32 compressed_size = (u32)ExportData_Compress(stream, streambuf_head, streamsize);
-    stream += compressed_size;
-    HSD_Free(streambuf_head); // free original data buffer
-
-    buf->compressed_event_data_stream_size = compressed_size;
-    buf->decompressed_event_data_stream_size = streamsize;
-    
-    u32 buf_actual_size = (u32)(stream - (u8*)buf);
-
-    stc_transfer_buf = (u8*)buf;
-    stc_transfer_buf_size = buf_actual_size;
+    Export_CreateExportFile();
 }
+
 int Export_Think(GOBJ *export_gobj)
 {
     ExportData_v1 *export_data = export_gobj->userdata;

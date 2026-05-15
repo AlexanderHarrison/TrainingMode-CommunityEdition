@@ -8,7 +8,7 @@
 
 // Labbing event
 // Custom TDI definitions
-#define TDI_HITNUM 10
+#define TDI_HITNUM 10 // Serialized!
 #define TDI_DISPNUM 4
 // menu model
 #define TDIMENU_SCALE 1
@@ -376,7 +376,7 @@ void Record_Think(GOBJ *rec_gobj);
 void Record_Update(int ply, RecInputData_v1 *inputs, RecInputData_v1 *rerecord_inputs, int rec_mode);
 void Record_SetInputs(GOBJ *fighter, RecInputs *inputs, bool mirror);
 int Record_RearrangeButtons(RecInputs *inputs);
-void Record_Restart(SavestateHeader *savestate, int flags);
+void Record_Restart(SavestateHeader *savestate, int savestate_version, int flags);
 void Record_RerollSlotRNG(void);
 void Record_LoadSavestate(SavestateHeader *savestate, int savestate_version);
 int Record_MenuThink(GOBJ *menu_gobj);
@@ -389,7 +389,7 @@ FighterData *Record_IDToFtData(int id);
 JOBJ *Record_IDToBone(FighterData *fighter_data, int id);
 void Record_StartExport(GOBJ *menu_gobj);
 void Record_OnSuccessfulSave(int deleteRecordings);
-void Export_Init(GOBJ *menu_gobj);
+void Export_StartExport(GOBJ *menu_gobj);
 int Export_Think(GOBJ *export_gobj);
 void Export_Destroy(GOBJ *export_gobj);
 void Export_SelCardInit(GOBJ *export_gobj);

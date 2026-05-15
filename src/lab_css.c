@@ -1071,6 +1071,9 @@ void Menu_Confirm_Think(GOBJ *menu_gobj)
             int this_file_index = (import_data.page * IMPORT_FILESPERPAGE) + import_data.cursor;
             ExportMetadata *metadata = &import_data.metadata[import_data.cursor];
             Preload *preload = Preload_GetTable();
+            
+            // set hazards
+            event_desc->disable_hazards = !metadata->enable_hazards;
 
             // get match data
             u8 hmn_kind = metadata->hmn;
