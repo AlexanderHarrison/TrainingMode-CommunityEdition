@@ -18,15 +18,14 @@ static ParsedExportData_v2 ExportData_Import_v2(u8 *transfer_buf) {
     ExportData_v2 *ed = (ExportData_v2 *)transfer_buf;
 
     u8 *event_data_stream = calloc(ed->decompressed_event_data_stream_size + 0x100);
-    u8 *compressed_data = ed->stream + ed->event_size_count*sizeof(u32) + ed->event_count*sizeof(u8);
+    u8 *compressed_data = ed->stream + ed->event_count*sizeof(u32)*2;
     lz77Decompress(compressed_data, event_data_stream);
 
     return (ParsedExportData_v2) {
         .metadata = &ed->metadata,
-        .event_size_count = ed->event_size_count,
-        .event_sizes = (u32 *)ed->stream,
-        .event_count = 16,
-        .events = ed->stream + ed->event_size_count*sizeof(u32),
+        .event_count = ed->event_count,
+        .events = (u32*)ed->stream,
+        .event_offsets = (u32*)ed->stream + ed->event_count,
         .event_data_stream = event_data_stream,
     };
 }
@@ -40,13 +39,31 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
     RecordingSave_v1 *recsave = calloc(sizeof(RecordingSave_v1) + 0x100);
     u32 decompressed_size = (u32)lz77Decompress(compressed_recording, (u8 *)recsave);
 
-    static u8 events[16] = {
+    static u32 events[] = {
         RecEvent_MatchInit, RecEvent_Savestate_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
         RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1, RecEvent_RecordingSlot_v1,
-        RecEvent_MenuSettings_Record_v1, RecEvent_Null,
+        RecEvent_MenuSettings_Record_v1
+    };
+
+    static u32 event_offsets[countof(events)] = {
+        0,
+        sizeof(RecEventData_MatchInit),
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1),
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*1,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*2,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*3,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*4,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*5,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*6,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*7,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*8,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*9,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*10,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*11,
+        sizeof(RecEventData_MatchInit) + sizeof(RecEventData_Savestate_v1) + sizeof(RecEventData_RecordingSlot_v1)*12,
     };
 
     // append menu settings
@@ -55,10 +72,9 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
 
     return (ParsedExportData_v2) {
         .metadata = &header->metadata,
-        .event_size_count = countof(rec_event_data_sizes),
-        .event_sizes = rec_event_data_sizes,
         .event_count = countof(events),
         .events = events,
+        .event_offsets = event_offsets,
 
         // We can use the recsave as an event stream directly!
         // It contains the matchinit, savestate, 12 recording slots, then menu settings, all in order.

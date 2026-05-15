@@ -223,6 +223,7 @@ Rect HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
 void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int action_count);
 void HUD_DrawInfoPanel(const char **label, const char **info, int count);
 
+// Serialized!
 typedef struct RNGControl
 {
     u8 peach_item;      // 0x0

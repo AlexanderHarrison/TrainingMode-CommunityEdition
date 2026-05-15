@@ -28,7 +28,11 @@ typedef struct ExportMetadata {
     u16 version;
     u16 image_width;
     u16 image_height;
-    u16 image_fmt;
+
+    // Flags: added in v2. Originally was the unused high byte of `u16 image_fmt`.
+    u8 enable_hazards: 1;
+
+    u8 image_fmt;
     u8 hmn;
     u8 hmn_costume;
     u8 cpu;
@@ -47,10 +51,9 @@ typedef struct ExportMetadata {
 
 typedef struct ParsedExportData_v2 {
     ExportMetadata *metadata;
-    u16 event_size_count;
-    u16 event_count; // guaranteed to be a multiple of 4 (to align events to 4b)
-    u32 *event_sizes;
-    u8 *events;
+    u32 event_count;
+    u32 *events;
+    u32 *event_offsets;
     u8 *event_data_stream;
 } ParsedExportData_v2;
 
@@ -88,16 +91,6 @@ typedef struct ExportData_v1
     int cpu_id;
     int stage_id;
 } ExportData_v1;
-
-typedef struct ExportMenuSettings_v1
-{
-    u8 hmn_mode;
-    u8 hmn_slot;
-    u8 cpu_mode;
-    u8 cpu_slot;
-    u8 loop_inputs;
-    u8 auto_restore;
-} ExportMenuSettings_v1;
 
 typedef struct ExportHeader_v1
 {
@@ -143,10 +136,10 @@ typedef struct RecordingSave_v1
 
 // VERSION 2 #####################################################
 
-// These work for v1 as well by converting it losslessly to the v2 format.
+// These work for v1 as well. It will convert v1 losslessly into the v2 format.
 ParsedExportData_v2 ExportData_Import(u8 *transfer_buf);
-void ExportData_ApplyEvents(ParsedExportData_v2 *ed);
 void ExportData_Free(ParsedExportData_v2 *ed);
+void ExportData_ApplyEvent(void *data, u32 event);
 int ExportData_Compress(u8 *dst, u8 *src, u32 size);
 
 /*
@@ -159,32 +152,38 @@ int ExportData_Compress(u8 *dst, u8 *src, u32 size);
 
 typedef struct ExportData_v2 {
     ExportMetadata metadata;
-    u16 event_size_count;
-    u16 event_count; // guaranteed to be a multiple of 4 (to align events to 4b)
+    u32 event_count;
     u32 compressed_event_data_stream_size;
     u32 decompressed_event_data_stream_size;
 
-    // stream field is equivalent to these dynamically sized fields:
-    // u32 event_sizes[event_size_count];
-    // u8 events[event_count]; 
+    // The stream field is equivalent to these dynamically sized fields:
+    // u32 events[event_count];
+    // u32 event_offsets[event_count];
     // u8 compressed_event_data_stream[];
     u8 stream[];
 } ExportData_v2;
 
+// Serialized! Do not reorder events. Only add new events to the end.
+// Be sure to update `rec_event_data_sizes`.
 typedef enum RecEvent {
     RecEvent_Null,
     RecEvent_MatchInit,
     RecEvent_Savestate_v1,
     RecEvent_Savestate_v2,
     RecEvent_RecordingSlot_v1,
+    RecEvent_RecordingSlot_v2,
     RecEvent_MenuSettings_Record_v1,
+    RecEvent_MenuSettings_Record_v2,
+    RecEvent_MenuSettings_BehaviorOptions,
+    RecEvent_MenuSettings_TDIOptions,
+    RecEvent_MenuSettings_TechOptions,
+    RecEvent_MenuSettings_InfoDisplay,
+    RecEvent_MenuSettings_ActionLog,
+    RecEvent_MenuSettings_CustomOSDs,
+    RecEvent_MenuSettings_Overlays,
+    // TODO Stage 
+    RecEvent_RNGControl,
 
-    // RecEvent_InfoDisplay,
-    // RecEvent_RNGOptions,
-    // RecEvent_TDIOptions,
-    // RecEvent_TechOptions,
-    // RecEvent_ActionLog,
-    // RecEvent_CustomOSDs,
     RecEvent_Count
 } RecEvent;
 
@@ -208,8 +207,144 @@ typedef struct ALIGN_4 RecEventData_RecordingSlot_v1 {
     RecInputData_v1 rec_input_data;
 } RecEventData_RecordingSlot_v1;
 
+typedef struct ALIGN_4 RecEventData_RecordingSlot_v2 {
+    u8 ply;
+    u8 slot_idx;
+    u16 input_count;
+    int start_frame;
+    RecInputs inputs[REC_LENGTH];
+} RecEventData_RecordingSlot_v2;
+
 typedef struct ALIGN_4 RecEventData_MenuSettings_Record_v1 {
-    ExportMenuSettings_v1 menu_settings;
+    u8 hmn_mode;
+    u8 hmn_slot;
+    u8 cpu_mode;
+    u8 cpu_slot;
+    u8 loop_inputs;
+    u8 auto_restore;
 } RecEventData_MenuSettings_Record_v1;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_Record_v2 {
+    RecEventData_MenuSettings_Record_v1 v1; 
+    u8 mirror;
+    u8 cpu_counter;
+    u8 start_paused;
+    u8 hmn_random_percent;
+    u8 cpu_random_percent;
+    u8 hmn_slot_chance_count;
+    u8 cpu_slot_chance_count;
+    u8 hmn_slot_chances[32];
+    u8 cpu_slot_chances[32];
+} RecEventData_MenuSettings_Record_v2;
+
+typedef struct CustomTDI {
+    float lstickX;
+    float lstickY;
+    float cstickX;
+    float cstickY;
+    u32 reversing: 1;
+    u32 direction: 1; // 0 = left of player, 1 = right of player
+} CustomTDI;
+
+typedef struct AdvancedCounterAction {
+    u8 counter_logic;
+    u8 counter_air;
+    u8 counter_ground;
+    u8 counter_shield;
+    u8 counter_delay_air;
+    u8 counter_delay_ground;
+    u8 counter_delay_shield;
+} AdvancedCounterAction;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_BehaviorOptions {
+    u8 behavior;
+    u8 shield_angle;
+    u8 mash;
+    u8 inf_shields;
+    u8 counter_air;
+    u8 counter_ground;
+    u8 counter_shield;
+    u8 counter_delay;
+    u8 counter_advanced_count;
+    AdvancedCounterAction counter_advanced[32];
+} RecEventData_MenuSettings_BehaviorOptions;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_TDIOptions {
+    u8 tdi_direction;
+    u8 sdi_count;
+    u8 sdi_direction;
+    u8 asdi_direction;
+    u8 custom_tdi_count; 
+    CustomTDI custom_tdi[10];
+} RecEventData_MenuSettings_TDIOptions;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_TechOptions {
+    u8 tech_direction;
+    u8 getup_direction;
+    u8 invisibility;
+    u8 invisibility_delay;
+    u8 tech_sound;
+    u8 simulate_tech_trap;
+    u8 tech_lockout;
+    u8 chance_tech_in_place;
+    u8 chance_tech_away;
+    u8 chance_tech_toward;
+    u8 chance_tech_miss;
+    u8 chance_miss_wait;
+    u8 chance_miss_getup_in_place;
+    u8 chance_miss_getup_away;
+    u8 chance_miss_getup_toward;
+    u8 chance_miss_attack;
+} RecEventData_MenuSettings_TechOptions;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_InfoDisplay {
+    u8 ply;
+    u8 info_idx[8];
+} RecEventData_MenuSettings_InfoDisplay;
+
+typedef struct ActionLogAction {
+    u8 behaviour;
+    s8 min_lstick_x;
+    s8 min_lstick_y;
+    u8 fastfall : 1;
+    u8 iasa : 1;
+    u16 min_state_frame;
+    u16 state;
+} ActionLogAction;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_ActionLog {
+    u8 action_count;
+    ActionLogAction actions[16];
+} RecEventData_MenuSettings_ActionLog;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_CustomOSDs {
+    u8 state_count;
+    u16 states[8];
+} RecEventData_MenuSettings_CustomOSDs;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
+    u8 ply;
+    u8 actionable;
+    u8 hitstun;
+    u8 invincible;
+    u8 ledge_actionable;
+    u8 missed_lcancel;
+    u8 can_fastfall;
+    u8 autocancel;
+    u8 crouch;
+    u8 wait;
+    u8 walk;
+    u8 dash;
+    u8 run;
+    u8 jumps_used;
+    u8 fullhop;
+    u8 shorthop;
+    u8 iasa;
+    u8 shield_stun;
+} RecEventData_MenuSettings_Overlays;
+
+typedef struct ALIGN_4 RecEventData_RNGControl {
+    RNGControl rng_control;
+} RecEventData_RNGControl;
 
 #endif
