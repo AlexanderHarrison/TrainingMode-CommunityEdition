@@ -10,7 +10,6 @@ static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
 static RecData_v1 rec_data;
 static SavestateHeader *rec_state;
-static int rec_state_savestate_version; 
 static u8 export_status;
 static Arch_LabData *stc_lab_data;
 static char *tm_filename = "TMREC_%02d%02d%04d_%02d%02d%02d";
@@ -2572,8 +2571,8 @@ int Update_CheckAdvance()
             timer_dec++;
 
             int curr_frame = Record_GetCurrFrame();
-            if (rec_state->is_exist == 1 && (timer_dec == 1 || timer_dec > 30)) {
-                Record_Restart(rec_state, rec_state_savestate_version, Savestate_Silent);
+            if (rec_state->is_initialized == 1 && (timer_dec == 1 || timer_dec > 30)) {
+                Record_Restart(rec_state, Savestate_Silent);
                 if (curr_frame > 0) {
                     stc_recording_target_frame = curr_frame - 1;
                     event_vars->flags |= EventVarsFlag_ForceGameLoop;
@@ -3649,7 +3648,7 @@ GOBJ *Record_Init()
     // alloc rec_state
     rec_state = calloc(sizeof(Savestate_v2));
     // set as not exist
-    rec_state->is_exist = 0;
+    rec_state->is_initialized = 0;
 
     // disable menu options
     for (u32 i = 0; i < countof(LabOptions_Record); i++)
@@ -3776,7 +3775,7 @@ void Record_GX(GOBJ *gobj, int pass)
 
 void Record_Think(GOBJ *rec_gobj)
 {
-    if (rec_state->is_exist != 1) return;
+    if (rec_state->is_initialized != 1) return;
 
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
@@ -3852,7 +3851,7 @@ void Record_Think(GOBJ *rec_gobj)
             rec_data.restore_timer++;
 
         if (rec_data.restore_timer >= AUTORESTORE_DELAY)
-            Record_LoadSavestate(rec_state, rec_state_savestate_version);
+            Record_LoadSavestate(rec_state);
     }
 
     int curr_frame = Record_GetCurrFrame();
@@ -4095,7 +4094,6 @@ void Record_InitState(GOBJ *menu_gobj)
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
-        rec_state_savestate_version = 2;
         Record_OnSuccessfulSave(1);
     }
 }
@@ -4107,7 +4105,6 @@ int Record_RemakeState(void)
     stc_playback_cancelled_cpu = false;
     int prev_frame = rec_state->frame;
     if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
-        rec_state_savestate_version = 2;
         Record_OnSuccessfulSave(0);
     }
     int new_frame = rec_state->frame;
@@ -4194,7 +4191,7 @@ void Record_PruneState(GOBJ *menu_gobj)
 }
 void Record_DeleteState(GOBJ *menu_gobj)
 {
-    rec_state->is_exist = 0;
+    rec_state->is_initialized = 0;
 
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
@@ -4226,7 +4223,7 @@ void Record_DeleteState(GOBJ *menu_gobj)
 }
 void Record_RestoreState(GOBJ *menu_gobj)
 {
-    Record_LoadSavestate(rec_state, rec_state_savestate_version);
+    Record_LoadSavestate(rec_state);
 }
 void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
 {
@@ -4250,7 +4247,7 @@ void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
     }
 
     // reload save
-    Record_LoadSavestate(rec_state, rec_state_savestate_version);
+    Record_LoadSavestate(rec_state);
 }
 void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
 {
@@ -4274,7 +4271,7 @@ void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
     }
 
     // reload save
-    Record_LoadSavestate(rec_state, rec_state_savestate_version);
+    Record_LoadSavestate(rec_state);
 }
 
 void Record_ChangeMode_Common(void)
@@ -4314,7 +4311,7 @@ void Record_ChangeHMNMode(GOBJ *menu_gobj, int value)
         memcpy(rec_data.hmn_inputs[Record_GetSlot(0)], rec_data.hmn_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_HMN_PLAYBACK || value == RECMODE_HMN_RERECORD)
-        Record_LoadSavestate(rec_state, rec_state_savestate_version);
+        Record_LoadSavestate(rec_state);
     Record_ChangeMode_Common();
 }
 void Record_ChangeCPUMode(GOBJ *menu_gobj, int value)
@@ -4328,7 +4325,7 @@ void Record_ChangeCPUMode(GOBJ *menu_gobj, int value)
         memcpy(rec_data.cpu_inputs[Record_GetSlot(1)], rec_data.cpu_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_CPU_PLAYBACK || value == RECMODE_CPU_RERECORD)
-        Record_LoadSavestate(rec_state, rec_state_savestate_version);
+        Record_LoadSavestate(rec_state);
     Record_ChangeMode_Common();
 }
 void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
@@ -4345,7 +4342,7 @@ void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
         LabOptions_Record[OPTREC_CPUMODE].disable = 0;
     }
 
-    Record_LoadSavestate(rec_state, rec_state_savestate_version);
+    Record_LoadSavestate(rec_state);
 }
 int Record_GetRandomSlot(RecInputData_v1 **input_data, EventOption slot_menu[])
 {
@@ -4566,10 +4563,6 @@ void Record_MemcardLoad(int slot, int file_no)
             }
 
             ExportData_Free(&ed);
-            if (rec_state->is_exist) {
-                Record_LoadSavestate(rec_state, rec_state_savestate_version);
-                Record_OnSuccessfulSave(false);
-            }
         }
 
         HSD_Free(memcard_save.data);
@@ -4607,7 +4600,7 @@ void Record_RerollSlotRNG(void) {
     }
 }
 
-void Record_Restart(SavestateHeader *savestate, int savestate_version, int flags) {
+void Record_Restart(SavestateHeader *savestate, int flags) {
     int mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
     if (mirror == OPTMIRROR_RANDOM)
         mirror = HSD_Randi(2);
@@ -4631,17 +4624,11 @@ void Record_Restart(SavestateHeader *savestate, int savestate_version, int flags
     stc_playback_cancelled_cpu = false;
     
     if (mirror) flags |= Savestate_Mirror;
-
-    if (savestate_version == 1)
-        event_vars->Savestate_Load_v1((Savestate_v1*)savestate, flags);
-    else if (savestate_version == 2)
-        event_vars->Savestate_Load_v2((Savestate_v2*)savestate, flags);
-    else
-        assert("bad savestate version!");
+    event_vars->Savestate_Load(savestate, flags);
 }
 
-void Record_LoadSavestate(SavestateHeader *savestate, int savestate_version) {
-    Record_Restart(savestate, savestate_version, 0);
+void Record_LoadSavestate(SavestateHeader *savestate) {
+    Record_Restart(savestate, 0);
     Record_RerollSlotRNG();
 }
 
@@ -4703,7 +4690,7 @@ void Savestates_Update()
                 if (pad->down & loadstate_mask)
                 {
                     // load state
-                    Record_LoadSavestate((SavestateHeader *)event_vars->savestate2, 2);
+                    Record_LoadSavestate(&event_vars->savestate2->header);
                     stc_playback_cancelled_hmn = false;
                     stc_playback_cancelled_cpu = false;
 
@@ -4785,13 +4772,15 @@ void ExportData_ApplyEvent(void *data, u32 event) {
         case RecEvent_Savestate_v1: {
             RecEventData_Savestate_v1 *state = data;
             memcpy(rec_state, state, sizeof(Savestate_v1));
-            rec_state_savestate_version = 1;
+            Record_LoadSavestate(rec_state);
+            Record_OnSuccessfulSave(false);
         } break;
 
         case RecEvent_Savestate_v2: {
             RecEventData_Savestate_v2 *state = data;
             memcpy(rec_state, state, sizeof(Savestate_v2));
-            rec_state_savestate_version = 2;
+            Record_LoadSavestate(rec_state);
+            Record_OnSuccessfulSave(false);
         } break;
 
         case RecEvent_RecordingSlot_v1: {
@@ -4847,29 +4836,40 @@ static void Export_CreateExportFile(void)
     
     // find events to be saved --------------------------------------
     
-    if (!rec_state->is_exist) LabOptions_Export[OPTEXP_RECORDING].val = false;
+    if (!rec_state->is_initialized) LabOptions_Export[OPTEXP_RECORDING].val = false;
 
     if (LabOptions_Export[OPTEXP_RECORDING].val) {
-        if (rec_state_savestate_version == 1) {
+        if (rec_state->version_major <= 1) {
             events[event_count++] = RecEvent_Savestate_v1;
-        } else if (rec_state_savestate_version == 2) {
+        } else if (rec_state->version_major == 2) {
             events[event_count++] = RecEvent_Savestate_v2;
         } else {
             assert("invalid savestate version!");
         }
 
         for (u32 i = 0; i < REC_SLOTS; ++i)
-            if (rec_data.hmn_inputs[i].start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+            if (rec_data.hmn_inputs[i]->start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
         for (u32 i = 0; i < REC_SLOTS; ++i)
-            if (rec_data.cpu_inputs[i].start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+            if (rec_data.cpu_inputs[i]->start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+    }
+    
+    int info_display_enabled_hmn = 0;
+    int info_display_enabled_cpu = 0;
+    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val) {
+        for (u32 i = 0; i < INFDISPLAY_ROWCOUNT; ++i) {
+            info_display_enabled_hmn |= LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val;
+            info_display_enabled_cpu |= LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val;
+        }
+    
+        if (info_display_enabled_hmn) events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
+        if (info_display_enabled_cpu) events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
     }
 
     if (LabOptions_Export[OPTEXP_SETTINGS_RECORDING].val)       events[event_count++] = RecEvent_MenuSettings_Record_v2;
     if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val)        events[event_count++] = RecEvent_MenuSettings_BehaviorOptions;
-    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val)              events[event_count++] = RecEvent_MenuSettings_TDIOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val)              events[event_count++] = RecEvent_MenuSettings_DIOptions;
     if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val)            events[event_count++] = RecEvent_MenuSettings_TechOptions;
     if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val)   events[event_count++] = RecEvent_MenuSettings_RNGControl;
-    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val)    events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
     if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val)      events[event_count++] = RecEvent_MenuSettings_ActionLog;
     if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
     if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
@@ -4890,37 +4890,38 @@ static void Export_CreateExportFile(void)
 
     if (LabOptions_Export[OPTEXP_RECORDING].val) {
         // copy savestate
-        if (rec_state_savestate_version == 1) {
-            RecEventData_Savestate_v1 *dst = eventbuf + event_offsets[event_write_i++];
+        if (rec_state->version_major <= 1) {
+            RecEventData_Savestate_v1 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
             memcpy(dst, rec_state, sizeof(RecEventData_Savestate_v1));
-        } else if (rec_state_savestate_version == 2) {
-            RecEventData_Savestate_v2 *dst = eventbuf + event_offsets[event_write_i++];
+        } else if (rec_state->version_major == 2) {
+            RecEventData_Savestate_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
             memcpy(dst, rec_state, sizeof(RecEventData_Savestate_v2));
         }
 
         // copy recording slots
         for (u32 i = 0; i < REC_SLOTS; ++i) {
-            if (rec_data.hmn_inputs[i].start_frame >= 0) {
-                RecEventData_RecordSlot_v2 *dst = eventbuf + event_offsets[event_write_i++];
+            if (rec_data.hmn_inputs[i]->start_frame >= 0) {
+                RecEventData_RecordingSlot_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
                 dst->ply = 0;
                 dst->slot_idx = i;
-                dst->input_count = (u16)rec_data.hmn_inputs[i].num;
-                memcpy(dst->inputs, rec_state.hmn_inputs[i].inputs, sizeof(dst->inputs));
+                dst->input_count = (u16)rec_data.hmn_inputs[i]->num;
+                memcpy(dst->inputs, rec_data.hmn_inputs[i]->inputs, sizeof(dst->inputs));
             }
         }
         for (u32 i = 0; i < REC_SLOTS; ++i) {
-            if (rec_data.cpu_inputs[i].start_frame >= 0) {
-                RecEventData_RecordSlot_v2 *dst = eventbuf + event_offsets[event_write_i++];
+            if (rec_data.cpu_inputs[i]->start_frame >= 0) {
+                RecEventData_RecordingSlot_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
                 dst->ply = 1;
                 dst->slot_idx = i;
-                dst->input_count = (u16)rec_data.cpu_inputs[i].num;
-                memcpy(dst->inputs, rec_state.cpu_inputs[i].inputs, sizeof(dst->inputs));
+                dst->input_count = (u16)rec_data.cpu_inputs[i]->num;
+                memcpy(dst->inputs, rec_data.cpu_inputs[i]->inputs, sizeof(dst->inputs));
             }
         }
     }
 
     if (LabOptions_Export[OPTEXP_SETTINGS_RECORDING].val) {
-        RecEventData_MenuSettings_Record_v2 *dst = eventbuf + event_offsets[event_write_i++];
+        // copy recording settings
+        RecEventData_MenuSettings_Record_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
         dst->v1.hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
         dst->v1.hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
         dst->v1.cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
@@ -4930,19 +4931,122 @@ static void Export_CreateExportFile(void)
         dst->mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
         dst->cpu_counter = LabOptions_Record[OPTREC_PLAYBACK_COUNTER].val;
         dst->start_paused = LabOptions_Record[OPTREC_STARTPAUSED].val;
-        dst->hmn_random_percent = LabOptions_Record[OPTREC_STARTPAUSED].val;
+        dst->hmn_random_percent = LabOptions_SlotChancesHMN[OPTSLOTCHANCE_PERCENT].val;
+        dst->cpu_random_percent = LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT].val;
         
-        // CONTINUE HERE
-        
-        RETURN
+        if (REC_SLOTS > countof(dst->hmn_slot_chances)) assert("not enough rec slots!");
+        dst->hmn_slot_chance_count = REC_SLOTS;
+        dst->cpu_slot_chance_count = REC_SLOTS;
+        for (u32 i = 0; i < REC_SLOTS; ++i) {
+            dst->hmn_slot_chances[i] = LabOptions_SlotChancesHMN[OPTSLOTCHANCE_1 + i].val;
+            dst->cpu_slot_chances[i] = LabOptions_SlotChancesCPU[OPTSLOTCHANCE_1 + i].val;
+        }
     }
 
-    if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val)        events[event_count++] = RecEvent_MenuSettings_BehaviorOptions;
-    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val)              events[event_count++] = RecEvent_MenuSettings_TDIOptions;
-    if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val)            events[event_count++] = RecEvent_MenuSettings_TechOptions;
-    if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val)   events[event_count++] = RecEvent_MenuSettings_RNGControl;
-    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val)    events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
-    if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val)      events[event_count++] = RecEvent_MenuSettings_ActionLog;
+    if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val) {
+        // copy CPU behavior settings
+        RecEventData_MenuSettings_BehaviorOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->behavior = LabOptions_CPU[OPTCPU_BEHAVE].val;
+        dst->shield_angle = LabOptions_CPU[OPTCPU_SHIELDDIR].val;
+        dst->mash = LabOptions_CPU[OPTCPU_MASH].val;
+        dst->inf_shield = LabOptions_CPU[OPTCPU_SHIELD].val;
+        dst->inf_shield_health = LabOptions_CPU[OPTCPU_SHIELDHEALTH].val;
+        dst->shield_dir = LabOptions_CPU[OPTCPU_SHIELDDIR].val;
+        dst->intang = LabOptions_CPU[OPTCPU_INTANG].val;
+        dst->grab_release = LabOptions_CPU[OPTCPU_GRABRELEASE].val;
+        dst->counter_air = LabOptions_CPU[OPTCPU_CTRAIR].val;
+        dst->counter_ground = LabOptions_CPU[OPTCPU_CTRGRND].val;
+        dst->counter_shield = LabOptions_CPU[OPTCPU_CTRSHIELD].val;
+        dst->counter_delay = LabOptions_CPU[OPTCPU_CTRFRAMES].val;
+
+        if (ADV_COUNTER_COUNT > countof(dst->counter_advanced)) assert("not enough counter slots!");
+        dst->counter_advanced_count = ADV_COUNTER_COUNT;
+        for (u32 i = 0; i < ADV_COUNTER_COUNT; ++i) {
+            AdvancedCounterAction *adv_dst = &dst->counter_advanced[i];
+            EventOption *adv_src = LabOptions_AdvCounter[i];
+            adv_dst->counter_logic = adv_src[OPTCTR_LOGIC].val; 
+            adv_dst->counter_air = adv_src[OPTCTR_CTRAIR].val; 
+            adv_dst->counter_ground = adv_src[OPTCTR_CTRGRND].val; 
+            adv_dst->counter_shield = adv_src[OPTCTR_CTRSHIELD].val; 
+            adv_dst->counter_delay_air = adv_src[OPTCTR_DELAYAIR].val; 
+            adv_dst->counter_delay_ground = adv_src[OPTCTR_DELAYGRND].val; 
+            adv_dst->counter_delay_shield = adv_src[OPTCTR_DELAYSHIELD].val; 
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val) {
+        // copy CPU DI settings
+        RecEventData_MenuSettings_DIOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->tdi_direction = LabOptions_CPU[OPTCPU_TDI].val;
+        dst->sdi_count = LabOptions_CPU[OPTCPU_SDINUM].val;
+        dst->sdi_direction = LabOptions_CPU[OPTCPU_SDIDIR].val;
+        dst->asdi_direction = LabOptions_CPU[OPTCPU_ASDI].val;
+
+        if (TDI_HITNUM > countof(dst->custom_tdi)) assert("not enough custom tdi slots!");
+        dst->custom_tdi_count = TDI_HITNUM;
+        for (u32 i = 0; i < TDI_HITNUM; ++i)
+            dst->custom_tdi[i] = stc_tdi_vals[i]
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val) {
+        // copy CPU tech settings
+        RecEventData_MenuSettings_TechOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->tech_direction = LabOptions_Tech[OPTTECH_TECH].val;
+        dst->getup_direction = LabOptions_Tech[OPTTECH_GETUP].val;
+        dst->invisibility = LabOptions_Tech[OPTTECH_INVISIBLE].val;
+        dst->invisibility_delay = LabOptions_Tech[OPTTECH_INVISIBLE_DELAY].val;
+        dst->tech_sound = LabOptions_Tech[OPTTECH_SOUND].val;
+        dst->simulate_tech_trap = LabOptions_Tech[OPTTECH_TRAP].val;
+        dst->tech_lockout = LabOptions_Tech[OPTTECH_LOCKOUT].val;
+        dst->chance_tech_in_place = LabOptions_Tech[OPTTECH_TECHINPLACECHANCE].val;
+        dst->chance_tech_away = LabOptions_Tech[OPTTECH_TECHAWAYCHANCE].val;
+        dst->chance_tech_toward = LabOptions_Tech[OPTTECH_TECHTOWARDCHANCE].val;
+        dst->chance_tech_miss = LabOptions_Tech[OPTTECH_MISSTECHCHANCE].val;
+        dst->chance_miss_wait = LabOptions_Tech[OPTTECH_GETUPWAITCHANCE].val;
+        dst->chance_miss_getup_in_place = LabOptions_Tech[OPTTECH_GETUPSTANDCHANCE].val;
+        dst->chance_miss_getup_away = LabOptions_Tech[OPTTECH_GETUPAWAYCHANCE].val;
+        dst->chance_miss_getup_toward = LabOptions_Tech[OPTTECH_GETUPTOWARDCHANCE].val;
+        dst->chance_miss_getup_attack = LabOptions_Tech[OPTTECH_GETUPATTACKCHANCE].val;
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val) {
+        RecEventData_MenuSettings_RNGControl *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->rng_control = event_vars->rng;
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val) {
+        if (info_display_enabled_hmn) {
+            RecEventData_MenuSettings_InfoDisplay *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+            if (INFDISPLAY_ROWCOUNT > countof(dst->info)) assert("not enough info display slots!");
+            dst->ply = 0;
+            for (u32 i = 0; i < INFDISPLAY_ROWCOUNT; ++i)
+                dst->info[i] = LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val;
+        }
+
+        if (info_display_enabled_cpu) {
+            RecEventData_MenuSettings_InfoDisplay *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+            if (INFDISPLAY_ROWCOUNT > countof(dst->info)) assert("not enough info display slots!");
+            dst->ply = 1;
+            for (u32 i = 0; i < INFDISPLAY_ROWCOUNT; ++i)
+                dst->info[i] = LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val;
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val) {
+        RecEventData_MenuSettings_ActionLog *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        if (ACTION_LOG_MAX > countof(dst->actions)) assert("not enough action log slots!");
+        dst->action_log_count = ACTION_LOG_MAX;
+        for (u32 i = 0; i < ACTION_LOG_MAX; ++i) {
+            ActionLogAction *action_dst = &dst->actions[i];
+            EventOption *action_src = LabOptions_ActionLog[i];
+            action_dst->behavior = action_src[OPTACTIONLOG_ACTION];
+            action_dst->state = action_src[OPTACTIONLOG_STATE];
+            action_dst->frame = action_src[OPTACTIONLOG_FRAME];
+            action_dst->min_lstick_x = action_src[OPTACTIONLOG_LSTICK_X];
+            action_dst->min_lstick_y = action_src[OPTACTIONLOG_LSTICK_Y];
+        }
+    }
+
     if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
     if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
 
@@ -6674,7 +6778,7 @@ void Event_Think(GOBJ *event)
 {
     // Save a minor state at event start, so people can reset if they SD.
     // This cannot be done in Event_Init, so we do it here.
-    if (!event_vars->savestate2->header.is_exist) {
+    if (!event_vars->savestate2->header.is_initialized) {
         event_vars->Savestate_Save_v2(event_vars->savestate2, Savestate_Silent);
         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
     }

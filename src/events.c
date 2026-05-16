@@ -728,6 +728,19 @@ EventPage *EventPages[] = {
 
 RNGControl rng;
 
+int Savestate_Load(SavestateHeader *savestate, int flags) {
+    if (!savestate->is_initialized)
+        assert("savestate not initialized!");
+
+    if (savestate->version_major <= 1)
+        return Savestate_Load_v1((Savestate_v1*)savestate, flags);
+    else if (savestate->version_major == 2)
+        return Savestate_Load_v2((Savestate_v2*)savestate, flags);
+    else
+        assert("unsupported savestate version!");
+    return false;
+}
+
 EventVars stc_event_vars = {
     .event_desc = 0,
     .menu_assets = 0,
@@ -737,9 +750,8 @@ EventVars stc_event_vars = {
     .game_timer = 0,
     .flags = 0,
     .Savestate_Save_v1 = Savestate_Save_v1,
-    .Savestate_Load_v1 = Savestate_Load_v1,
     .Savestate_Save_v2 = Savestate_Save_v2,
-    .Savestate_Load_v2 = Savestate_Load_v2,
+    .Savestate_Load = Savestate_Load,
     .Message_Display = Message_Display,
     .Tip_Display = Tip_Display,
     .Tip_Destroy = Tip_Destroy,

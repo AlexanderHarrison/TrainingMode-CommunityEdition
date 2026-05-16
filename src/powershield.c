@@ -404,7 +404,7 @@ static void PutOnGround(GOBJ *ft) {
 void Reset(void) {
     int direction = Options_Main[OPT_DIRECTION].val;
     int mirror = direction == DIRECTION_LEFT ? Savestate_Mirror : 0;
-    event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent | mirror);
+    event_vars->Savestate_Load(&event_vars->savestate->header, Savestate_Silent | mirror);
 
     falco_wait_delay = -1;
     falco_shoot_delay = -1;

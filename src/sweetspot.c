@@ -302,7 +302,7 @@ void Reset(int side_idx) {
     if (side_idx != 0 && side_idx != 1)
         assert("invalid side");
 
-    event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
+    event_vars->Savestate_Load(&event_vars->savestate->header, Savestate_Silent);
     sideb.attempted = false;
 
     GOBJ *hmn = Fighter_GetGObj(0);

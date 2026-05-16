@@ -33,7 +33,7 @@ static ParsedExportData_v2 ExportData_Import_v2(u8 *transfer_buf) {
 static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
     ExportHeader_v1 *header = (ExportHeader_v1 *)transfer_buf;
     u8 *compressed_recording = transfer_buf + header->lookup.ofst_recording;
-    ExportMenuSettings_v1 *menu_settings = (ExportMenuSettings_v1 *)(transfer_buf + header->lookup.ofst_menusettings);
+    ExportMenuSettings *menu_settings = (ExportMenuSettings *)(transfer_buf + header->lookup.ofst_menusettings);
     
     // decompress
     RecordingSave_v1 *recsave = calloc(sizeof(RecordingSave_v1) + 0x100);
@@ -68,7 +68,12 @@ static ParsedExportData_v2 ExportData_Import_v1(u8 *transfer_buf) {
 
     // append menu settings
     RecEventData_MenuSettings_Record_v1* record = (void*)((u8*)recsave + decompressed_size);
-    record->menu_settings = *menu_settings;
+    record->hmn_mode = menu_settings->hmn_mode;
+    record->hmn_slot = menu_settings->hmn_slot;
+    record->cpu_mode = menu_settings->cpu_mode;
+    record->cpu_slot = menu_settings->cpu_slot;
+    record->loop_inputs = menu_settings->loop_inputs;
+    record->auto_restore = menu_settings->auto_restore;
 
     return (ParsedExportData_v2) {
         .metadata = &header->metadata,
