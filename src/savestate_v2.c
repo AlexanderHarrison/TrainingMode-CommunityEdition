@@ -350,7 +350,9 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
         }
     }
 
-    savestate->header.is_exist = 1;
+    savestate->header.version_major = 2;
+    savestate->header.version_minor = 0;
+    savestate->header.is_initialized = true;
 
     // save frame
     savestate->header.frame = event_vars->game_timer;
@@ -730,7 +732,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
 {
     OSReport("START LOAD --------------------------------------\n");
 
-    if (!savestate->header.is_exist) {
+    if (!savestate->header.is_initialized) {
         if ((flags & Savestate_Silent) == 0)
             SFX_PlayCommon(3);
         return false;

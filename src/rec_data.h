@@ -175,14 +175,14 @@ typedef enum RecEvent {
     RecEvent_MenuSettings_Record_v1,
     RecEvent_MenuSettings_Record_v2,
     RecEvent_MenuSettings_BehaviorOptions,
-    RecEvent_MenuSettings_TDIOptions,
+    RecEvent_MenuSettings_DIOptions,
     RecEvent_MenuSettings_TechOptions,
     RecEvent_MenuSettings_InfoDisplay,
     RecEvent_MenuSettings_ActionLog,
     RecEvent_MenuSettings_CustomOSDs,
     RecEvent_MenuSettings_Overlays,
     // TODO Stage 
-    RecEvent_RNGControl,
+    RecEvent_MenuSettings_RNGControl,
 
     RecEvent_Count
 } RecEvent;
@@ -260,23 +260,27 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_BehaviorOptions {
     u8 behavior;
     u8 shield_angle;
     u8 mash;
-    u8 inf_shields;
+    u8 inf_shield;
+    u8 inf_shield_health;
+    u8 shield_dir;
+    u8 intang;
+    u8 grab_release;
     u8 counter_air;
     u8 counter_ground;
     u8 counter_shield;
     u8 counter_delay;
     u8 counter_advanced_count;
-    AdvancedCounterAction counter_advanced[32];
+    AdvancedCounterAction counter_advanced[16];
 } RecEventData_MenuSettings_BehaviorOptions;
 
-typedef struct ALIGN_4 RecEventData_MenuSettings_TDIOptions {
+typedef struct ALIGN_4 RecEventData_MenuSettings_DIOptions {
     u8 tdi_direction;
     u8 sdi_count;
     u8 sdi_direction;
     u8 asdi_direction;
     u8 custom_tdi_count; 
     CustomTDI custom_tdi[10];
-} RecEventData_MenuSettings_TDIOptions;
+} RecEventData_MenuSettings_DIOptions;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_TechOptions {
     u8 tech_direction;
@@ -294,16 +298,18 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_TechOptions {
     u8 chance_miss_getup_in_place;
     u8 chance_miss_getup_away;
     u8 chance_miss_getup_toward;
-    u8 chance_miss_attack;
+    u8 chance_miss_getup_attack;
 } RecEventData_MenuSettings_TechOptions;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_InfoDisplay {
     u8 ply;
-    u8 info_idx[8];
+    u8 info[15];
 } RecEventData_MenuSettings_InfoDisplay;
 
+// TODO: convert arrays to separate objects. Maybe. Think about it.
+
 typedef struct ActionLogAction {
-    u8 behaviour;
+    u8 behavior;
     s8 min_lstick_x;
     s8 min_lstick_y;
     u8 fastfall : 1;
@@ -343,8 +349,10 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
     u8 shield_stun;
 } RecEventData_MenuSettings_Overlays;
 
-typedef struct ALIGN_4 RecEventData_RNGControl {
+// TODO store rng seed for each frame and stuff
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_RNGControl {
     RNGControl rng_control;
-} RecEventData_RNGControl;
+} RecEventData_MenuSettings_RNGControl;
 
 #endif

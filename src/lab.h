@@ -1493,8 +1493,9 @@ enum info_disp_option
     OPTINF_ROW6,
     OPTINF_ROW7,
     OPTINF_ROW8,
+    INFDISPLAY_ROWCOUNT = OPTINF_ROW8 - OPTINF_ROW1 + 1,
 
-    OPTINF_COUNT
+    OPTINF_COUNT, 
 };
 
 #define OPTINF_ROW_COUNT (OPTINF_COUNT - OPTINF_ROW1)
@@ -2238,6 +2239,7 @@ enum cpu_mash
     CPUMASH_COUNT
 };
 
+// Serialized!
 enum cpu_grab_release
 {
     CPUGRABRELEASE_GROUNDED,

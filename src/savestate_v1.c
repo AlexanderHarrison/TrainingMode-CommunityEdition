@@ -146,8 +146,9 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
     int isSaved = 0;
     if (canSave == 1)
     {
-
-        savestate->header.is_exist = 1;
+        savestate->header.version_major = 1;
+        savestate->header.version_minor = 0;
+        savestate->header.is_initialized = true;
 
         // save frame
         savestate->header.frame = event_vars->game_timer;
@@ -305,6 +306,7 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
 
     return isSaved;
 }
+
 // use enum savestate_flags for flags
 int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 {

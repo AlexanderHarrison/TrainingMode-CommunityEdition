@@ -8,7 +8,13 @@
 #define EVENT_DATASIZE 512
 
 typedef struct SavestateHeader {
-    int is_exist;
+    // These 4 bytes were originally `int is_exist` in unc's original savestate format.
+    // The high 32 bits were completely unused, so we can easily fit in a version field here.
+    // version < 2 corresponds to v1.
+    u8 version_major;
+    u8 version_minor;
+    u8 _unused;
+    u8 is_initialized;
     int frame;
 } SavestateHeader;
 
@@ -164,6 +170,15 @@ typedef struct Savestate_v2
 
 // VERSION 1 #####################################################
     
+typedef struct ExportMenuSettings {
+    u8 hmn_mode;
+    u8 hmn_slot;
+    u8 cpu_mode;
+    u8 cpu_slot;
+    u8 loop_inputs;
+    u8 auto_restore;
+} ExportMenuSettings;
+
 typedef struct FtSaveStateData_v1
 {
     int is_exist;
@@ -362,8 +377,8 @@ enum savestate_flags {
 };
 
 int Savestate_Save_v1(Savestate_v1 *savestate, int flags);
-int Savestate_Load_v1(Savestate_v1 *savestate, int flags);
 int Savestate_Save_v2(Savestate_v2 *savestate, int flags);
+int Savestate_Load_v1(Savestate_v1 *savestate, int flags);
 int Savestate_Load_v2(Savestate_v2 *savestate, int flags);
 
 #endif
