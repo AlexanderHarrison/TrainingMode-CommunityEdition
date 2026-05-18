@@ -1403,14 +1403,12 @@ enum info_disp_option
     OPTINF_ROW6,
     OPTINF_ROW7,
     OPTINF_ROW8,
-    INFDISPLAY_ROWCOUNT = OPTINF_ROW8 - OPTINF_ROW1 + 1,
-
-    OPTINF_COUNT, 
+    OPTINF_COUNT,
 };
 
 #define OPTINF_ROW_COUNT (OPTINF_COUNT - OPTINF_ROW1)
 
-// Serialized! Do not remove or re-order entries!
+// Serialized!
 static const char *LabValues_InfoDisplay[INFDISP_COUNT] = {"None", "Position", "State Name", "State Frame", "Velocity - Self", "Velocity - KB", "Velocity - Total", "Engine LStick", "System LStick", "Engine CStick", "System CStick", "Engine Trigger", "System Trigger", "Ledgegrab Timer", "Intangibility Timer", "Hitlag", "Hitstun", "Shield Health", "Shield Stun", "Grip Strength", "ECB Lock", "ECB Bottom", "Jumps", "Walljumps", "Can Walljump", "Jab Counter", "Line Info", "Blastzone Left/Right", "Blastzone Up/Down"};
 static const char *LabValues_InfoSizeText[] = {"Small", "Medium", "Large"};
 static float LabValues_InfoSizes[] = {0.7, 0.85, 1.0};
@@ -1435,7 +1433,6 @@ static int LabValues_InfoPresetStates[][OPTINF_ROW_COUNT] = {
         INFDISP_INTANGREMAIN,
         INFDISP_ECBLOCK,
         INFDISP_ECBBOT,
-        INFDISP_NONE,
     },
 
     // Damage

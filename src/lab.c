@@ -4821,6 +4821,26 @@ void ExportData_ApplyEvent(void *data, u32 event) {
     }
 }
 
+static void Export_CopyMenuSettings_Overlays(RecEventData_MenuSettings_Overlays *dst, EventOption *options) {
+    dst->actionable = options[OVERLAY_ACTIONABLE].val;
+    dst->hitstun = options[OVERLAY_HITSTUN].val;
+    dst->invincible = options[OVERLAY_INVINCIBLE].val;
+    dst->ledge_actionable = options[OVERLAY_LEDGE_ACTIONABLE].val;
+    dst->missed_lcancel = options[OVERLAY_MISSED_LCANCEL].val;
+    dst->can_fastfall = options[OVERLAY_CAN_FASTFALL].val;
+    dst->autocancel = options[OVERLAY_AUTOCANCEL].val;
+    dst->crouch = options[OVERLAY_CROUCH].val;
+    dst->wait = options[OVERLAY_WAIT].val;
+    dst->walk = options[OVERLAY_WALK].val;
+    dst->dash = options[OVERLAY_DASH].val;
+    dst->run = options[OVERLAY_RUN].val;
+    dst->jumps_used = options[OVERLAY_JUMPS_USED].val;
+    dst->fullhop = options[OVERLAY_FULLHOP].val;
+    dst->shorthop = options[OVERLAY_SHORTHOP].val;
+    dst->iasa = options[OVERLAY_IASA].val;
+    dst->shield_stun = options[OVERLAY_SHIELD_STUN].val;
+}
+
 static inline void StreamAppend(u8** dst, void *src, size_t size) {
     memcpy(*dst, src, size);
     *dst += size;
@@ -4856,7 +4876,7 @@ static void Export_CreateExportFile(void)
     int info_display_enabled_hmn = 0;
     int info_display_enabled_cpu = 0;
     if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val) {
-        for (u32 i = 0; i < INFDISPLAY_ROWCOUNT; ++i) {
+        for (u32 i = 0; i < OPTINF_ROW_COUNT; ++i) {
             info_display_enabled_hmn |= LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val;
             info_display_enabled_cpu |= LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val;
         }
@@ -4872,7 +4892,18 @@ static void Export_CreateExportFile(void)
     if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val)   events[event_count++] = RecEvent_MenuSettings_RNGControl;
     if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val)      events[event_count++] = RecEvent_MenuSettings_ActionLog;
     if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
-    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
+    
+    int overlays_enabled_hmn = 0;
+    int overlays_enabled_cpu = 0;
+    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val) {
+        for (u32 i = 0; i < OVERLAY_COUNT; ++i) {
+            overlays_enabled_hmn |= LabOptions_OverlaysHMN[i].val;
+            overlays_enabled_cpu |= LabOptions_OverlaysCPU[i].val;
+        }
+
+        if (overlays_enabled_hmn) events[event_count++] = RecEvent_MenuSettings_Overlays;
+        if (overlays_enabled_cpu) events[event_count++] = RecEvent_MenuSettings_Overlays;
+    }
 
     // alloc event buffer --------------------------------------
 
@@ -4885,7 +4916,7 @@ static void Export_CreateExportFile(void)
     memset(eventbuf, 0, eventbuf_size + 32);
 
     // write events --------------------------------------
-    
+
     u32 event_write_i = 0;
 
     if (LabOptions_Export[OPTEXP_RECORDING].val) {
@@ -4985,7 +5016,7 @@ static void Export_CreateExportFile(void)
         if (TDI_HITNUM > countof(dst->custom_tdi)) assert("not enough custom tdi slots!");
         dst->custom_tdi_count = TDI_HITNUM;
         for (u32 i = 0; i < TDI_HITNUM; ++i)
-            dst->custom_tdi[i] = stc_tdi_vals[i]
+            dst->custom_tdi[i] = stc_tdi_vals[i];
     }
 
     if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val) {
@@ -5011,23 +5042,23 @@ static void Export_CreateExportFile(void)
 
     if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val) {
         RecEventData_MenuSettings_RNGControl *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
-        dst->rng_control = event_vars->rng;
+        dst->rng_control = *event_vars->rng;
     }
 
     if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val) {
         if (info_display_enabled_hmn) {
             RecEventData_MenuSettings_InfoDisplay *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
-            if (INFDISPLAY_ROWCOUNT > countof(dst->info)) assert("not enough info display slots!");
+            if (OPTINF_ROW_COUNT > countof(dst->info)) assert("not enough info display slots!");
             dst->ply = 0;
-            for (u32 i = 0; i < INFDISPLAY_ROWCOUNT; ++i)
+            for (u32 i = 0; i < OPTINF_ROW_COUNT; ++i)
                 dst->info[i] = LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val;
         }
 
         if (info_display_enabled_cpu) {
             RecEventData_MenuSettings_InfoDisplay *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
-            if (INFDISPLAY_ROWCOUNT > countof(dst->info)) assert("not enough info display slots!");
+            if (OPTINF_ROW_COUNT > countof(dst->info)) assert("not enough info display slots!");
             dst->ply = 1;
-            for (u32 i = 0; i < INFDISPLAY_ROWCOUNT; ++i)
+            for (u32 i = 0; i < OPTINF_ROW_COUNT; ++i)
                 dst->info[i] = LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val;
         }
     }
@@ -5035,47 +5066,52 @@ static void Export_CreateExportFile(void)
     if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val) {
         RecEventData_MenuSettings_ActionLog *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
         if (ACTION_LOG_MAX > countof(dst->actions)) assert("not enough action log slots!");
-        dst->action_log_count = ACTION_LOG_MAX;
+        dst->action_count = ACTION_LOG_MAX;
         for (u32 i = 0; i < ACTION_LOG_MAX; ++i) {
             ActionLogAction *action_dst = &dst->actions[i];
             EventOption *action_src = LabOptions_ActionLog[i];
-            action_dst->behavior = action_src[OPTACTIONLOG_ACTION];
-            action_dst->state = action_src[OPTACTIONLOG_STATE];
-            action_dst->frame = action_src[OPTACTIONLOG_FRAME];
-            action_dst->min_lstick_x = action_src[OPTACTIONLOG_LSTICK_X];
-            action_dst->min_lstick_y = action_src[OPTACTIONLOG_LSTICK_Y];
+            action_dst->behavior = action_src[OPTACTIONLOG_ACTION].val;
+            action_dst->state = action_src[OPTACTIONLOG_STATE].val;
+            action_dst->min_state_frame = action_src[OPTACTIONLOG_FRAME].val;
+            action_dst->min_lstick_x = action_src[OPTACTIONLOG_LSTICK_X].val;
+            action_dst->min_lstick_y = action_src[OPTACTIONLOG_LSTICK_Y].val;
         }
     }
 
-    if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
-    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
-
-    /*u32 event_offsets[countof(events)];
-    u32 eventbuf_size = 0;
-    for (u32 i = 0; i < countof(events); ++i) {
-        event_offsets[i] = eventbuf_size;
-        eventbuf_size += rec_event_data_sizes[events[i]];
-    }
-    u8 *eventbuf_head = HSD_MemAlloc(eventbuf_size);
-    u8 *eventbuf = eventbuf_head;
-
-    if (rec_state_savestate_version == 1) {
-        StreamAppend(&eventbuf, rec_state, sizeof(RecEventData_Savestate_v1));
-    } else if (rec_state_savestate_version == 2) {
-        StreamAppend(&eventbuf, rec_state, sizeof(RecEventData_Savestate_v2));
+    if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val) {
+        RecEventData_MenuSettings_CustomOSDs *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        if (OPTCUSTOMOSD_MAX_COUNT > countof(dst->states)) assert("not enough custom OSD slots!");
+        dst->state_count = stc_custom_osd_state_num;
+        for (u32 i = 0; i < stc_custom_osd_state_num; ++i)
+            dst->states[i] = stc_custom_osd_states[i];
     }
 
-    for (int i = 0; i < REC_SLOTS; i++)
-        StreamAppend(&eventbuf, rec_data.hmn_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
-    for (int i = 0; i < REC_SLOTS; i++)
-        StreamAppend(&eventbuf, rec_data.cpu_inputs[i], sizeof(RecEventData_RecordingSlot_v1));
+    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val) {
+        if (overlays_enabled_hmn) {
+            RecEventData_MenuSettings_Overlays *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+            dst->ply = 0;
+            Export_CopyMenuSettings_Overlays(dst, LabOptions_OverlaysHMN);
+        }
 
-    u32 buf_noncompressed_size = sizeof(ExportMetadata) + 12
-        + countof(events)*sizeof(u32)*2;
+        if (overlays_enabled_cpu) {
+            RecEventData_MenuSettings_Overlays *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+            dst->ply = 1;
+            Export_CopyMenuSettings_Overlays(dst, LabOptions_OverlaysCPU);
+        }
+    }
+
+    // alloc transfer buffer --------------------------------------
+
+    u32 buf_noncompressed_size = sizeof(ExportMetadata) + 8 + countof(events)*sizeof(u32)*2;
 
     ExportData_v2 *buf = HSD_MemAlloc(buf_noncompressed_size + eventbuf_size); // overalloc, just in case
     memset(&buf->metadata, 0, sizeof(buf->metadata));
 
+    // write export header --------------------------------------
+
+    buf->event_count = event_count;
+    buf->decompressed_event_data_stream_size = eventbuf_size;
+    
     OSCalendarTime td;
     OSTicksToCalendarTime(OSGetTime(), &td);
     buf->metadata.version = 2;
@@ -5096,20 +5132,23 @@ static void Export_CreateExportFile(void)
     buf->metadata.minute = td.min;
     buf->metadata.second = td.sec;
 
-    buf->event_count = countof(events);
+    // write events lists --------------------------------------
 
     u8 *stream = buf->stream;
-    StreamAppend(&stream, events, sizeof(events));
-    StreamAppend(&stream, event_offsets, sizeof(event_offsets));
-    u32 compressed_size = (u32)ExportData_Compress(stream, eventbuf_head, eventbuf_size);
-    stream += compressed_size;
-    HSD_Free(eventbuf_head); // free original data buffer
+    StreamAppend(&stream, events, event_count * sizeof(*events));
+    StreamAppend(&stream, event_offsets, event_count * sizeof(*event_offsets));
+    
+    // write compressed events ---------------------------------
 
-    buf->compressed_event_data_stream_size = compressed_size;
-    buf->decompressed_event_data_stream_size = eventbuf_size;
+    stream += ExportData_Compress(stream, eventbuf, eventbuf_size);
+
+    // we're done with the uncompressed event stream, so free it
+    HSD_Free(eventbuf);
+
+    // Transfer to memcard! ---------------------------------
 
     stc_transfer_buf = (u8*)buf;
-    stc_transfer_buf_size = (u32)(stream - (u8*)buf);*/
+    stc_transfer_buf_size = (u32)(stream - (u8*)buf);
 }
 
 void Export_StartExport(GOBJ *menu_gobj)
