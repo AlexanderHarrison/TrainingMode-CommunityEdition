@@ -153,7 +153,6 @@ int ExportData_Compress(u8 *dst, u8 *src, u32 size);
 typedef struct ExportData_v2 {
     ExportMetadata metadata;
     u32 event_count;
-    u32 compressed_event_data_stream_size;
     u32 decompressed_event_data_stream_size;
 
     // The stream field is equivalent to these dynamically sized fields:
@@ -181,8 +180,8 @@ typedef enum RecEvent {
     RecEvent_MenuSettings_ActionLog,
     RecEvent_MenuSettings_CustomOSDs,
     RecEvent_MenuSettings_Overlays,
-    // TODO Stage 
     RecEvent_MenuSettings_RNGControl,
+    // TODO Stage 
 
     RecEvent_Count
 } RecEvent;
