@@ -318,7 +318,8 @@ typedef struct PadLibData {
 static HSD_IDTable *stc_hsd_default_table = (void *)0x804C23EC;
 static HSD_VI *stc_HSD_VI = (void *)0x8046b0f0;
 static HSD_Update *stc_hsd_update = (void *)0x80479d58;
-static int **stc_rng_seed = (void *)0x804D5F94;
+static u32 *stc_rng_seed = (void *)0x804D5F90;
+static u32 **stc_rng_seed_ptr = (void *)0x804D5F94;
 static HSD_Pads *stc_engine_pads = (HSD_Pads *)0x804c21cc;
 static HSD_Pads *stc_master_pads = (HSD_Pads *)0x804c1fac;
 static u64 *stc_pause_plink_whitelists = (void *)0x803da888; // array of u64 bitfields defining which gobj p_links should run for the corresponding PauseKind

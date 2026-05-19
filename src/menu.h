@@ -25,6 +25,7 @@ typedef struct evMenu
 
 // Structure Definitions
 typedef struct EventMenu EventMenu;
+typedef struct MenuData MenuData;
 typedef struct EventOption
 {
     u8 kind;                                        // the type of option this is; string, integers, etc
@@ -66,7 +67,7 @@ typedef enum MenuMode {
     MenuMode_Normal,
     MenuMode_Paused,
 } MenuMode;
-typedef struct MenuData
+struct MenuData
 {
     EventMenu *curr_menu;
     u16 canvas_menu;
@@ -86,8 +87,7 @@ typedef struct MenuData
     GOBJ *custom_gobj;                               // onSelect gobj
     int (*custom_gobj_think)(GOBJ *custom_gobj);     // per frame function. Returns bool indicating if the program should check to unpause
     void (*custom_gobj_destroy)(GOBJ *custom_gobj);  // on destroy function
-} MenuData;
-
+};
 
 GOBJ *EventMenu_Init(EventMenu *start_menu);
 void EventMenu_Draw(GOBJ *eventMenu);

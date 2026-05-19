@@ -60,6 +60,16 @@ static float hmn_locked_percent = 0;
 // so we calculate it on the first frame of landing and store it here. 
 static bool did_player_miss_lcancel[2] = {false, false};
 
+// Aitch: Because we record and restore the RNG seed each playback frame for playback consistency,
+// we can't use the built-in HSD_Rand* function in the lab. So we use our own!
+static u32 stc_lab_rng_seed;
+static u32 Lab_Rand(void) {
+    stc_lab_rng_seed = stc_lab_rng_seed * 214013 + 2531011;
+    return stc_lab_rng_seed >> 0x10;
+}
+static f32 Lab_Randf(void) { return (f32)Lab_Rand() / (1 << 16u); }
+static int Lab_Randi(int max_val) { return max_val * Lab_Rand() / (1 << 16u); }
+
 // Menu Callbacks
 
 RecInputData_v1 *Lab_GetAlteringRecording(void) {
@@ -1378,7 +1388,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
             
             // choose random normal counter action in action list 
             for (;;) {
-                action_id = actions[HSD_Randi(action_count)];
+                action_id = actions[Lab_Randi(action_count)];
                 if (CPUACT_NORMAL_START <= action_id && action_id < CPUACT_NORMAL_END)
                     break;
             }
@@ -1421,7 +1431,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
             if (custom_action_ids_count == 0)
                 return true;
     
-            action_id = custom_action_ids[HSD_Randi(custom_action_ids_count)];
+            action_id = custom_action_ids[Lab_Randi(custom_action_ids_count)];
             stc_rndm_counter_slot = action_id;
         }
 
@@ -1511,7 +1521,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
             dir = -cpu_data->facing_direction;
             break;
         case STICKDIR_RDM:
-            dir = HSD_Randi(2) ? -1 : 1;
+            dir = Lab_Randi(2) ? -1 : 1;
             break;
         default:
             assert("Invalid stick dir");
@@ -1628,7 +1638,7 @@ void CPUOnHit(void) {
         case (CPUTDI_RANDOM):
         TDI_RANDOM:
         {
-            switch (HSD_Randi(3)) {
+            switch (Lab_Randi(3)) {
                 case 0: goto TDI_IN;
                 case 1: goto TDI_OUT;
                 case 2: goto TDI_NONE;
@@ -1683,7 +1693,7 @@ void CPUOnHit(void) {
             };
             
             int di_num = eventData->cpu_hitnum > 1 ? 8 : 5;
-            struct DI di = di_options[HSD_Randi(di_num)];
+            struct DI di = di_options[Lab_Randi(di_num)];
             
             eventData->cpu_tdi_lstick_x = di.x;
             eventData->cpu_tdi_lstick_y = di.y;
@@ -1707,7 +1717,7 @@ void CPUOnHit(void) {
         }
         case (CPUTDI_RANDOM_CUSTOM):
         {
-            custom_di = &stc_tdi_vals[HSD_Randi(stc_tdi_val_num)];
+            custom_di = &stc_tdi_vals[Lab_Randi(stc_tdi_val_num)];
             int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
             eventData->cpu_tdi_lstick_x = (int)(custom_di->lstickX * 127.f) * dir_factor;
             eventData->cpu_tdi_lstick_y = (int)(custom_di->lstickY * 127.f);
@@ -1794,13 +1804,13 @@ void CPUOnHit(void) {
             // when grounded, only left right
             if (cpu_data->phys.air_state == 0)
             {
-                eventData->cpu_sdi_lstick_x = HSD_Randi(2) ? -127 : 127;
+                eventData->cpu_sdi_lstick_x = Lab_Randi(2) ? -127 : 127;
                 eventData->cpu_sdi_lstick_y = 0;
             }
             // when airborne, any direction
             else
             {
-                float angle = HSD_Randf() * (2.f * M_PI);
+                float angle = Lab_Randf() * (2.f * M_PI);
                 eventData->cpu_sdi_lstick_x = cos(angle) * 127.f;
                 eventData->cpu_sdi_lstick_y = sin(angle) * 127.f;
             }
@@ -2085,8 +2095,8 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         if (mash == CPUMASH_NONE) {
             Fighter_ZeroCPUInputs(cpu_data);
         }
-        else if ((mash == CPUMASH_MED && HSD_Randi(100) <= CPUMASHRNG_MED)
-                || (mash == CPUMASH_HIGH && HSD_Randi(100) <= CPUMASHRNG_HIGH)
+        else if ((mash == CPUMASH_MED && Lab_Randi(100) <= CPUMASHRNG_MED)
+                || (mash == CPUMASH_HIGH && Lab_Randi(100) <= CPUMASHRNG_HIGH)
                 || mash == CPUMASH_PERFECT)
         {
             // remove last frame inputs
@@ -2234,7 +2244,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         // perform tech behavior
         int tech = LabOptions_Tech[OPTTECH_TECH].val;
         if (tech == CPUTECH_RANDOM) {
-            float roll = HSD_Randf() * 100.0f;
+            float roll = Lab_Randf() * 100.0f;
             float tip_chance = LabOptions_Tech[OPTTECH_TECHINPLACECHANCE].val;
             float away_chance = LabOptions_Tech[OPTTECH_TECHAWAYCHANCE].val;
             float toward_chance = LabOptions_Tech[OPTTECH_TECHTOWARDCHANCE].val;
@@ -2292,7 +2302,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
             break;
         } else {
             int wait_chance = LabOptions_Tech[OPTTECH_GETUPWAITCHANCE].val;
-            if (HSD_Randi(100) < wait_chance) {
+            if (Lab_Randi(100) < wait_chance) {
                 eventData->cpu_miss_tech_wait_timer = 15;
                 break;
             }
@@ -2300,7 +2310,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
 
         int getup = LabOptions_Tech[OPTTECH_GETUP].val;
         if (getup == CPUGETUP_RANDOM) {
-            float roll = HSD_Randf() * 100.0f;
+            float roll = Lab_Randf() * 100.0f;
             float stand_chance = LabOptions_Tech[OPTTECH_GETUPSTANDCHANCE].val;
             float away_chance = LabOptions_Tech[OPTTECH_GETUPAWAYCHANCE].val;
             float toward_chance = LabOptions_Tech[OPTTECH_GETUPTOWARDCHANCE].val;
@@ -3598,6 +3608,7 @@ GOBJ *Record_Init()
     // Create GOBJ
     GOBJ *rec_gobj = GObj_Create(0, 7, 0);
     // Add per frame process
+    GObj_AddProc(rec_gobj, Record_UpdateRNGSeed, 0);
     GObj_AddProc(rec_gobj, Record_Think, 3);
 
     evMenu *menuAssets = event_vars->menu_assets;
@@ -3664,6 +3675,9 @@ GOBJ *Record_Init()
     }
     InitInputSlot(&rec_data.hmn_rerecord_inputs);
     InitInputSlot(&rec_data.cpu_rerecord_inputs);
+
+    rec_data.rng_seed_recording = calloc(REC_LENGTH * sizeof(*rec_data.rng_seed_recording));
+    rec_data.rng_seed_recording_num = 0;
 
     // init memcard stuff
     Memcard_InitWorkArea();
@@ -3772,6 +3786,25 @@ void Record_GX(GOBJ *gobj, int pass)
     GXLink_Common(gobj, pass);
 }
 
+void Record_UpdateRNGSeed(GOBJ *rec_gobj) {
+    int curr_frame = Record_GetCurrFrame();
+    if (Record_HMN_IsRecording() || Record_CPU_IsRecording()) {
+        if (curr_frame < REC_LENGTH) {
+            // record seed
+            rec_data.rng_seed_recording[curr_frame] = *stc_rng_seed;
+            rec_data.rng_seed_recording_num = curr_frame + 1;
+            OSReport("RECORD %i: %x\n", curr_frame, *stc_rng_seed);
+        }
+    } else if (Record_HMN_IsPlayback() || Record_CPU_IsPlayback()) {
+        // replay seed
+        OSReport("REPLAY FRAME %i\n", curr_frame);
+        if (curr_frame < rec_data.rng_seed_recording_num) {
+            *stc_rng_seed = rec_data.rng_seed_recording[curr_frame];
+            OSReport("REPLAY %i: %x\n", curr_frame, *stc_rng_seed);
+        }
+    }
+}
+
 void Record_Think(GOBJ *rec_gobj)
 {
     if (rec_state->is_initialized != 1) return;
@@ -3781,6 +3814,7 @@ void Record_Think(GOBJ *rec_gobj)
 
     int hmn_slot = Record_GetSlot(0);
     int cpu_slot = Record_GetSlot(1);
+    int curr_frame = Record_GetCurrFrame();
 
     RecInputData_v1 *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
     RecInputData_v1 *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
@@ -3797,6 +3831,7 @@ void Record_Think(GOBJ *rec_gobj)
     int adjusted_hmn_mode = hmn_mode;
     if (adjusted_hmn_mode > 0) // adjust hmn_mode to match cpu_mode
         adjusted_hmn_mode++;
+
     Record_Update(0, hmn_inputs, rec_data.hmn_rerecord_inputs, adjusted_hmn_mode);
     Record_Update(1, cpu_inputs, rec_data.cpu_rerecord_inputs, cpu_mode);
 
@@ -3807,7 +3842,7 @@ void Record_Think(GOBJ *rec_gobj)
         && !Record_CPU_IsRecording()
         && cpu_mode != RECMODE_CPU_CONTROL;
     int has_inputs = input_num != 0;
-    int past_last_input = Record_GetCurrFrame() >= input_num;
+    int past_last_input = curr_frame >= input_num;
     if (loop_mode & modes_allow_loop & has_inputs & past_last_input)
     {
         event_vars->game_timer = rec_state->frame;
@@ -3853,7 +3888,6 @@ void Record_Think(GOBJ *rec_gobj)
             Record_LoadSavestate(rec_state);
     }
 
-    int curr_frame = Record_GetCurrFrame();
     if (curr_frame >= stc_recording_target_frame) {
         event_vars->flags &= ~EventVarsFlag_ForceGameLoop;
         stc_recording_target_frame = -1;
@@ -4356,7 +4390,7 @@ int Record_GetRandomSlot(RecInputData_v1 **input_data, EventOption slot_menu[])
             slots[slot_num++] = i;
     }
 
-    int rand = HSD_Randi(100);
+    int rand = Lab_Randi(100);
 
     for (int i = 0; i < chance_count; ++i) {
         int chance = (int)*chances[i];
@@ -4590,7 +4624,7 @@ void Record_RerollSlotRNG(void) {
         FighterData *fighter_data = fighter->userdata;
         int percent = fighter_data->dmg.percent;
         
-        int change = HSD_Randi(chance+1);
+        int change = Lab_Randi(chance+1);
         percent += change;
         if (percent > 999) percent = 999;
         fighter_data->dmg.percent = percent;
@@ -4602,7 +4636,7 @@ void Record_RerollSlotRNG(void) {
 void Record_Restart(SavestateHeader *savestate, int flags) {
     int mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
     if (mirror == OPTMIRROR_RANDOM)
-        mirror = HSD_Randi(2);
+        mirror = Lab_Randi(2);
 
     // if a non-major savestate is saved while mirrored, we need to unmirror again.
     if (savestate != rec_state)

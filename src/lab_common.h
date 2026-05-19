@@ -373,6 +373,7 @@ void Record_RestoreState(GOBJ *menu_gobj);
 void Record_CObjThink(GOBJ *gobj);
 void Record_GX(GOBJ *gobj, int pass);
 void Record_Think(GOBJ *rec_gobj);
+void Record_UpdateRNGSeed(GOBJ *rec_gobj);
 void Record_Update(int ply, RecInputData_v1 *inputs, RecInputData_v1 *rerecord_inputs, int rec_mode);
 void Record_SetInputs(GOBJ *fighter, RecInputs *inputs, bool mirror);
 int Record_RearrangeButtons(RecInputs *inputs);
