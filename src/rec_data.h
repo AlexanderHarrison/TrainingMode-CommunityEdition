@@ -119,6 +119,8 @@ typedef struct RecData_v1
     int cpu_rndm_slot;
     RecInputData_v1 *cpu_inputs[REC_SLOTS];
     RecInputData_v1 *cpu_rerecord_inputs;
+    int rng_seed_recording_num;
+    u32 *rng_seed_recording;
     int restore_timer;
     JOBJ *seek_jobj;
     Text *text;
@@ -171,6 +173,7 @@ typedef enum RecEvent {
     RecEvent_Savestate_v2,
     RecEvent_RecordingSlot_v1,
     RecEvent_RecordingSlot_v2,
+    RecEvent_RNGSeedRecording,
     RecEvent_MenuSettings_Record_v1,
     RecEvent_MenuSettings_Record_v2,
     RecEvent_MenuSettings_BehaviorOptions,
@@ -213,6 +216,14 @@ typedef struct ALIGN_4 RecEventData_RecordingSlot_v2 {
     int start_frame;
     RecInputs inputs[REC_LENGTH];
 } RecEventData_RecordingSlot_v2;
+
+typedef struct ALIGN_4 RecEventData_RNGSeedRecording {
+    u8 _unused;
+    u8 slot_idx;
+    u16 count;
+    int start_frame;
+    u32 seeds[REC_LENGTH];
+} RecEventData_RNGSeedRecording;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_Record_v1 {
     u8 hmn_mode;
