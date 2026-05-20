@@ -4796,9 +4796,18 @@ static void Export_ApplySetting(EventOption *opt, s16 value) {
     if (opt->OnChange) opt->OnChange(event_vars->menu_gobj, opt->val);
 }
 
-void ExportData_ApplyEvent(void *data, u32 event) {
-    #define fallthrough __attribute__((fallthrough));
+static u32 Export_Min(u32 val, u32 max, bool *err) {
+    if (val > max) {
+        val = max;
+        *err = true;
+    }
+    return val;
+}
 
+bool ExportData_ApplyEvent(void *data, u32 event) {
+    bool err = false;
+
+    #define fallthrough __attribute__((fallthrough));
     switch (event) {
         case RecEvent_Null: break;
         case RecEvent_MatchInit: break; // saved, but not actually used in v1!
@@ -4824,35 +4833,201 @@ void ExportData_ApplyEvent(void *data, u32 event) {
                 memcpy(rec_data.hmn_inputs[slot_idx], &slot->rec_input_data, sizeof(RecInputData_v1));
             } else if (slot_idx < 12) {
                 memcpy(rec_data.cpu_inputs[slot_idx-6], &slot->rec_input_data, sizeof(RecInputData_v1));
+            } else {
+                return true;
             }
             slot_idx++;
         } break;
+        
+        case RecEvent_RecordingSlot_v2: {
+            RecEventData_RecordingSlot_v2 *src = data;
+
+            RecInputData_v1 **slots;
+            if (src->ply == 0) slots = rec_data.hmn_inputs;
+            else if (src->ply == 1) slots = rec_data.cpu_inputs;
+            else return true; 
+
+            if (src->slot_idx >= REC_SLOTS) return true;
+            RecInputData_v1 *slot = slots[src->slot_idx];
+            slot->start_frame = src->start_frame;
+            u32 input_count = Export_Min(src->input_count, REC_LENGTH, &err);
+            slot->num = input_count;
+            memcpy(slot->inputs, &src->inputs, sizeof(RecInputs)*input_count);
+        } break;
+
+        case RecEvent_RNGSeedRecording: {
+            RecEventData_RNGSeedRecording *src = data;
+            u32 count = Export_Min(src->count, REC_LENGTH, &err);
+            rec_data.rng_seed_recording_num = count;
+            memcpy(rec_data.rng_seed_recording, src->seeds, sizeof(u32)*count);
+        } break;
 
         case RecEvent_MenuSettings_Record_v2: {
-            RecEventData_MenuSettings_Record_v2 *set = data;
-            Export_ApplySetting(&LabOptions_Record[OPTREC_MIRRORED_PLAYBACK], set->mirror);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_PLAYBACK_COUNTER], set->cpu_counter);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_STARTPAUSED], set->start_paused);
-            Export_ApplySetting(&LabOptions_SlotChancesHMN[OPTSLOTCHANCE_PERCENT], set->hmn_random_percent);
-            Export_ApplySetting(&LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT], set->cpu_random_percent);
+            RecEventData_MenuSettings_Record_v2 *src = data;
+            Export_ApplySetting(&LabOptions_Record[OPTREC_MIRRORED_PLAYBACK], src->mirror);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_PLAYBACK_COUNTER], src->cpu_counter);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_STARTPAUSED], src->start_paused);
+            Export_ApplySetting(&LabOptions_SlotChancesHMN[OPTSLOTCHANCE_PERCENT], src->hmn_random_percent);
+            Export_ApplySetting(&LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT], src->cpu_random_percent);
 
-            // TODO array here
-            // Export_ApplySetting(set, size, &LabOptions_Record[OPTREC_], hmn_slot_chance_count);
-            // Export_ApplySetting(set, size, &LabOptions_Record[OPTREC_], start_paused);
+            u32 count = Export_Min(countof(src->hmn_slot_chances), REC_SLOTS, &err);
+            for (u32 i = 0; i < count; ++i) {
+                Export_ApplySetting(&LabOptions_SlotChancesHMN[OPTSLOTCHANCE_1 + i], src->hmn_slot_chances[i]);
+                Export_ApplySetting(&LabOptions_SlotChancesCPU[OPTSLOTCHANCE_1 + i], src->cpu_slot_chances[i]);
+            }
         } fallthrough; // apply v1 afterwards
 
         case RecEvent_MenuSettings_Record_v1: {
-            RecEventData_MenuSettings_Record_v1 *set = data;
-            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNMODE], set->hmn_mode);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNSLOT], set->hmn_slot);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUMODE], set->cpu_mode);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUSLOT], set->cpu_slot);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_LOOP], set->loop_inputs);
-            Export_ApplySetting(&LabOptions_Record[OPTREC_AUTORESTORE], set->auto_restore);
+            RecEventData_MenuSettings_Record_v1 *src = data;
+            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNMODE], src->hmn_mode);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNSLOT], src->hmn_slot);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUMODE], src->cpu_mode);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUSLOT], src->cpu_slot);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_LOOP], src->loop_inputs);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_AUTORESTORE], src->auto_restore);
         } break;
         
-        default: break;
+        case RecEvent_MenuSettings_BehaviorOptions: {
+            RecEventData_MenuSettings_BehaviorOptions *src = data;
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_BEHAVE], src->behavior);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELDDIR], src->shield_angle);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_MASH], src->mash);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELD], src->inf_shield);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELDHEALTH], src->inf_shield_health);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELDDIR], src->shield_dir);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_INTANG], src->intang);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_GRABRELEASE], src->grab_release);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRAIR], src->counter_air);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRGRND], src->counter_ground);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRSHIELD], src->counter_shield);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRFRAMES], src->counter_delay);
+
+            u32 count = Export_Min(countof(src->counter_advanced), ADV_COUNTER_COUNT, &err);
+            for (u32 i = 0; i < count; ++i) {
+                EventOption *adv_dst = LabOptions_AdvCounter[i];
+                AdvancedCounterAction *adv_src = &src->counter_advanced[i];
+                Export_ApplySetting(&adv_dst[OPTCTR_LOGIC], adv_src->counter_logic);
+                Export_ApplySetting(&adv_dst[OPTCTR_CTRAIR], adv_src->counter_air);
+                Export_ApplySetting(&adv_dst[OPTCTR_CTRGRND], adv_src->counter_ground);
+                Export_ApplySetting(&adv_dst[OPTCTR_CTRSHIELD], adv_src->counter_shield);
+                Export_ApplySetting(&adv_dst[OPTCTR_DELAYAIR], adv_src->counter_delay_air);
+                Export_ApplySetting(&adv_dst[OPTCTR_DELAYGRND], adv_src->counter_delay_ground);
+                Export_ApplySetting(&adv_dst[OPTCTR_DELAYSHIELD], adv_src->counter_delay_shield);
+            }
+        } break;
+
+        case RecEvent_MenuSettings_DIOptions: {
+            RecEventData_MenuSettings_DIOptions *src = data;
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_TDI], src->tdi_direction);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SDINUM], src->sdi_count);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SDIDIR], src->sdi_direction);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_ASDI], src->asdi_direction);
+
+            for (u32 i = 0; i < countof(src->custom_tdi); ++i)
+                stc_tdi_vals[i] = src->custom_tdi[i];
+        } break;
+
+        case RecEvent_MenuSettings_TechOptions: {
+            RecEventData_MenuSettings_TechOptions *src = data;
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECH], src->tech_direction);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUP], src->getup_direction);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_INVISIBLE], src->invisibility);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_INVISIBLE_DELAY], src->invisibility_delay);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_SOUND], src->tech_sound);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TRAP], src->simulate_tech_trap);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_LOCKOUT], src->tech_lockout);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECHINPLACECHANCE], src->chance_tech_in_place);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECHAWAYCHANCE], src->chance_tech_away);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECHTOWARDCHANCE], src->chance_tech_toward);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_MISSTECHCHANCE], src->chance_tech_miss);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPWAITCHANCE], src->chance_miss_wait);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPSTANDCHANCE], src->chance_miss_getup_in_place);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPAWAYCHANCE], src->chance_miss_getup_away);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPTOWARDCHANCE], src->chance_miss_getup_toward);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPATTACKCHANCE], src->chance_miss_getup_attack);
+        } break;
+        
+        case RecEvent_MenuSettings_InfoDisplay: {
+            RecEventData_MenuSettings_InfoDisplay *src = data;
+
+            EventOption *dst;
+            if (src->ply == 0) dst = LabOptions_InfoDisplayHMN;
+            else if (src->ply == 1) dst = LabOptions_InfoDisplayCPU;
+            else return true; 
+
+            u32 count = Export_Min(countof(src->info), OPTINF_ROW_COUNT, &err);
+            for (u32 i = 0; i < count; ++i)
+                Export_ApplySetting(&dst[OPTINF_ROW1 + i], src->info[i]);
+        } break;
+
+        case RecEvent_MenuSettings_ActionLog: {
+            RecEventData_MenuSettings_ActionLog *src = data;
+            u32 count = Export_Min(countof(src->actions), OPTCUSTOMOSD_MAX_COUNT, &err);
+            for (u32 i = 0; i < count; ++i) {
+                ActionLogAction *action_src = &src->actions[i];
+                EventOption *action_dst = LabOptions_ActionLog[i];
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_ACTION], action_src->behavior);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_STATE], action_src->state);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_FRAME], action_src->min_state_frame);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_LSTICK_X], action_src->min_lstick_x);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_LSTICK_Y], action_src->min_lstick_y);
+            }
+        } break;
+
+        case RecEvent_MenuSettings_CustomOSDs: {
+            RecEventData_MenuSettings_CustomOSDs *src = data;
+            u32 count = Export_Min(countof(src->states), OPTCUSTOMOSD_MAX_COUNT, &err); 
+            stc_custom_osd_state_num = 0;
+            for (u32 i = 0; i < count; ++i) {
+                if (src->states[i] < 0) break;
+                stc_custom_osd_states[i] = src->states[i];
+                stc_custom_osd_state_num++;
+            }
+        } break;
+
+        case RecEvent_MenuSettings_Overlays: {
+            RecEventData_MenuSettings_Overlays *src = data;
+            
+            EventOption *dst;
+            if (src->ply == 0) dst = LabOptions_OverlaysHMN;
+            else if (src->ply == 1) dst = LabOptions_OverlaysCPU;
+            else return true; 
+
+            Export_ApplySetting(&dst[OVERLAY_ACTIONABLE], src->actionable);
+            Export_ApplySetting(&dst[OVERLAY_HITSTUN], src->hitstun);
+            Export_ApplySetting(&dst[OVERLAY_INVINCIBLE], src->invincible);
+            Export_ApplySetting(&dst[OVERLAY_LEDGE_ACTIONABLE], src->ledge_actionable);
+            Export_ApplySetting(&dst[OVERLAY_MISSED_LCANCEL], src->missed_lcancel);
+            Export_ApplySetting(&dst[OVERLAY_CAN_FASTFALL], src->can_fastfall);
+            Export_ApplySetting(&dst[OVERLAY_AUTOCANCEL], src->autocancel);
+            Export_ApplySetting(&dst[OVERLAY_CROUCH], src->crouch);
+            Export_ApplySetting(&dst[OVERLAY_WAIT], src->wait);
+            Export_ApplySetting(&dst[OVERLAY_WALK], src->walk);
+            Export_ApplySetting(&dst[OVERLAY_DASH], src->dash);
+            Export_ApplySetting(&dst[OVERLAY_RUN], src->run);
+            Export_ApplySetting(&dst[OVERLAY_JUMPS_USED], src->jumps_used);
+            Export_ApplySetting(&dst[OVERLAY_FULLHOP], src->fullhop);
+            Export_ApplySetting(&dst[OVERLAY_SHORTHOP], src->shorthop);
+            Export_ApplySetting(&dst[OVERLAY_IASA], src->iasa);
+            Export_ApplySetting(&dst[OVERLAY_SHIELD_STUN], src->shield_stun);
+        } break;
+    
+        case RecEvent_MenuSettings_RNGControl: {
+            RecEventData_MenuSettings_RNGControl *src = data;
+            event_vars->rng->peach_item = Export_Min(src->peach_item, RNG_SETTING_COUNT_PEACH_ITEM, &err);
+            event_vars->rng->peach_fsmash = Export_Min(src->peach_fsmash, RNG_SETTING_COUNT_PEACH_FSMASH, &err);
+            event_vars->rng->luigi_misfire = Export_Min(src->luigi_misfire, RNG_SETTING_COUNT_LUIGI_MISFIRE, &err);
+            event_vars->rng->gnw_hammer = Export_Min(src->gnw_hammer, RNG_SETTING_COUNT_GNW_HAMMER, &err);
+            event_vars->rng->nana_throw = Export_Min(src->nana_throw, RNG_SETTING_COUNT_NANA_THROW, &err);
+        } break;
+
+        default: {
+            err = true;
+            break;
+        }
     }
+    
+    return err;
 }
 
 static void Export_CopyMenuSettings_Overlays(RecEventData_MenuSettings_Overlays *dst, EventOption *options) {
@@ -5000,8 +5175,6 @@ static void Export_CreateExportFile(void)
         dst->cpu_random_percent = LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT].val;
         
         if (REC_SLOTS > countof(dst->hmn_slot_chances)) assert("not enough rec slots!");
-        dst->hmn_slot_chance_count = REC_SLOTS;
-        dst->cpu_slot_chance_count = REC_SLOTS;
         for (u32 i = 0; i < REC_SLOTS; ++i) {
             dst->hmn_slot_chances[i] = LabOptions_SlotChancesHMN[OPTSLOTCHANCE_1 + i].val;
             dst->cpu_slot_chances[i] = LabOptions_SlotChancesCPU[OPTSLOTCHANCE_1 + i].val;
@@ -5025,7 +5198,6 @@ static void Export_CreateExportFile(void)
         dst->counter_delay = LabOptions_CPU[OPTCPU_CTRFRAMES].val;
 
         if (ADV_COUNTER_COUNT > countof(dst->counter_advanced)) assert("not enough counter slots!");
-        dst->counter_advanced_count = ADV_COUNTER_COUNT;
         for (u32 i = 0; i < ADV_COUNTER_COUNT; ++i) {
             AdvancedCounterAction *adv_dst = &dst->counter_advanced[i];
             EventOption *adv_src = LabOptions_AdvCounter[i];
@@ -5076,7 +5248,11 @@ static void Export_CreateExportFile(void)
 
     if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val) {
         RecEventData_MenuSettings_RNGControl *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
-        dst->rng_control = *event_vars->rng;
+        dst->peach_item = event_vars->rng->peach_item;
+        dst->peach_fsmash = event_vars->rng->peach_fsmash;
+        dst->luigi_misfire = event_vars->rng->luigi_misfire;
+        dst->gnw_hammer = event_vars->rng->gnw_hammer;
+        dst->nana_throw = event_vars->rng->nana_throw;
     }
 
     if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val) {
@@ -5100,7 +5276,6 @@ static void Export_CreateExportFile(void)
     if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val) {
         RecEventData_MenuSettings_ActionLog *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
         if (ACTION_LOG_MAX > countof(dst->actions)) assert("not enough action log slots!");
-        dst->action_count = ACTION_LOG_MAX;
         for (u32 i = 0; i < ACTION_LOG_MAX; ++i) {
             ActionLogAction *action_dst = &dst->actions[i];
             EventOption *action_src = LabOptions_ActionLog[i];
@@ -5115,9 +5290,10 @@ static void Export_CreateExportFile(void)
     if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val) {
         RecEventData_MenuSettings_CustomOSDs *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
         if (OPTCUSTOMOSD_MAX_COUNT > countof(dst->states)) assert("not enough custom OSD slots!");
-        dst->state_count = stc_custom_osd_state_num;
         for (u32 i = 0; i < stc_custom_osd_state_num; ++i)
             dst->states[i] = stc_custom_osd_states[i];
+        for (u32 i = stc_custom_osd_state_num; i < OPTCUSTOMOSD_MAX_COUNT; ++i)
+            dst->states[i] = -1;
     }
 
     if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val) {
