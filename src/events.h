@@ -224,6 +224,12 @@ void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int actio
 void HUD_DrawInfoPanel(const char **label, const char **info, int count);
 
 // Serialized!
+#define RNG_SETTING_COUNT_PEACH_ITEM 8
+#define RNG_SETTING_COUNT_PEACH_FSMASH 3
+#define RNG_SETTING_COUNT_LUIGI_MISFIRE 3
+#define RNG_SETTING_COUNT_GNW_HAMMER 10
+#define RNG_SETTING_COUNT_NANA_THROW 6
+
 typedef struct RNGControl
 {
     u8 peach_item;      // 0x0

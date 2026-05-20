@@ -141,7 +141,7 @@ typedef struct RecordingSave_v1
 // These work for v1 as well. It will convert v1 losslessly into the v2 format.
 ParsedExportData_v2 ExportData_Import(u8 *transfer_buf);
 void ExportData_Free(ParsedExportData_v2 *ed);
-void ExportData_ApplyEvent(void *data, u32 event);
+bool ExportData_ApplyEvent(void *data, u32 event);
 int ExportData_Compress(u8 *dst, u8 *src, u32 size);
 
 /*
@@ -218,9 +218,8 @@ typedef struct ALIGN_4 RecEventData_RecordingSlot_v2 {
 } RecEventData_RecordingSlot_v2;
 
 typedef struct ALIGN_4 RecEventData_RNGSeedRecording {
-    u8 _unused;
-    u8 slot_idx;
     u16 count;
+    u16 _unused;
     int start_frame;
     u32 seeds[REC_LENGTH];
 } RecEventData_RNGSeedRecording;
@@ -241,10 +240,8 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_Record_v2 {
     u8 start_paused;
     u8 hmn_random_percent;
     u8 cpu_random_percent;
-    u8 hmn_slot_chance_count;
-    u8 cpu_slot_chance_count;
-    u8 hmn_slot_chances[32];
-    u8 cpu_slot_chances[32];
+    u8 hmn_slot_chances[6];
+    u8 cpu_slot_chances[6];
 } RecEventData_MenuSettings_Record_v2;
 
 typedef struct CustomTDI {
@@ -279,8 +276,7 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_BehaviorOptions {
     u8 counter_ground;
     u8 counter_shield;
     u8 counter_delay;
-    u8 counter_advanced_count;
-    AdvancedCounterAction counter_advanced[16];
+    AdvancedCounterAction counter_advanced[10];
 } RecEventData_MenuSettings_BehaviorOptions;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_DIOptions {
@@ -313,7 +309,7 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_TechOptions {
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_InfoDisplay {
     u8 ply;
-    u8 info[15];
+    u8 info[8];
 } RecEventData_MenuSettings_InfoDisplay;
 
 // TODO: convert arrays to separate objects. Maybe. Think about it.
@@ -329,13 +325,11 @@ typedef struct ActionLogAction {
 } ActionLogAction;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_ActionLog {
-    u8 action_count;
-    ActionLogAction actions[16];
+    ActionLogAction actions[10];
 } RecEventData_MenuSettings_ActionLog;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_CustomOSDs {
-    u8 state_count;
-    u16 states[8];
+    s16 states[8]; // -1 for n/a
 } RecEventData_MenuSettings_CustomOSDs;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
@@ -362,7 +356,11 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
 // TODO store rng seed for each frame and stuff
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_RNGControl {
-    RNGControl rng_control;
+    u8 peach_item;
+    u8 peach_fsmash;
+    u8 luigi_misfire;
+    u8 gnw_hammer;
+    u8 nana_throw;
 } RecEventData_MenuSettings_RNGControl;
 
 #endif
