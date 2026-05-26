@@ -3787,22 +3787,30 @@ void Record_GX(GOBJ *gobj, int pass)
     GXLink_Common(gobj, pass);
 }
 
+/*
+Aitch: It's a bit tricky to maintain consistent RNG.
+I wanted each recording to have the same outcome each time through internal game RNG.
+But we can't record the rng for each cpu/hmn slot independently.
+Should I record one for each cpu slot? For each hmn slot? For each combination?
+Hard to say. For now, just record rng from the last recording and use that for every playback.
+This does mean that recording one slot might fail during playback after recording a different slots.
+But in that case, you usually are mix and matching slots anyways so rng doesn't matter too much.
+The case where you only have one single recording slot is the most important to have consistent.
+This method also allows rwing exports to easily send the rng seeds for playback, removing randomness desyncs.
+*/
 void Record_UpdateRNGSeed(GOBJ *rec_gobj) {
     int curr_frame = Record_GetCurrFrame();
     if (Record_HMN_IsRecording() || Record_CPU_IsRecording()) {
+        // record seed
         if (curr_frame < REC_LENGTH) {
-            // record seed
             rec_data.rng_seed_recording[curr_frame] = *stc_rng_seed;
-            rec_data.rng_seed_recording_num = curr_frame + 1;
-            OSReport("RECORD %i: %x\n", curr_frame, *stc_rng_seed);
+            if (curr_frame >= rec_data.rng_seed_recording_num)
+                rec_data.rng_seed_recording_num = curr_frame + 1;
         }
     } else if (Record_HMN_IsPlayback() || Record_CPU_IsPlayback()) {
         // replay seed
-        OSReport("REPLAY FRAME %i\n", curr_frame);
-        if (curr_frame < rec_data.rng_seed_recording_num) {
+        if (curr_frame < rec_data.rng_seed_recording_num)
             *stc_rng_seed = rec_data.rng_seed_recording[curr_frame];
-            OSReport("REPLAY %i: %x\n", curr_frame, *stc_rng_seed);
-        }
     }
 }
 
