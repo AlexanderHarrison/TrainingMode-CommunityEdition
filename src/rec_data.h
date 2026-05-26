@@ -263,6 +263,12 @@ typedef struct AdvancedCounterAction {
     u8 counter_delay_shield;
 } AdvancedCounterAction;
 
+typedef struct ALIGN_4 RecEventData_MenuSettings_Percent {
+    // indexed by ply
+    u8 lock_percent[2];
+    u16 percent[2];
+} RecEventData_MenuSettings_Percent;
+
 typedef struct ALIGN_4 RecEventData_MenuSettings_BehaviorOptions {
     u8 behavior;
     u8 shield_angle;
@@ -308,8 +314,7 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_TechOptions {
 } RecEventData_MenuSettings_TechOptions;
 
 typedef struct ALIGN_4 RecEventData_MenuSettings_InfoDisplay {
-    u8 ply;
-    u8 info[8];
+    u8 info[2][8]; // indexed by ply
 } RecEventData_MenuSettings_InfoDisplay;
 
 // TODO: convert arrays to separate objects. Maybe. Think about it.
@@ -332,8 +337,7 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_CustomOSDs {
     s16 states[8]; // -1 for n/a
 } RecEventData_MenuSettings_CustomOSDs;
 
-typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
-    u8 ply;
+typedef struct MenuSettings_Overlays_PerPly {
     u8 actionable;
     u8 hitstun;
     u8 invincible;
@@ -351,6 +355,10 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
     u8 shorthop;
     u8 iasa;
     u8 shield_stun;
+} MenuSettings_Overlays_PerPly;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_Overlays {
+    MenuSettings_Overlays_PerPly overlays[2]; // indexed by ply
 } RecEventData_MenuSettings_Overlays;
 
 // TODO store rng seed for each frame and stuff
