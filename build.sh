@@ -87,6 +87,7 @@ mex_build "evFunction" "build/lcancel.dat" "src/lcancel.c" "dats/lcancel.dat" &
 mex_build "evFunction" "build/ledgedash.dat" "src/ledgedash.c" "dats/ledgedash.dat" &
 mex_build "evFunction" "build/wavedash.dat" "src/wavedash.c" "dats/wavedash.dat" &
 mex_build "evFunction" "build/powershield.dat" "src/powershield.c" &
+mex_build "evFunction" "build/dthrowknee.dat" "src/dthrowknee.c" &
 mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
 mex_build "evFunction" "build/fc.dat" "src/fc.c" "dats/ledgedash.dat" &
 mex_build "evFunction" "build/sweetspot.dat" "src/sweetspot.c" &
@@ -122,6 +123,7 @@ ${gc_fst} fs TM-CE.iso \
     insert TM/ledgedash.dat build/ledgedash.dat \
     insert TM/wavedash.dat build/wavedash.dat \
     insert TM/powershield.dat build/powershield.dat \
+    insert TM/dthrowknee.dat build/dthrowknee.dat \
     insert TM/edgeguard.dat build/edgeguard.dat \
     insert TM/fc.dat build/fc.dat \
     insert TM/sweetspot.dat build/sweetspot.dat \

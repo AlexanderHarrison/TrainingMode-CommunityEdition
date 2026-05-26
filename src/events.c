@@ -339,6 +339,37 @@ EventDesc Powershield = {
     .callbackPriority = 3,
     .matchData = &Powershield_MatchData,
 };
+
+static EventMatchData EscapeDThrowKnee_MatchData = {
+    .timer = MATCH_TIMER_COUNTUP,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = true,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = true,
+    .isShowScore = false,
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc EscapeDThrowKnee = {
+    .eventName = "Escape DThrow Knee\n",
+    .eventDescription = "Airdodge out of Falcon's down\nthrow knee kill confirm!",
+    .eventFile = "dthrowknee",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = { .hmn = -1, .cpu = -1 },
+    .cpuKind = CKIND_FALCON,
+    .stage = GRKINDEXT_FD,
+    .disable_hazards = true,
+    .force_sopo = true,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &EscapeDThrowKnee_MatchData,
+};
+
 EventDesc Ledgetech = {
     .eventName = "Ledgetech Training\n",
     .eventDescription = "Practice ledgeteching\nFalco's down-smash!",
@@ -672,6 +703,7 @@ static EventDesc *CharacterSpecific_Events[] = {
     &Edgeguard,
     &Sweetspot,
     &EscapeSheik,
+    &EscapeDThrowKnee,
     &FloatCancel,
 };
 static EventPage CharacterSpecific_Page = {
