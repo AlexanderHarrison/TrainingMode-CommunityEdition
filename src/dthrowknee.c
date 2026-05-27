@@ -5,7 +5,43 @@ static void Exit(GOBJ *menu);
 static void Reset(void);
 static void PutOnGround(GOBJ *ft);
 
+enum {
+    Leniency_Small,
+    Leniency_Large,
+    Leniency_None,
+
+    Leniency_Count
+};
+
+static u8 dash_random_delay_max[Leniency_Count] = { 2, 3, 1 };
+static u8 knee_random_delay_max[Leniency_Count] = { 3, 4, 1 };
+static const char *Options_Leniency[] = { "Small", "Large", "None" };
+
+enum {
+    Opt_Leniency,
+    Opt_Help,
+    Opt_Exit,
+};
+
 static EventOption Options_Main[] = {
+    {
+        .kind = OPTKIND_STRING,
+        .name = "Leniency",
+        .desc = {"How much falcon will delay the knee,",
+                 "giving you more time to escape."},
+        .values = Options_Leniency,
+        .value_num = countof(Options_Leniency),
+    },
+    {
+        .kind = OPTKIND_INFO,
+        .name = "Help",
+        .desc = {
+            "To escape Falcon's down throw into knee kill confirm,",
+            "Tap up to buffer a jump right before hitstun ends.",
+            "Then, press down both triggers with a slight delay to",
+            "airdodge up, dodging the knee."
+        },
+    },
     {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
@@ -87,7 +123,7 @@ static void Event_PostThink(GOBJ *menu) {
     if (hmn_data->flags.hitstun) {
         float hitstun;
         memcpy(&hitstun, &hmn_data->state_var.state_var1, sizeof(float));
-        if (hitstun == 9.f) { // TODO: adjust
+        if (hitstun == 10.f) {
             action_log_cur = 0;
             memset(action_log, 0, sizeof(action_log));
             memset(lr_press_log, 0, sizeof(lr_press_log));
@@ -124,10 +160,24 @@ static void Event_PostThink(GOBJ *menu) {
         if (pad->down & PAD_TRIGGER_R) lr_press_log[action_log_cur]++;
         if (pad->down & PAD_BUTTON_X) jump_press_log[action_log_cur]++;
         if (pad->down & PAD_BUTTON_Y) jump_press_log[action_log_cur]++;
+        
         if (
+            // If in tap jump range
             hmn_data->input.lstick.Y >= ftcommon->jumpaerial_lsticky
             && hmn_data->input.lstick_prev.Y < ftcommon->jumpaerial_lsticky
-        ) jump_press_log[action_log_cur]++;
+        ) {
+            // If this jump was buffered, it's counted from the first tilt frame.
+            int tilt_y = hmn_data->input.timer_lstick_tilt_y;
+            if (
+                // ensure first tilt input was during hitstun and in the log
+                tilt_y >= 0
+                && tilt_y <= (int)action_log_cur
+                && action_log_cur - tilt_y < countof(action_log)/2
+            )
+                jump_press_log[action_log_cur - tilt_y]++;
+            else
+                jump_press_log[action_log_cur]++;
+        }
 
         action_log_cur++;
     }
@@ -180,7 +230,10 @@ void Event_Init(GOBJ *menu) {
     GObj_AddProc(gobj, Event_PostThink, 20);
     GObj_AddGXLink(gobj, Event_GX, 5, 0);
 }
-    
+
+static int start_timer = -1;
+static int reset_timer = -1;
+
 void Event_Think(GOBJ *menu) {
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
@@ -204,26 +257,26 @@ void Event_Think(GOBJ *menu) {
     if (pad->down & HSD_BUTTON_DPAD_LEFT)
         Reset();
 
-    static int reset_timer = -1;
     if (reset_timer < 0 && (cpu_state == ASID_LANDING || cpu_state == ASID_LANDINGAIRF))
         reset_timer = 20;
-    if (reset_timer > 0)
-        reset_timer--;
-    if (reset_timer == 0) {
-        reset_timer = -1;
+    if (reset_timer == 0)
         Reset();
-    }
+    if (reset_timer >= 0)
+        reset_timer--;
 
     // Calculate CPU inputs -------------------------------------------------------------
 
     Fighter_ZeroCPUInputs(cpu_data);
 
-    if (ASID_DAMAGEHI1 <= hmn_state && hmn_state <= ASID_DAMAGEFLYROLL) {
+    if (start_timer >= 0) {
+        start_timer--;
+    } else if (ASID_DAMAGEHI1 <= hmn_state && hmn_state <= ASID_DAMAGEFLYROLL) {
         Vec2 knee_pos = SimulateKB(hmn, 20);
         Vec2 to_knee = { knee_pos.X - cpu_data->phys.pos.X, knee_pos.Y - cpu_data->phys.pos.Y }; 
 
         if (cpu_state == ASID_WAIT) {
-            if (HSD_Randi(2) == 0 || cpu_data->TM.state_frame > 2)
+            int leniency = dash_random_delay_max[Options_Main[Opt_Leniency].val];
+            if (HSD_Randi(leniency) == 0 || cpu_data->TM.state_frame > leniency)
                 cpu_data->cpu.lstickX = 127;
         }
 
@@ -249,7 +302,8 @@ void Event_Think(GOBJ *menu) {
         if (cpu_state == ASID_JUMPF) {
             cpu_data->cpu.lstickX = 127;
 
-            if (HSD_Randi(3) == 0 || cpu_data->TM.state_frame > 3)
+            int leniency = knee_random_delay_max[Options_Main[Opt_Leniency].val];
+            if (HSD_Randi(leniency) == 0 || cpu_data->TM.state_frame > leniency)
                 cpu_data->cpu.held = PAD_BUTTON_A;
         }
 
@@ -335,4 +389,5 @@ static void Reset(void) {
     Fighter_SetHUDDamage(hmn_data->ply, percent);
 
     action_log_cur = countof(action_log);
+    start_timer = 20;
 }
