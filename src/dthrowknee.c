@@ -118,13 +118,12 @@ static void Event_PostThink(GOBJ *menu) {
         
         action_log[action_log_cur] = action;
 
-        // We need to use the master pad here: triggers in hmn_data->input.down are maintained during hitlag
+        // We need to use the master pad here: hmn_data->input.down is maintained during hitlag
         HSD_Pad *pad = PadGetMaster(hmn_data->pad_index);
         if (pad->down & PAD_TRIGGER_L) lr_press_log[action_log_cur]++;
         if (pad->down & PAD_TRIGGER_R) lr_press_log[action_log_cur]++;
-
-        if (hmn_data->input.down & PAD_BUTTON_X) jump_press_log[action_log_cur]++;
-        if (hmn_data->input.down & PAD_BUTTON_Y) jump_press_log[action_log_cur]++;
+        if (pad->down & PAD_BUTTON_X) jump_press_log[action_log_cur]++;
+        if (pad->down & PAD_BUTTON_Y) jump_press_log[action_log_cur]++;
         if (
             hmn_data->input.lstick.Y >= ftcommon->jumpaerial_lsticky
             && hmn_data->input.lstick_prev.Y < ftcommon->jumpaerial_lsticky
