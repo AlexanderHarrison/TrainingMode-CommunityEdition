@@ -50,10 +50,7 @@ static Vec2 SimulateKB(GOBJ *ft, u32 frames) {
 enum Action {
     Action_None,
     Action_Hitstun,
-    Action_HitstunRemaining,
-    Action_EarlyJump,
-    Action_BufferedJump,
-    Action_LateJump,
+    Action_Actionable,
     Action_DoubleJump,
     Action_Airdodge,
 
@@ -62,19 +59,13 @@ enum Action {
 static char *action_names[Action_Count] = {
     "None",
     "Hitstun",
-    "Hitstun Remaining",
-    "Early Jump",
-    "Buffered Jump",
     "Actionable",
     "Double Jump",
     "Airdodge",
 };
 static GXColor action_colors[Action_Count] = {
     {40, 40, 40, 180},  // dark gray - none
-    {160, 80, 80, 180},  // dark red - hitstun
-    {80, 80, 80, 180},  // light gray - hitstun remaining
-    {255, 128, 128, 180}, // red - early jump
-    {220, 220, 70, 180}, // yellow - buffered jump
+    {120, 80, 80, 180},  // dark red - hitstun
     {230, 22, 198, 180}, // magenta - actionable
     {128, 128, 255, 180}, // blue - double jump
     {128, 255, 128, 180}, // green - airdodge
@@ -99,7 +90,6 @@ static void Event_PostThink(GOBJ *menu) {
         if (hitstun == 9.f) { // TODO: adjust
             action_log_cur = 0;
             memset(action_log, 0, sizeof(action_log));
-            for (u32 i = 0; i < 9; ++i) action_log[i] = Action_HitstunRemaining;
             memset(lr_press_log, 0, sizeof(lr_press_log));
             memset(jump_press_log, 0, sizeof(jump_press_log));
         }
@@ -110,25 +100,15 @@ static void Event_PostThink(GOBJ *menu) {
 
         u8 action = Action_None;
 
-        if (hmn_data->flags.hitstun) {
-            float hitstun;
-            memcpy(&hitstun, &hmn_data->state_var.state_var1, sizeof(float));
-            int hitstun_i = (int)hitstun;
-
-            if (hitstun_i + hmn_data->input.timer_lstick_tilt_y < ftcommon->jumpaerial_lsticktimer) // TODO: adjust
-                action = Action_BufferedJump;
-            else if (hitstun_i + hmn_data->input.timer_lstick_tilt_y < 10) // TODO: adjust
-                action = Action_EarlyJump;
-            else
-                action = Action_Hitstun;
-        }
+        if (hmn_data->flags.hitstun)
+            action = Action_Hitstun;
 
         else if (
             (ASID_DAMAGEHI1 <= hmn_state && hmn_state <= ASID_DAMAGEFLYROLL) 
             || hmn_state == ASID_DAMAGEFALL 
             || hmn_state == ASID_FALL
         )
-            action = Action_LateJump;
+            action = Action_Actionable;
 
         else if (hmn_state == ASID_JUMPAERIALF || hmn_state == ASID_JUMPAERIALB)
             action = Action_DoubleJump;
@@ -137,14 +117,19 @@ static void Event_PostThink(GOBJ *menu) {
             action = Action_Airdodge;
         
         action_log[action_log_cur] = action;
-        if (!hmn_data->flags.hitstun && (hmn_data->input.down & PAD_TRIGGER_L)) lr_press_log[action_log_cur]++;
-        if (!hmn_data->flags.hitstun && (hmn_data->input.down & PAD_TRIGGER_R)) lr_press_log[action_log_cur]++;
+
+        // We need to use the master pad here: triggers in hmn_data->input.down are maintained during hitlag
+        HSD_Pad *pad = PadGetMaster(hmn_data->pad_index);
+        if (pad->down & PAD_TRIGGER_L) lr_press_log[action_log_cur]++;
+        if (pad->down & PAD_TRIGGER_R) lr_press_log[action_log_cur]++;
+
         if (hmn_data->input.down & PAD_BUTTON_X) jump_press_log[action_log_cur]++;
         if (hmn_data->input.down & PAD_BUTTON_Y) jump_press_log[action_log_cur]++;
         if (
             hmn_data->input.lstick.Y >= ftcommon->jumpaerial_lsticky
             && hmn_data->input.lstick_prev.Y < ftcommon->jumpaerial_lsticky
         ) jump_press_log[action_log_cur]++;
+
         action_log_cur++;
     }
 }
@@ -173,7 +158,7 @@ static void Event_GX(GOBJ *menu, int pass) {
             float y = rect_bar.y - 1.f;
             
             static const float s = 0.4f;
-            static const float t = 0.7f;
+            static const float t = 0.8f;
             static GXColor white = {255, 255, 255, 255};
 
             for (; jump_press_count; jump_press_count--) {
@@ -183,7 +168,7 @@ static void Event_GX(GOBJ *menu, int pass) {
             }
             
             for (; lr_press_count; lr_press_count--) {
-                Rect rect = { x - s, y - (s+s), s+s, s+s };
+                Rect rect = { x - s, y - t, t, t };
                 y -= 1.f;
                 event_vars->HUD_DrawRects(&rect, &white, 1);
             }
@@ -203,6 +188,9 @@ void Event_Think(GOBJ *menu) {
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
 
+    int hmn_state = hmn_data->state_id;
+    int cpu_state = cpu_data->state_id;
+
     if (event_vars->game_timer == 1) {
         PutOnGround(hmn);
         PutOnGround(cpu);
@@ -210,17 +198,26 @@ void Event_Think(GOBJ *menu) {
         event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
         Reset();
     }
+    
+    // Reset Logic ---------------------------------------------------------------------
 
     HSD_Pad *pad = PadGetMaster(hmn_data->pad_index);
     if (pad->down & HSD_BUTTON_DPAD_LEFT)
         Reset();
-        
+
+    static int reset_timer = -1;
+    if (reset_timer < 0 && (cpu_state == ASID_LANDING || cpu_state == ASID_LANDINGAIRF))
+        reset_timer = 20;
+    if (reset_timer > 0)
+        reset_timer--;
+    if (reset_timer == 0) {
+        reset_timer = -1;
+        Reset();
+    }
+
     // Calculate CPU inputs -------------------------------------------------------------
 
     Fighter_ZeroCPUInputs(cpu_data);
-
-    int hmn_state = hmn_data->state_id;
-    int cpu_state = cpu_data->state_id;
 
     if (ASID_DAMAGEHI1 <= hmn_state && hmn_state <= ASID_DAMAGEFLYROLL) {
         Vec2 knee_pos = SimulateKB(hmn, 20);
@@ -266,9 +263,6 @@ void Event_Think(GOBJ *menu) {
             cpu_data->cpu.lstickX = 0;
             cpu_data->cpu.lstickY = -127;
         }
-
-        if (cpu_state == ASID_LANDING || cpu_state == ASID_LANDINGAIRF)
-            Reset();
     } else {
         if (cpu_state == ASID_WAIT)
             cpu_data->cpu.lstickX = 127;

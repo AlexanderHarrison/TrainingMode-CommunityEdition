@@ -360,7 +360,11 @@ EventDesc EscapeDThrowKnee = {
     .eventFile = "dthrowknee",
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
-    .allowed_characters = { .hmn = -1, .cpu = -1 },
+    .allowed_characters = {
+        .hmn = CSSID_PEACH | CSSID_MARIO | CSSID_DOCTOR_MARIO | CSSID_LUIGI
+            | CSSID_MEWTWO | CSSID_ZELDA | CSSID_ICE_CLIMBERS | CSSID_MARTH,
+        .cpu = -1
+    },
     .cpuKind = CKIND_FALCON,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
