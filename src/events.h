@@ -129,6 +129,8 @@ typedef struct evFunction
     EventMenu **menu_start;
 } evFunction;
 
+typedef Vec2 Tri[3];
+
 typedef struct Rect
 {
     float x, y, w, h;
@@ -210,8 +212,9 @@ static inline void GFX_AddVtx(f32 x, f32 y, f32 z, GXColor color) {
 }
 
 void HUD_DrawRects(Rect *rects, GXColor *colors, int count);
+void HUD_DrawTris(Tri *tris, GXColor *colors, int count);
 void HUD_DrawText(const char *text, Rect *pos, float size);
-void HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
+Rect HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
 void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int action_count);
 
 typedef struct RNGControl
@@ -261,8 +264,9 @@ typedef struct EventVars
     GOBJ *hudcam_gobj;
     void (*GFX_Start)(u16 vtx_count, GFX_Params params);
     void (*HUD_DrawRects)(Rect *rects, GXColor *colors, int count);
+    void (*HUD_DrawTris)(Tri *tris, GXColor *colors, int count);
     void (*HUD_DrawText)(const char *text, Rect *pos, float size);
-    void (*HUD_DrawActionLogBar)(u8 *action_log, GXColor *color_lookup, int log_count);
+    Rect (*HUD_DrawActionLogBar)(u8 *action_log, GXColor *color_lookup, int log_count);
     void (*HUD_DrawActionLogKey)(char **action_names, GXColor *action_colors, int action_count);
 } EventVars;
 #define event_vars_ptr_loc ((EventVars**)0x803d7054)
