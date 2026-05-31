@@ -143,8 +143,8 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
                                          stc_match->time_frames - state->osd_start_frame < timeout &&
                                          state->osd_start_frame <= stc_match->time_frames;
     if (should_tick_handoff) {
-        //time after you attempt to grab that it decides you definitely missed the handoff
-        //regrabs after this point are chain grabs or backtracks
+        //this number of frames after the enemy is released from the throw, the handoff is considered invalid,
+        //even if you successfully regrab. a successful regrab after this timeout is likely a chain grab or backtrack.
         const int post_release_Timeout = 15;
         if (state->enemy_release_frame == 0 && IsThrownState(enemy_data->TM.state_prev[0]) && !IsThrownState(enemy_data->state_id)) {
             state->enemy_release_frame = stc_match->time_frames;
@@ -156,7 +156,7 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
         }
 
         if (grabber_data->state_id == ASID_CATCHPULL || grabber_data->state_id == ASID_CATCHDASHPULL) {
-            //if you caught without setting these vars it means you caught on the same exact frame
+            //if you grabbed them without setting these vars it means you grabbed them on the exact frame of release
             state->enemy_release_frame = state->enemy_release_frame == 0 ? stc_match->time_frames : state->enemy_release_frame;
             state->first_grab_hitbox_frame = state->first_grab_hitbox_frame == 0 ? stc_match->time_frames : state->first_grab_hitbox_frame;
             int grab_to_throw_delta = state->first_grab_hitbox_frame - state->enemy_release_frame;
@@ -174,8 +174,8 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
         else if (state->enemy_release_frame != 0 && state->first_grab_hitbox_frame != 0 && stc_match->time_frames - state->enemy_release_frame > post_release_Timeout) {
             int grab_to_throw_delta = state->first_grab_hitbox_frame - state->enemy_release_frame;
             bool grab_early = grab_to_throw_delta < 1;
-            //if the timing was exact, display a different error message to avoid confusion.
-            //'handoff failed\n timing perfect' is confusing in this case when the issue is something else.
+            //if the timing was 'perfect', yet you missed, give a custom error message to avoid confusion.
+            //'Handoff failed, timing perfect' was confusing to people in testing.
             if (grab_to_throw_delta == -1 || grab_to_throw_delta == 0) {
                 Message_Display(OSD_FighterSpecificTech, thrower_data->ply, MSGCOLOR_RED, "Handoff Failure\nConditions not Met");
             }
