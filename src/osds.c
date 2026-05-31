@@ -141,25 +141,25 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
 
     //tick if the thrower has started a throw recently (and not in the future for replay situations).
     const bool should_tick_handoff = state->osd_start_frame != 0 &&
-                                         event_vars->game_timer - state->osd_start_frame < timeout &&
-                                         state->osd_start_frame <= event_vars->game_timer;
+                                         stc_match->time_frames - state->osd_start_frame < timeout &&
+                                         state->osd_start_frame <= stc_match->time_frames;
     if (should_tick_handoff) {
         //time after you attempt to grab that it decides you definitely missed the handoff
         //regrabs after this point are chain grabs or backtracks
         const int post_release_Timeout = 15;
         if (state->enemy_release_frame == 0 && IsThrownState(enemy_data->TM.state_prev[0]) && !IsThrownState(enemy_data->state_id)) {
-            state->enemy_release_frame = event_vars->game_timer;
+            state->enemy_release_frame = stc_match->time_frames;
         }
 
         //grab hitbox is only two frames. first condition is to avoid false reporting the nana synced grab as a handoff attempt.
-        if (event_vars->game_timer - state->osd_start_frame > 8 && IsGrabHitboxActive(grabber_data) && event_vars->game_timer - state->first_grab_hitbox_frame != 1) {
-            state->first_grab_hitbox_frame = event_vars->game_timer;
+        if (stc_match->time_frames - state->osd_start_frame > 8 && IsGrabHitboxActive(grabber_data) && stc_match->time_frames - state->first_grab_hitbox_frame != 1) {
+            state->first_grab_hitbox_frame = stc_match->time_frames;
         }
 
         if (grabber_data->state_id == ASID_CATCHPULL || grabber_data->state_id == ASID_CATCHDASHPULL) {
             //if you caught without setting these vars it means you caught on the same exact frame
-            state->enemy_release_frame = state->enemy_release_frame == 0 ? event_vars->game_timer : state->enemy_release_frame;
-            state->first_grab_hitbox_frame = state->first_grab_hitbox_frame == 0 ? event_vars->game_timer : state->first_grab_hitbox_frame;
+            state->enemy_release_frame = state->enemy_release_frame == 0 ? stc_match->time_frames : state->enemy_release_frame;
+            state->first_grab_hitbox_frame = state->first_grab_hitbox_frame == 0 ? stc_match->time_frames : state->first_grab_hitbox_frame;
             int grab_to_throw_delta = state->first_grab_hitbox_frame - state->enemy_release_frame;
             bool grab_early = grab_to_throw_delta < 1;
             int color_timing = grab_to_throw_delta == -1 || grab_to_throw_delta == 0 ? MSGCOLOR_GREEN : MSGCOLOR_WHITE;
@@ -172,7 +172,7 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
             Text_SetColor(msg->text, 1, &stc_msg_colors[color_timing]);
             state->osd_start_frame = 0;
         }
-        else if (state->enemy_release_frame != 0 && state->first_grab_hitbox_frame != 0 && event_vars->game_timer - state->enemy_release_frame > post_release_Timeout) {
+        else if (state->enemy_release_frame != 0 && state->first_grab_hitbox_frame != 0 && stc_match->time_frames - state->enemy_release_frame > post_release_Timeout) {
             int grab_to_throw_delta = state->first_grab_hitbox_frame - state->enemy_release_frame;
             bool grab_early = grab_to_throw_delta < 1;
             //if the timing was exact, display a different error message to avoid confusion.
@@ -187,7 +187,7 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
             state->osd_start_frame = 0;
         }
     } else if (!IsThrowState(state->thrower_prev_state) && IsThrowState(thrower_data->state_id)) {
-        state->osd_start_frame = event_vars->game_timer;
+        state->osd_start_frame = stc_match->time_frames;
     } else {
         state->osd_start_frame = 0;
         state->enemy_release_frame = 0;
