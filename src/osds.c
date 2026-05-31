@@ -68,8 +68,8 @@ static void RunOSD_FrameAdvantage(GOBJ *ft, GOBJ *ft_sub) {
 
     // "actionable" if either state changed or in iasa, and not in aerial or ac landing lag.
     bool atk_actionable = (atk_hit_state[ply] != atk_state || CheckIASA(ft_data))
-                          && (atk_state != ASID_LANDING || ft_data->state.frame >= ft_data->attr.normal_landing_lag)
-                          && (atk_state < ASID_LANDINGAIRN || ASID_LANDINGAIRLW < atk_state);
+        && (atk_state != ASID_LANDING || ft_data->state.frame >= ft_data->attr.normal_landing_lag)
+        && (atk_state < ASID_LANDINGAIRN || ASID_LANDINGAIRLW < atk_state);
 
     if (atk_actionable) {
         int advantage;
@@ -79,14 +79,14 @@ static void RunOSD_FrameAdvantage(GOBJ *ft, GOBJ *ft_sub) {
             float anim_speed = ft_def_data->state.rate;
             float stun_total = JOBJ_GetJointAnimFrameTotal(ft_def->hsd_object);
             float stun_curr = ft_def_data->state.frame;
-            advantage = (int) ((stun_total - stun_curr) / anim_speed) + 1;
+            advantage = (int)((stun_total - stun_curr) / anim_speed) + 1;
         } else {
             // = or - on shield: advantage is -frames since shieldstun.
-            advantage = -(int) ft_def_data->TM.state_frame;
+            advantage = -(int)ft_def_data->TM.state_frame;
             for (u32 i = 0; i < countof(ft_def_data->TM.state_prev); ++i) {
                 if (ft_def_data->TM.state_prev[i] == ASID_GUARDSETOFF)
                     break;
-                advantage -= (int) ft_def_data->TM.state_prev_frames[i];
+                advantage -= (int)ft_def_data->TM.state_prev_frames[i];
             }
             advantage += 1; // off-by-one
         }
