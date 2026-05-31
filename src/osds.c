@@ -68,8 +68,8 @@ static void RunOSD_FrameAdvantage(GOBJ *ft, GOBJ *ft_sub) {
 
     // "actionable" if either state changed or in iasa, and not in aerial or ac landing lag.
     bool atk_actionable = (atk_hit_state[ply] != atk_state || CheckIASA(ft_data))
-        && (atk_state != ASID_LANDING || ft_data->state.frame >= ft_data->attr.normal_landing_lag)
-        && (atk_state < ASID_LANDINGAIRN || ASID_LANDINGAIRLW < atk_state);
+                          && (atk_state != ASID_LANDING || ft_data->state.frame >= ft_data->attr.normal_landing_lag)
+                          && (atk_state < ASID_LANDINGAIRN || ASID_LANDINGAIRLW < atk_state);
 
     if (atk_actionable) {
         int advantage;
@@ -79,14 +79,14 @@ static void RunOSD_FrameAdvantage(GOBJ *ft, GOBJ *ft_sub) {
             float anim_speed = ft_def_data->state.rate;
             float stun_total = JOBJ_GetJointAnimFrameTotal(ft_def->hsd_object);
             float stun_curr = ft_def_data->state.frame;
-            advantage = (int)((stun_total - stun_curr) / anim_speed) + 1;
+            advantage = (int) ((stun_total - stun_curr) / anim_speed) + 1;
         } else {
             // = or - on shield: advantage is -frames since shieldstun.
-            advantage = -(int)ft_def_data->TM.state_frame;
+            advantage = -(int) ft_def_data->TM.state_frame;
             for (u32 i = 0; i < countof(ft_def_data->TM.state_prev); ++i) {
                 if (ft_def_data->TM.state_prev[i] == ASID_GUARDSETOFF)
                     break;
-                advantage -= (int)ft_def_data->TM.state_prev_frames[i];
+                advantage -= (int) ft_def_data->TM.state_prev_frames[i];
             }
             advantage += 1; // off-by-one
         }
@@ -106,9 +106,10 @@ typedef struct {
     int osd_start_frame;
     int first_grab_hitbox_frame;
     int enemy_release_frame;
+    int thrower_prev_state;
 } HandoffState;
 
-//we use these statics instead of FTSTATEKIND becuase ft_data doesn't keep state kind of previous state kinds.
+//we use these statics instead of FTSTATEKIND becuase ft_data doesn't keep state kind of previous states
 static bool IsThrowState(const int state_id) {
     return state_id >= ASID_THROWF && state_id <= ASID_THROWLW;
 }
@@ -118,7 +119,7 @@ static bool IsThrownState(const int state_id) {
 }
 
 static bool IsGrabHitboxActive(const FighterData *ft_data) {
-    if (ft_data->state_id == ASID_CATCH) {
+    if (ft_data->state_id == ASID_CATCH || ft_data->state_id == ASID_CATCHDASH) {
         for (int i = 0; i < 4; i++) {
             if (ft_data->hitbox[i].active) {
                 return true;
@@ -137,14 +138,14 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
 
     //time after the intiial throw this OSD times out
     const int timeout = 60;
+    //time after you attempt to grab that it decides you definitely missed the handoff
+    //regrabs after this point are chain grabs or backtracks
 
     //tick if the thrower has started a throw recently (and not in the future for replay situations).
     const bool should_tick_handoff = state->osd_start_frame != 0 &&
                                          event_vars->game_timer - state->osd_start_frame < timeout &&
                                          state->osd_start_frame <= event_vars->game_timer;
     if (should_tick_handoff) {
-        //time after you attempt to grab that it decides you definitely missed the handoff
-        //regrabs after this point are chain grabs or backtracks
         const int post_release_Timeout = 15;
         if (state->enemy_release_frame == 0 && IsThrownState(enemy_data->TM.state_prev[0]) && !IsThrownState(enemy_data->state_id)) {
             state->enemy_release_frame = event_vars->game_timer;
@@ -155,7 +156,7 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
             state->first_grab_hitbox_frame = event_vars->game_timer;
         }
 
-        if (grabber_data->state_id == ASID_CATCHPULL) {
+        if (grabber_data->state_id == ASID_CATCHPULL || grabber_data->state_id == ASID_CATCHDASHPULL) {
             //if you caught without setting these vars it means you caught on the same exact frame
             state->enemy_release_frame = state->enemy_release_frame == 0 ? event_vars->game_timer : state->enemy_release_frame;
             state->first_grab_hitbox_frame = state->first_grab_hitbox_frame == 0 ? event_vars->game_timer : state->first_grab_hitbox_frame;
@@ -175,7 +176,7 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
             int grab_to_throw_delta = state->first_grab_hitbox_frame - state->enemy_release_frame;
             bool grab_early = grab_to_throw_delta < 1;
             //if the timing was exact, display a different error message to avoid confusion.
-            //'handoff failed\m timing perfect' is confusing in this case when the issue is something else.
+            //'handoff failed\n timing perfect' is confusing in this case when the issue is something else.
             if (grab_to_throw_delta == -1 || grab_to_throw_delta == 0) {
                 Message_Display(OSD_FighterSpecificTech, thrower_data->ply, MSGCOLOR_RED, "Handoff Failure\nConditions not Met");
             }
@@ -185,16 +186,14 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
             }
             state->osd_start_frame = 0;
         }
-        //we check the grabber isn't already grabbing to avoid a false start if the thrower is still in the throw state
-        //after a sucessfull handoff. happens vs heavy characters.
-    } else if (!IsThrowState(thrower_data->TM.state_prev[0]) && IsThrowState(thrower_data->state_id) && grabber_data->state_kind != FTSTATEKIND_CATCH) {
+    } else if (!IsThrowState(state->thrower_prev_state) && IsThrowState(thrower_data->state_id)) {
         state->osd_start_frame = event_vars->game_timer;
-    }
-    else {
+    } else {
         state->osd_start_frame = 0;
         state->enemy_release_frame = 0;
         state->first_grab_hitbox_frame = 0;
     }
+    state->thrower_prev_state = thrower_data->state_id;
 }
 
 void OSD_Think(GOBJ *event) {
