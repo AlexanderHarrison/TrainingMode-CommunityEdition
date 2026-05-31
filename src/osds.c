@@ -138,14 +138,14 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
 
     //time after the intiial throw this OSD times out
     const int timeout = 60;
-    //time after you attempt to grab that it decides you definitely missed the handoff
-    //regrabs after this point are chain grabs or backtracks
 
     //tick if the thrower has started a throw recently (and not in the future for replay situations).
     const bool should_tick_handoff = state->osd_start_frame != 0 &&
                                          event_vars->game_timer - state->osd_start_frame < timeout &&
                                          state->osd_start_frame <= event_vars->game_timer;
     if (should_tick_handoff) {
+        //time after you attempt to grab that it decides you definitely missed the handoff
+        //regrabs after this point are chain grabs or backtracks
         const int post_release_Timeout = 15;
         if (state->enemy_release_frame == 0 && IsThrownState(enemy_data->TM.state_prev[0]) && !IsThrownState(enemy_data->state_id)) {
             state->enemy_release_frame = event_vars->game_timer;
