@@ -199,6 +199,7 @@ static void Event_GX(GOBJ *menu, int pass) {
         );
         
         // draw indicator shapes
+        u32 since_jump = 10000;
         for (u32 i = 0; i < countof(lr_press_log); ++i) {
             u8 lr_press_count = lr_press_log[i];
             u8 jump_press_count = jump_press_log[i];
@@ -208,19 +209,27 @@ static void Event_GX(GOBJ *menu, int pass) {
             
             static const float s = 0.4f;
             static const float t = 0.8f;
-            static GXColor white = {255, 255, 255, 255};
+            static GXColor red = {255, 150, 150, 255};
+            static GXColor green = {150, 255, 200, 255};
 
             for (; jump_press_count; jump_press_count--) {
                 Tri tri = { { x, y }, { x - s, y - t }, { x + s, y - t } };
                 y -= 1.f;
-                event_vars->HUD_DrawTris(&tri, &white, 1);
+                
+                u32 mid = countof(lr_press_log)/2;
+                GXColor *color = (mid-3 <= i && i <= mid+3) ? &green : &red;
+                event_vars->HUD_DrawTris(&tri, color, 1);
+                since_jump = 0;
             }
-            
+
             for (; lr_press_count; lr_press_count--) {
                 Rect rect = { x - s, y - t, t, t };
                 y -= 1.f;
-                event_vars->HUD_DrawRects(&rect, &white, 1);
+                GXColor *color = (1 <= since_jump && since_jump <= 5) ? &green : &red;
+                event_vars->HUD_DrawRects(&rect, color, 1);
             }
+
+            since_jump++;
         }
     }
 }
