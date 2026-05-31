@@ -106,7 +106,7 @@ typedef struct {
     int osd_start_frame;
     int first_grab_hitbox_frame;
     int enemy_release_frame;
-    int thrower_prev_state;
+    int thrower_state_prev_frame;
 } HandoffState;
 
 //we use these statics instead of FTSTATEKIND becuase ft_data doesn't keep state kind of previous states
@@ -186,14 +186,14 @@ static void RunOsd_Handoff(GOBJ *thrower, GOBJ *grabber, GOBJ *enemy, HandoffSta
             }
             state->osd_start_frame = 0;
         }
-    } else if (!IsThrowState(state->thrower_prev_state) && IsThrowState(thrower_data->state_id)) {
+    } else if (!IsThrowState(state->thrower_state_prev_frame) && IsThrowState(thrower_data->state_id)) {
         state->osd_start_frame = stc_match->time_frames;
     } else {
         state->osd_start_frame = 0;
         state->enemy_release_frame = 0;
         state->first_grab_hitbox_frame = 0;
     }
-    state->thrower_prev_state = thrower_data->state_id;
+    state->thrower_state_prev_frame = thrower_data->state_id;
 }
 
 void OSD_Think(GOBJ *event) {
