@@ -120,6 +120,11 @@ void HUD_GX(GOBJ *gobj, int pass) {
 
     if (WdOptions_Main[OPT_HUD].val == 0) return;
     if (pass != 2) return;
+    
+    // Draw info panel
+    static const char *label[3] = {"L1", "L2", "L3"};
+    static const char *info[3] = {"I1", "I2", "I3"};
+    event_vars->HUD_DrawInfoPanel(label, info, 3);
 
     #define W 1.6f // width of square
     #define H 2.f // height of square
