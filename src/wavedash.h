@@ -46,6 +46,7 @@ struct WavedashData
     int timer;
     int airdodge_count;
     int airdodge_frame[8];
+    int result;
     float angle;
     int short_hop;
     int wd_attempted;

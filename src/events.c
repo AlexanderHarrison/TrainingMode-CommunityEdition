@@ -889,7 +889,8 @@ void HUD_DrawTextEx(
         new_text->kerning = 1;
         new_text->align = align;
         new_text->use_aspect = 1;
-        new_text->aspect.X = 165;
+        // new_text->aspect.X = 165;
+        new_text->aspect.X = 80;
         new_text->viewport_scale.X = 0.1f;
         new_text->viewport_scale.Y = 0.1f;
         Text_AddSubtext(new_text, 0, 0, "");
@@ -956,8 +957,8 @@ static const u8 info_item_quad_grey_idx[] = {
 static const u8 info_item_quad_black_idx[] = {
     6, 7, 8, 4
 };
-static const Rect info_item_label_rect = { 1.f, 2.5f, 8.f, 2.5f };
-static const Rect info_item_info_rect = { 0.2f, 0.2f, 9.f, 2.5f };
+static const Rect info_item_label_rect = { 0.8f, 2.5f, 8.6f, 2.5f };
+static const Rect info_item_info_rect = { 0.0f, 0.0f, 9.6f, 2.5f };
 
 void HUD_DrawInfoPanel(const char **label, const char **info, int count) {
     HUDCamData *cam_data = stc_event_vars.hudcam_gobj->userdata;
@@ -966,7 +967,7 @@ void HUD_DrawInfoPanel(const char **label, const char **info, int count) {
     CObj_SetCurrent(stc_event_vars.hudcam_gobj->hsd_object);
 
     float x = 17.f;
-    float y = 5.f;
+    float y = 10.f;
     GXColor grey = { 130, 130, 130, 180 };
     GXColor black = { 0, 0, 0, 180 };
 
@@ -1003,7 +1004,7 @@ void HUD_DrawInfoPanel(const char **label, const char **info, int count) {
         info_rect.y += cur_y;
         HUD_DrawTextEx(
             info[info_i], &info_rect, 0.5f,
-            (GXColor) {200,200,200,255}, (GXColor) {0,0,0,0},
+            (GXColor) {220,220,220,255}, (GXColor) {0,0,0,0},
             0, 1
         );
 
