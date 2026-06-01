@@ -32,17 +32,6 @@ struct WavedashData
     struct
     {
         GOBJ *gobj;
-        int canvas;
-        Text *text_timing;
-        Text *text_angle;
-        Text *text_succession;
-        float arrow_prevpos;
-        float arrow_nextpos;
-        int arrow_timer;
-    } hud;
-    struct
-    {
-        GOBJ *gobj;
         float scale;
         Vec3 left_offset;
         Vec3 center_offset;
@@ -55,7 +44,8 @@ struct WavedashData
     } tip;
     float wd_maxdstn;
     int timer;
-    int airdodge_frame;
+    int airdodge_count;
+    int airdodge_frame[8];
     float angle;
     int short_hop;
     int wd_attempted;
@@ -96,6 +86,6 @@ void Target_ChangeState(GOBJ *target_gobj, int state);
 void Target_Manager(WavedashData *event_data, FighterData *hmn_data);
 void Target_Init(WavedashData *event_data, FighterData *hmn_data);
 void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data);
-void Wavedash_Init(WavedashData *event_data);
 void Wavedash_ChangeShowHUD(GOBJ *menu_gobj, int show);
+void HUD_GX(GOBJ *gobj, int pass);
 void Event_Exit(GOBJ *menu);

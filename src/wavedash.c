@@ -79,19 +79,21 @@ void Event_Init(GOBJ *gobj)
     // get wavedash assets
     event_data->assets = Archive_GetPublicAddress(event_vars->event_archive, "wavedash");
 
-    // create HUD
-    Wavedash_Init(event_data);
-
     // init target
     Target_Init(event_data, hmn_data);
+
+    // init timer
+    event_data->timer = -1;
+    
+    GObj_AddGXLink(gobj, HUD_GX, 5, 0);
 }
+
 // Think Function
 void Event_Think(GOBJ *event)
 {
     WavedashData *event_data = event->userdata;
     GOBJ *hmn = Fighter_GetGObj(0);
     FighterData *hmn_data = hmn->userdata;
-    JOBJ *hud_jobj = event_data->hud.gobj->hsd_object;
 
     // infinite shields
     hmn_data->shield.health = 60;
@@ -103,25 +105,6 @@ void Event_Think(GOBJ *event)
 
     // run tip logic
     Tips_Think(event_data, hmn_data);
-
-    // update HUD anim
-    JOBJ_AnimAll(hud_jobj);
-
-    // update arrow animation
-    if (event_data->hud.arrow_timer > 0)
-    {
-        event_data->hud.arrow_timer--;
-
-        // get this frames position
-        float time = 1 - ((float)event_data->hud.arrow_timer / (float)WDARROW_ANIMFRAMES);
-        float xpos = smooth_lerp(time, event_data->hud.arrow_prevpos, event_data->hud.arrow_nextpos);
-
-        // update position
-        JOBJ *arrow_jobj;
-        JOBJ_GetChild(hud_jobj, &arrow_jobj, WDJOBJ_ARROW, -1); // get timing bar jobj
-        arrow_jobj->trans.X = xpos;
-        JOBJ_SetMtxDirtySub(arrow_jobj);
-    }
 }
 void Event_Exit(GOBJ *menu)
 {
@@ -132,63 +115,129 @@ void Event_Exit(GOBJ *menu)
     Match_EndVS();
 }
 
-// Event functions
-void Wavedash_Init(WavedashData *event_data)
-{
-    GOBJ *hud_gobj = GObj_Create(0, 0, 0);
-    event_data->hud.gobj = hud_gobj;
-    // Load jobj
-    JOBJ *hud_jobj = JOBJ_LoadJoint(event_data->assets->hud);
-    GObj_AddObject(hud_gobj, 3, hud_jobj);
-    GObj_AddGXLink(hud_gobj, GXLink_Common, GXLINK_HUD, 80);
+void HUD_GX(GOBJ *gobj, int pass) {
+    WavedashData *event_data = gobj->userdata;
 
-    // create text canvas
-    int canvas = Text_CreateCanvas(2, hud_gobj, 14, 15, 0, GXLINK_HUD, 81, 19);
-    event_data->hud.canvas = canvas;
+    if (WdOptions_Main[OPT_HUD].val == 0) return;
+    if (pass != 2) return;
 
-    // init text
-    Text **text_arr = &event_data->hud.text_timing;
-    for (int i = 0; i < 3; i++)
-    {
+    #define W 1.6f // width of square
+    #define H 2.f // height of square
+    #define P 0.1f // amount of padding
+    #define SX (-W * 15.f * 0.5f - P/2) // starting x
+    #define SY 16.f // starting y
+    
+    static GXColor colors[16] = {
+        {0, 0, 0, 255}, // background
+        
+        // early
+        {0xff, 0x60, 0x60, 0xff},
+        {0xff, 0x60, 0x60, 0xff},
+        {0xff, 0x60, 0x60, 0xff},
+        {0xff, 0x60, 0x60, 0xff},
+        {0xff, 0x60, 0x60, 0xff},
+        {0xff, 0x60, 0x60, 0xff},
+        {0xff, 0x60, 0x60, 0xff},
+        
+        // interpolate green -> orange
+        { 0xb4, 0xff, 0xb4, 0xff },
+        { 0xc3, 0xf3, 0x99, 0xff },
+        { 0xd5, 0xe3, 0x79, 0xff },
+        { 0xe5, 0xd2, 0x61, 0xff },
+        { 0xf2, 0xc0, 0x51, 0xff },
+        { 0xfc, 0xab, 0x4e, 0xff },
+        { 0xff, 0x9d, 0x54, 0xff },
+        { 0xff, 0x90, 0x60, 0xff },
+    };
+    
+    static Rect rects[16] = {
+        {SX-P/2, SY, 15.f*W+P, H}, // background
+        {SX+P/2+W*0, SY+P, W-P, H-P*2},
+        {SX+P/2+W*1, SY+P, W-P, H-P*2},
+        {SX+P/2+W*2, SY+P, W-P, H-P*2},
+        {SX+P/2+W*3, SY+P, W-P, H-P*2},
+        {SX+P/2+W*4, SY+P, W-P, H-P*2},
+        {SX+P/2+W*5, SY+P, W-P, H-P*2},
+        {SX+P/2+W*6, SY+P, W-P, H-P*2},
+        {SX+P/2+W*7, SY+P, W-P, H-P*2},
+        {SX+P/2+W*8, SY+P, W-P, H-P*2},
+        {SX+P/2+W*9, SY+P, W-P, H-P*2},
+        {SX+P/2+W*10, SY+P, W-P, H-P*2},
+        {SX+P/2+W*11, SY+P, W-P, H-P*2},
+        {SX+P/2+W*12, SY+P, W-P, H-P*2},
+        {SX+P/2+W*13, SY+P, W-P, H-P*2},
+        {SX+P/2+W*14, SY+P, W-P, H-P*2},
+    };
+    event_vars->HUD_DrawRects(rects, colors, countof(rects));
 
-        // Create text object
-        Text *hud_text = Text_CreateText(2, canvas);
-        text_arr[i] = hud_text;
-        hud_text->kerning = 1;
-        hud_text->align = 1;
-        hud_text->use_aspect = 1;
+    Tri tris[countof(event_data->airdodge_frame)*2];
+    GXColor tri_color[countof(event_data->airdodge_frame)*2];
 
-        // Get position
-        Vec3 text_pos;
-        JOBJ *text_jobj;
-        JOBJ_GetChild(hud_jobj, &text_jobj, WDJOBJ_TEXT + i, -1);
-        JOBJ_GetWorldPosition(text_jobj, 0, &text_pos);
+    int ad_count = event_data->airdodge_count;
+    int *ad_frame = event_data->airdodge_frame;
+    GOBJ *ft = Fighter_GetGObj(0);
+    FighterData *hmn_data = ft->userdata;
+    
+    static float x_pos[countof(event_data->airdodge_frame)] = {0};
+    static int show_count = 0;
 
-        // adjust scale
-        Vec3 *scale = &hud_jobj->scale;
-        // text scale
-        hud_text->viewport_scale.X = (scale->X * 0.01) * TEXT_SCALE;
-        hud_text->viewport_scale.Y = (scale->Y * 0.01) * TEXT_SCALE;
-        hud_text->aspect.X = 165;
+    if (event_data->timer == -1) {
+        show_count = ad_count;
 
-        // text position
-        hud_text->trans.X = text_pos.X + (scale->X / 4.0);
-        hud_text->trans.Y = (text_pos.Y * -1) + (scale->Y / 4.0);
-
-        // dummy text
-        Text_AddSubtext(hud_text, 0, 0, "-");
+        // animate
+        for (int i = 0; i < ad_count; ++i) {
+            int f = ad_frame[i];
+            float x = SX + ((float)f + (7.f - hmn_data->attr.jump_startup_time - 1.f) + 0.5f) * W;
+    
+            float px = x_pos[i];
+            float dx = x - px;
+            if (fabs(dx) > 0.01f) 
+                x = px + dx * 0.3f;
+            x_pos[i] = x;
+        }
     }
 
-    // init timer
-    event_data->timer = -1;
+    for (int i = 0; i < show_count; ++i) {
+        float x = x_pos[i];
+        float y = SY - 0.8f;
+        int f = ad_frame[i];
+        if (i != 0 && ad_frame[i-1] == f)
+            y -= H;
+        #define B 0.3f
+        #define B2 0.1f
+        #define B3 0.15f
+        tris[i*2+1][0] = (Vec2) {x, y};
+        tris[i*2+1][1] = (Vec2) {x+W*0.3f, y-H*0.6f};
+        tris[i*2+1][2] = (Vec2) {x-W*0.3f, y-H*0.6f};
+        tri_color[i*2+1] = (GXColor) {255, 255, 255, 255};
+
+        tris[i*2+0][0].X = tris[i*2+1][0].X;
+        tris[i*2+0][0].Y = tris[i*2+1][0].Y + 0.3f;
+        tris[i*2+0][1].X = tris[i*2+1][1].X + 0.15f;
+        tris[i*2+0][1].Y = tris[i*2+1][1].Y - 0.1f;
+        tris[i*2+0][2].X = tris[i*2+1][2].X - 0.15f;
+        tris[i*2+0][2].Y = tris[i*2+1][2].Y - 0.1f;
+        tri_color[i*2+0] = (GXColor) {0, 0, 0, 200};
+    }
+
+    event_vars->HUD_DrawTris(tris, tri_color, show_count * 2);
+    
+    
+    static Rect early = { SX, SY + 3, 0, 0 };
+    static Rect perfect = { 0, SY + 3, 0, 0 };
+    static Rect late = { -SX, SY + 3, 0, 0 };
+    event_vars->HUD_DrawText("Too Early", &early, 0.45f);
+    event_vars->HUD_DrawText("Perfect", &perfect, 0.45f);
+    event_vars->HUD_DrawText("Too Late", &late, 0.45f);
 }
+
 void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
 {
     // start sequence on jump squat
     if (hmn_data->state_id == ASID_KNEEBEND && hmn_data->TM.state_frame == 0)
     {
         event_data->timer = 0;
-        event_data->airdodge_frame = -1;
+        event_data->airdodge_count = 0;
     }
 
     // Do nothing if sequence hasn't started
@@ -204,12 +253,12 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
         event_data->short_hop = hmn_data->state_var.state_var1;
     if (WdOptions_Main[OPT_SHORT_HOP].val && event_data->short_hop)
         Fighter_ColAnim_Apply(hmn_data, 107, 0); // make sparkles
-
-    // Record early airdodge timings. May be overwritten by a later successful
-    // timing in case player uses multiple presses.
-    if (hmn_data->input.down & (PAD_TRIGGER_L | PAD_TRIGGER_R) &&
-            hmn_data->state_id == ASID_KNEEBEND)
-        event_data->airdodge_frame = event_data->timer;
+    
+    // Record airdodge timings.
+    if (hmn_data->input.down & PAD_TRIGGER_L)
+        event_data->airdodge_frame[event_data->airdodge_count++] = event_data->timer;
+    if (hmn_data->input.down & PAD_TRIGGER_R)
+        event_data->airdodge_frame[event_data->airdodge_count++] = event_data->timer;
 
     // Real airdodge
     if (hmn_data->TM.state_frame == 0 &&
@@ -218,33 +267,37 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
              hmn_data->TM.state_prev[0] == ASID_ESCAPEAIR &&
              hmn_data->TM.state_prev_frames[0] == 0)))
     {
-        event_data->airdodge_frame = event_data->timer;
         PADStatus *stat = PadGetRaw(hmn_data->pad_index);
         event_data->angle = -atan2(stat->stickY, fabs(stat->stickX)) / M_1DEGREE;
     }
 
-    void *mat_anim = 0;
     if (hmn_data->state_id == ASID_LANDINGFALLSPECIAL
         && hmn_data->TM.state_frame == 0
         && hmn_data->TM.state_prev[0] == ASID_ESCAPEAIR
         && hmn_data->TM.state_prev[2] == ASID_KNEEBEND)
     {
         // success
-        mat_anim = event_data->assets->hudmatanim[0];
         event_data->wd_attempted++;
         event_data->wd_succeeded++;
 
         // check for perfect
-        if (event_data->airdodge_frame == ((int)hmn_data->attr.jump_startup_time + 1))
-            SFX_Play(303);
+        int perfect_frame = (int)hmn_data->attr.jump_startup_time + 1;
+        for (int i = 0; i < event_data->airdodge_count; ++i) {
+            if (
+                event_data->airdodge_frame[i] == perfect_frame
+                || (event_data->airdodge_frame[i] == perfect_frame+1 && event_data->short_hop)
+            ) {
+                SFX_Play(303);
+                break;
+            }
+        }
     }
     else if (hmn_data->TM.state_frame >= FAILFRAMES &&
-             event_data->airdodge_frame > 0 &&
+             event_data->airdodge_count != 0 &&
             (hmn_data->state_id == ASID_JUMPF ||
              hmn_data->state_id == ASID_JUMPB ||
              hmn_data->state_id == ASID_ESCAPEAIR)) {
         // failure
-        mat_anim = event_data->assets->hudmatanim[1];
         event_data->wd_attempted++;
         SFX_PlayCommon(3);
     } else if (hmn_data->state_id == ASID_KNEEBEND ||
@@ -259,59 +312,11 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
     // Reset
     event_data->timer = -1;
     Fighter_ColAnim_Remove(hmn_data, 107); // remove sparkles
-
-    // Wavedash not attempted
-    if (event_data->airdodge_frame < 0)
-        return;
-
-    // update bar frame colors
-    JOBJ *hud_jobj = event_data->hud.gobj->hsd_object;
-    JOBJ *arrow_jobj;
-    JOBJ_GetChild(hud_jobj, &arrow_jobj, WDJOBJ_ARROW, -1); // get timing bar jobj
-    int timing = event_data->airdodge_frame - (int)hmn_data->attr.jump_startup_time - 1;
-
-    // update arrow position
-    if (timing + WDFRAMES / 2 < WDFRAMES)
-    {
-        event_data->hud.arrow_prevpos = arrow_jobj->trans.X;
-        event_data->hud.arrow_nextpos = timing * WDARROW_OFFSET;
-        event_data->hud.arrow_timer = WDARROW_ANIMFRAMES;
-        JOBJ_ClearFlags(arrow_jobj, JOBJ_HIDDEN);
-    }
-    else
-    {
-        // hide arrow for this wd attempt
-        event_data->hud.arrow_timer = 0;
-        arrow_jobj->trans.X = 0;
-        JOBJ_SetFlags(arrow_jobj, JOBJ_HIDDEN);
-    }
-
-    // updating timing text
-    if (timing < 0) // is early
-        Text_SetText(event_data->hud.text_timing, 0, "%df Early", -timing);
-    else if (timing > 0)
-        Text_SetText(event_data->hud.text_timing, 0, "%df Late", timing);
-    else
-        Text_SetText(event_data->hud.text_timing, 0, "Perfect");
-
-    // Update airdodge angle text
-    Text_SetText(event_data->hud.text_angle, 0, "%.1f", event_data->angle);
-
-    // update succession
-    int successful = event_data->wd_succeeded;
-    float succession = 100.0 * event_data->wd_succeeded / event_data->wd_attempted;
-    Text_SetText(event_data->hud.text_succession, 0, "%d (%.2f%)", successful, succession);
-
-    // apply HUD animation
-    JOBJ_RemoveAnimAll(hud_jobj);
-    JOBJ_AddAnimAll(hud_jobj, 0, mat_anim, 0);
-    JOBJ_ReqAnimAll(hud_jobj, 0);
 }
 
 // Target functions
 void Target_Init(WavedashData *event_data, FighterData *hmn_data)
 {
-
     ftCommonData *ftcommon = *stc_ftcommon;
     float mag;
 
