@@ -221,13 +221,14 @@ void HUD_GX(GOBJ *gobj, int pass) {
     }
 
     event_vars->HUD_DrawTris(tris, tri_color, show_count * 2);
-    
-    
+
     static Rect early = { SX, SY + 3, 0, 0 };
-    static Rect perfect = { 0, SY + 3, 0, 0 };
+    static Rect timing0 = { 0, SY + 4.5f, 0, 0 };
+    static Rect timing1 = { 0, SY + 3, 0, 0 };
     static Rect late = { -SX, SY + 3, 0, 0 };
     event_vars->HUD_DrawText("Too Early", &early, 0.45f);
-    event_vars->HUD_DrawText("Perfect", &perfect, 0.45f);
+    event_vars->HUD_DrawText("Wavedash", &timing0, 0.4f);
+    event_vars->HUD_DrawText("Timing", &timing1, 0.4f);
     event_vars->HUD_DrawText("Too Late", &late, 0.45f);
 }
 
