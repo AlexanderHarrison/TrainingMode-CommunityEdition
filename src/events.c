@@ -889,7 +889,6 @@ void HUD_DrawTextEx(
         new_text->kerning = 1;
         new_text->align = align;
         new_text->use_aspect = 1;
-        // new_text->aspect.X = 165;
         new_text->aspect.X = 80;
         new_text->viewport_scale.X = 0.1f;
         new_text->viewport_scale.Y = 0.1f;

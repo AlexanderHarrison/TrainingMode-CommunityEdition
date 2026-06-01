@@ -266,7 +266,7 @@ void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
         Fighter_ColAnim_Apply(hmn_data, 107, 0); // make sparkles
     
     // Record airdodge timings.
-    if (event_data->airdodge_count < countof(event_data->airdodge_frame)) {
+    if (event_data->airdodge_count < (int)countof(event_data->airdodge_frame)) {
         if (hmn_data->input.down & PAD_TRIGGER_L)
             event_data->airdodge_frame[event_data->airdodge_count++] = event_data->timer;
         if (hmn_data->input.down & PAD_TRIGGER_R)
