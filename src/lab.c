@@ -4798,6 +4798,32 @@ void ImageScale(RGB565 *out_img, RGB565 *in_img, int OutWidth, int OutHeight, in
     }
 }
 
+static void OptionSetEnabled(int i, bool enabled) {
+    LabOptions_Export[i].val = enabled;
+    LabOptions_Export[i].disable = !enabled;
+}
+
+void Export_MenuOpen(GOBJ *menu) {
+    OptionSetEnabled(OPTEXP_RECORDING, rec_state->is_initialized);
+    OptionSetEnabled(OPTEXP_SETTINGS_RECORDING, rec_state->is_initialized);
+    OptionSetEnabled(OPTEXP_SETTINGS_ACTION_LOG, ActionLog_IsShowing());
+    OptionSetEnabled(OPTEXP_SETTINGS_CUSTOM_OSDS, stc_custom_osd_state_num != 0);
+
+    bool has_overlays = false;
+    for (int i = 0; i < OVERLAY_COUNT; ++i) {
+        has_overlays |= LabOptions_OverlaysHMN[i].val != 0;
+        has_overlays |= LabOptions_OverlaysCPU[i].val != 0;
+    }
+    OptionSetEnabled(OPTEXP_SETTINGS_OVERLAYS, has_overlays);
+    
+    bool has_info_display = false;
+    for (int i = 0; i < OPTINF_ROW_COUNT; ++i) {
+        has_info_display |= LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val != 0;
+        has_info_display |= LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val != 0;
+    }
+    OptionSetEnabled(OPTEXP_SETTINGS_INFO_DISPLAY, has_info_display);
+}
+
 static void Export_ApplySetting(EventOption *opt, s16 value) {
     s16 value_num = opt->kind == OPTKIND_TOGGLE ? 2 : opt->value_num;
     s16 value_min = opt->value_min;
@@ -4863,7 +4889,7 @@ bool ExportData_ApplyEvent(void *data, u32 event) {
             slot->start_frame = src->start_frame;
             u32 input_count = Export_Min(src->input_count, REC_LENGTH, &err);
             slot->num = input_count;
-            memcpy(slot->inputs, &src->inputs, sizeof(RecInputs)*input_count);
+            memcpy(slot->inputs, src->inputs, sizeof(RecInputs)*input_count);
         } break;
 
         case RecEvent_RNGSeedRecording: {
@@ -5136,6 +5162,7 @@ static void Export_CreateExportFile(void)
                 dst->ply = 0;
                 dst->slot_idx = i;
                 dst->input_count = (u16)rec_data.hmn_inputs[i]->num;
+                dst->start_frame = rec_data.hmn_inputs[i]->start_frame;
                 memcpy(dst->inputs, rec_data.hmn_inputs[i]->inputs, sizeof(dst->inputs));
             }
         }
@@ -5146,6 +5173,7 @@ static void Export_CreateExportFile(void)
                 dst->ply = 1;
                 dst->slot_idx = i;
                 dst->input_count = (u16)rec_data.cpu_inputs[i]->num;
+                dst->start_frame = rec_data.cpu_inputs[i]->start_frame;
                 memcpy(dst->inputs, rec_data.cpu_inputs[i]->inputs, sizeof(dst->inputs));
             }
         }
@@ -7027,11 +7055,7 @@ void Event_Think(GOBJ *event)
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
     HSD_Pad *pad = PadGetEngine(hmn_data->pad_index);
-    
-    // char idx = 0x3c;
-    // JOBJ *j = JOBJFindBonePtr(hmn->hsd_object, &idx);
-    // OSReport("0x3c %p\n", j);
-    
+
     // We allow negative values to track how long we have not been in lockout for.
     // If the CPU is in hitlag, do not finish the lockout. This prevents insta techs
     // when the tech windows is the 1f between hitlag and knockdown.

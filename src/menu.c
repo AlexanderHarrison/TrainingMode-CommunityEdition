@@ -26,6 +26,8 @@ GOBJ *EventMenu_Init(EventMenu *start_menu)
     menu_data->canvas_popup = Text_CreateCanvas(2, cam_gobj, 9, 13, 0, GXLINK_MENUTEXT, GXPRI_POPUPTEXT, MENUCAM_GXPRI);
     menu_data->curr_menu = start_menu;
 
+    if (start_menu->OnOpen) start_menu->OnOpen(gobj);
+
     EventMenu_CreateModel(gobj);
     EventMenu_CreateText(gobj);
     menu_data->hide_menu = 1;
@@ -88,6 +90,8 @@ void EventMenu_PrevMenu(GOBJ *gobj) {
     curr_menu = curr_menu->prev;
     menu_data->curr_menu = curr_menu;
 
+    if (curr_menu->OnOpen) curr_menu->OnOpen(gobj);
+
     EventMenu_UpdateText(gobj);
 }
 
@@ -101,6 +105,8 @@ void EventMenu_NextMenu(GOBJ *gobj, EventMenu* next_menu) {
     next_menu->shortcuts = menu_data->curr_menu->shortcuts;
     next_menu->prev = menu_data->curr_menu;
     menu_data->curr_menu = next_menu;
+
+    if (next_menu->OnOpen) next_menu->OnOpen(gobj);
 
     EventMenu_UpdateText(gobj);
 }
@@ -252,7 +258,7 @@ void EventMenu_RunFuncOption(GOBJ *gobj, EventOption *func_option) {
 
 void EventMenu_MenuThink(GOBJ *gobj, EventMenu *curr_menu) {
     MenuData *menu_data = gobj->userdata;
-
+    
     HSD_Pad *pad = PadGetMaster(menu_data->controller_index);
     int inputs = pad->repeat;
 

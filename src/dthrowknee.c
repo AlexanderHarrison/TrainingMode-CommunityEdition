@@ -384,8 +384,8 @@ static void PutOnGround(GOBJ *ft) {
 }
 
 static void Reset(void) {
-    event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
-    
+    event_vars->Savestate_Load(&event_vars->savestate->header, Savestate_Silent);
+
     GOBJ *hmn = Fighter_GetGObj(0);
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *hmn_data = hmn->userdata;
