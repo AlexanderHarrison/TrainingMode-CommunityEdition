@@ -1058,6 +1058,7 @@ static EventMenu LabMenu_Export = {
     .option_num = countof(LabOptions_Export),
     .options = LabOptions_Export,
     .shortcuts = &Lab_ShortcutList,
+    .OnOpen = Export_MenuOpen,
 };
 
 // CONTROLS MENU --------------------------------------------------------------

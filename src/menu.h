@@ -62,6 +62,7 @@ struct EventMenu
     EventOption *options;          // pointer to all of this menu's options
     EventMenu *prev;               // pointer to previous menu, used at runtime
     ShortcutList *shortcuts;       // pointer to shortcuts when shortcut mode is entered on this menu
+    void (*OnOpen)(GOBJ *menu_gobj);
 };
 typedef enum MenuMode {
     MenuMode_Normal,
