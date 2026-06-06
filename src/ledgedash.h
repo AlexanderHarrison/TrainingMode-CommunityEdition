@@ -14,7 +14,6 @@ typedef struct LdshHitboxData LdshHitboxData;
 struct LedgedashData
 {
     EventDesc *event_desc;
-    LedgedashAssets *assets;
     int ledge;
     bool was_successful;
     s16 reset_timer;
@@ -22,11 +21,6 @@ struct LedgedashData
     CmSubject *cam;
     struct
     {
-        GOBJ *gobj;
-        Text *text_angle;
-        Text *text_galint;
-        Text *text_count;
-        int canvas;
         float airdodge_angle;
         int total_count;
         int successful_count;
@@ -98,7 +92,6 @@ void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn);
 void Ledgedash_InitVariables(LedgedashData *event_data);
 void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn);
 void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data);
-void Ledgedash_HUDInit(LedgedashData *event_data);
 void RebirthWait_Phys(GOBJ *fighter);
 int RebirthWait_IASA(GOBJ *fighter);
 int Ledge_Find(int search_dir, float xpos_start, float *ledge_dir);

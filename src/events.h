@@ -6,8 +6,8 @@
 #include "savestate.h"
 #include <stdint.h>
 
-#define TM_VERSSHORT "TM-CE v1.4.1"
-#define TM_VERSLONG "TM Community Edition v1.4.1"
+#define TM_VERSSHORT "TM-CE v1.4 d1"
+#define TM_VERSLONG "TM Community Edition v1.4 d1"
 #define EVENT_DATASIZE 512
 #define TM_FUNC -(50 * 4)
 
@@ -129,6 +129,8 @@ typedef struct evFunction
     EventMenu **menu_start;
 } evFunction;
 
+typedef Vec2 Tri[3];
+
 typedef struct Rect
 {
     float x, y, w, h;
@@ -210,9 +212,16 @@ static inline void GFX_AddVtx(f32 x, f32 y, f32 z, GXColor color) {
 }
 
 void HUD_DrawRects(Rect *rects, GXColor *colors, int count);
+void HUD_DrawTris(Tri *tris, GXColor *colors, int count);
 void HUD_DrawText(const char *text, Rect *pos, float size);
-void HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
+void HUD_DrawTextEx(
+    const char *text, Rect *pos, float size,
+    GXColor text_color, GXColor border_color,
+    float border_offset, int align
+);
+Rect HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
 void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int action_count);
+void HUD_DrawInfoPanel(const char **label, const char **info, int count);
 
 typedef struct RNGControl
 {
@@ -261,9 +270,16 @@ typedef struct EventVars
     GOBJ *hudcam_gobj;
     void (*GFX_Start)(u16 vtx_count, GFX_Params params);
     void (*HUD_DrawRects)(Rect *rects, GXColor *colors, int count);
+    void (*HUD_DrawTris)(Tri *tris, GXColor *colors, int count);
     void (*HUD_DrawText)(const char *text, Rect *pos, float size);
-    void (*HUD_DrawActionLogBar)(u8 *action_log, GXColor *color_lookup, int log_count);
+    void (*HUD_DrawTextEx)(
+        const char *text, Rect *pos, float size,
+        GXColor text_color, GXColor border_color,
+        float border_offset, int align
+    );
+    Rect (*HUD_DrawActionLogBar)(u8 *action_log, GXColor *color_lookup, int log_count);
     void (*HUD_DrawActionLogKey)(char **action_names, GXColor *action_colors, int action_count);
+    void (*HUD_DrawInfoPanel)(const char **label, const char **info, int count);
 } EventVars;
 #define event_vars_ptr_loc ((EventVars**)0x803d7054)
 #define event_vars (*event_vars_ptr_loc)

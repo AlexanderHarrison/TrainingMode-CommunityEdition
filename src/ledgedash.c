@@ -45,6 +45,12 @@ enum reset_pos
     OPTPOS_RANDOM,  // Must be last
 };
 
+static char *panel_labels[3] = {"Angle", "GALINT", "Success Rate"};
+static char angle_text[24] = "-";
+static char galint_text[24] = "-";
+static char success_rate_text[24] = "-";
+static char *panel_info[3] = {angle_text, galint_text, success_rate_text};
+
 // Main Menu
 static const char *LdshOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced"};
 static const char *LdshOptions_Start[] = {"Ledge", "Falling", "Stage", "Respawn Platform", "Random"};
@@ -174,9 +180,6 @@ void Event_Init(GOBJ *gobj)
 {
     LedgedashData *event_data = gobj->userdata;
 
-    // get assets
-    event_data->assets = Archive_GetPublicAddress(event_vars->event_archive, "ledgedash");
-
     HSD_Update *hsd_update = stc_hsd_update;
     hsd_update->checkPause = Update_CheckPause;
     hsd_update->checkAdvance = Update_CheckAdvance;
@@ -192,9 +195,6 @@ void Event_Init(GOBJ *gobj)
 
     // Init hitlog
     event_data->hitlog_gobj = Ledgedash_HitLogInit();
-
-    // Init HUD
-    Ledgedash_HUDInit(event_data);
 
     // Init Fighter
     Ledgedash_FtInit(event_data);
@@ -267,58 +267,10 @@ void Event_Exit(GOBJ *menu)
     Match_EndVS();
 }
 
-// Ledgedash functions
-void Ledgedash_HUDInit(LedgedashData *event_data)
-{
-    GOBJ *hud_gobj = GObj_Create(0, 0, 0);
-    event_data->hud.gobj = hud_gobj;
-    // Load jobj
-    JOBJ *hud_jobj = JOBJ_LoadJoint(event_data->assets->hud);
-    GObj_AddObject(hud_gobj, 3, hud_jobj);
-    GObj_AddGXLink(hud_gobj, GXLink_Common, GXLINK_HUD, 80);
-
-    // create text canvas
-    int canvas = Text_CreateCanvas(2, hud_gobj, 14, 15, 0, GXLINK_HUD, 81, 19);
-    event_data->hud.canvas = canvas;
-
-    // init text
-    Text **text_arr = &event_data->hud.text_angle;
-    for (int i = 0; i < 3; i++)
-    {
-        // Create text object
-        Text *hud_text = Text_CreateText(2, canvas);
-        text_arr[i] = hud_text;
-        hud_text->kerning = 1;
-        hud_text->align = 1;
-        hud_text->use_aspect = 1;
-
-        // Get position
-        Vec3 text_pos;
-        JOBJ *text_jobj;
-        JOBJ_GetChild(hud_jobj, &text_jobj, 2 + i, -1);
-        JOBJ_GetWorldPosition(text_jobj, 0, &text_pos);
-
-        // adjust scale
-        Vec3 *scale = &hud_jobj->scale;
-        // text scale
-        hud_text->viewport_scale.X = (scale->X * 0.01) * LCLTEXT_SCALE;
-        hud_text->viewport_scale.Y = (scale->Y * 0.01) * LCLTEXT_SCALE;
-        hud_text->aspect.X = 165;
-
-        // text position
-        hud_text->trans.X = text_pos.X + (scale->X / 4.0);
-        hud_text->trans.Y = (text_pos.Y * -1) + (scale->Y / 4.0);
-
-        // dummy text
-        Text_AddSubtext(hud_text, 0, 0, "-");
-    }
-}
 void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
 {
     // run tip logic
     Tips_Think(event_data, hmn_data);
-
-    JOBJ *hud_jobj = event_data->hud.gobj->hsd_object;
 
     // check to initialize timer
     if ((hmn_data->state_id == ASID_CLIFFWAIT) && (hmn_data->TM.state_frame == 1))
@@ -422,46 +374,36 @@ void Ledgedash_HUDThink(LedgedashData *event_data, FighterData *hmn_data)
 
         // output remaining airdodge angle
         if (event_data->action_state.is_airdodge == 1)
-            Text_SetText(event_data->hud.text_angle, 0, "%.2f", fabs(event_data->hud.airdodge_angle / M_1DEGREE));
+            sprintf(angle_text, "%.2f", fabs(event_data->hud.airdodge_angle / M_1DEGREE));
         else
-            Text_SetText(event_data->hud.text_angle, 0, "-");
+            sprintf(angle_text, "-");
 
         // output remaining GALINT
-        void *matanim;
-        Text *text_galint = event_data->hud.text_galint;
         if (hmn_data->hurt.intang_frames.ledge > 0)
         {
             event_data->hud.successful_count++;
             event_data->was_successful = true;
-            matanim = event_data->assets->hudmatanim[0];
-            Text_SetText(text_galint, 0, "%df", hmn_data->hurt.intang_frames.ledge);
+            sprintf(galint_text, "%df", hmn_data->hurt.intang_frames.ledge);
         }
         else if (hmn_data->TM.vuln_frames < 25)
         {
             event_data->was_successful = false;
-            matanim = event_data->assets->hudmatanim[1];
-            Text_SetText(text_galint, 0, "-%df", hmn_data->TM.vuln_frames);
+            sprintf(galint_text, "-%df", hmn_data->TM.vuln_frames);
         }
         else
         {
             event_data->was_successful = false;
-            matanim = event_data->assets->hudmatanim[1];
-            Text_SetText(text_galint, 0, "-");
+            sprintf(galint_text, "-");
         }
         event_data->hud.total_count++;
         int success_count = event_data->hud.successful_count;
         int total_count = event_data->hud.total_count;
-        float success_percent = (float)success_count/total_count;
-        Text_SetText(event_data->hud.text_count, 0, "%d/%d (%.1f%%)", success_count, total_count, success_percent*100);
+        float success_percent = (float)success_count/(float)total_count;
+        sprintf(success_rate_text, "%d/%d (%.1f%%)", success_count, total_count, success_percent*100.f);
 
         // init hitbox num
         LdshHitlogData *hitlog_data = event_data->hitlog_gobj->userdata;
         hitlog_data->num = 0;
-
-        // apply HUD animation
-        JOBJ_RemoveAnimAll(hud_jobj);
-        JOBJ_AddAnimAll(hud_jobj, 0, matanim, 0);
-        JOBJ_ReqAnimAll(hud_jobj, 0);
     }
 }
 
@@ -530,8 +472,8 @@ void Ledgedash_ResetThink(LedgedashData *event_data, GOBJ *hmn)
             event_data->hud.total_count++;
             int success_count = event_data->hud.successful_count;
             int total_count = event_data->hud.total_count;
-            float success_percent = (float)success_count/total_count;
-            Text_SetText(event_data->hud.text_count, 0, "%d/%d (%.1f%%)", success_count, total_count, success_percent*100);
+            float success_percent = (float)success_count/(float)total_count;
+            sprintf(success_rate_text, "%d/%d (%.1f%%)", success_count, total_count, success_percent*100.f);
         }
     }
 }
@@ -640,37 +582,42 @@ void Ledgedash_HitLogThink(LedgedashData *event_data, GOBJ *hmn)
 
 void Ledgedash_HitLogGX(GOBJ *gobj, int pass)
 {
-    static GXColor hitlog_ambient = {128, 0, 0, 50};
-    static GXColor hit_diffuse = {255, 99, 99, 50};
-    static GXColor grab_diffuse = {255, 0, 255, 50};
-    static GXColor detect_diffuse = {255, 255, 255, 50};
+    if (pass != 2) return;
+
+    static GXColor hitlog_ambient = {128, 0, 0, 150};
+    static GXColor hit_diffuse = {255, 99, 99, 150};
+    static GXColor grab_diffuse = {255, 0, 255, 150};
+    static GXColor detect_diffuse = {255, 255, 255, 150};
 
     LdshHitlogData *hitlog_data = gobj->userdata;
     
-    if (pass == 2) {
-        LedgedashData *event_data = event_vars->event_gobj->userdata;
-        static char *names[] = {
-            "Cliffwait",
-            "Fall",
-            "Fastfall",
-            "Jump",
-            "Airdodge",
-            "Attack",
-            "Landing",
-            "GALINT",
-        };
-        event_vars->HUD_DrawActionLogBar(
-            event_data->action_state.action_log,
-            action_colors,
-            countof(event_data->action_state.action_log)
-        );
-        event_vars->HUD_DrawActionLogKey(
-            names,
-            &action_colors[1],
-            countof(names)
-        );
-    }
+    // panel info
+    event_vars->HUD_DrawInfoPanel((const char**)panel_labels, (const char**)panel_info, countof(panel_labels));
+
+    // action log
+    LedgedashData *event_data = event_vars->event_gobj->userdata;
+    static char *names[] = {
+        "Cliffwait",
+        "Fall",
+        "Fastfall",
+        "Jump",
+        "Airdodge",
+        "Attack",
+        "Landing",
+        "GALINT",
+    };
+    event_vars->HUD_DrawActionLogBar(
+        event_data->action_state.action_log,
+        action_colors,
+        countof(event_data->action_state.action_log)
+    );
+    event_vars->HUD_DrawActionLogKey(
+        names,
+        &action_colors[1],
+        countof(names)
+    );
     
+    // hitboxes
     for (int i = 0; i < hitlog_data->num; i++)
     {
         LdshHitboxData *this_ldsh_hit = &hitlog_data->hitlog[i];

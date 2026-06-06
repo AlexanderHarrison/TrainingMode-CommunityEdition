@@ -11,25 +11,20 @@ struct LCancelData
     GOBJ *barrel_gobj;
     Vec3 barrel_lastpos;
     int barrel_intangible_timer; // frame counter for intangible cycles (0-119)
-    bool is_fail;      // status of the last l-cancel
-    bool is_fastfall;  // bool used to detect fastfall frame
-    u8 fastfall_frame; // frame the player fastfell on
-    u8 current_l_input_timing;      // number of frames an L was input before the current aerial landing
-    bool is_current_aerial_counted; // whether or not the current aerial has already been tracked as a success or failure
-    struct
-    {
-        GOBJ *gobj;
-        u16 lcl_success;
-        u16 lcl_total;
-        Text *text_time;
-        Text *text_air;
-        Text *text_scs;
-        int canvas;
-        float arrow_base_x; // starting X position of arrow
-        float arrow_prevpos;
-        float arrow_nextpos;
-        int arrow_timer;
-    } hud;
+
+    s8 lcancel;   // if the player failed this aerial's l-cancel. Unset: 0, Fail: -1, Success: 1
+    s8 success;   // if the player either lcanceled or edgecanceled. Unset: 0, Fail: -1, Success: 1
+    bool fastfell; // if the player fastfell this aerial
+    
+    int fastfall_frame;
+    int lrz_input_count;
+    int lrz_input_frame[8];
+    int land_frame;
+    int cur_frame;
+    
+    int successful_attempts;
+    int total_attempts;
+
     struct
     {
         u8 shield_isdisp;   // whether tip has been shown to the player
@@ -63,8 +58,6 @@ void Tips_Toggle(GOBJ *menu_gobj, int value);
 void Tips_Think(LCancelData *event_data, FighterData *hmn_data);
 void LCancel_Think(LCancelData *event_data, FighterData *hmn_data);
 void LCancel_ChangeBarrel(GOBJ *gobj, int value);
-void LCancel_ChangeShowHUD(GOBJ *gobj, int show);
-void LCancel_Init(LCancelData *event_data);
 void Barrel_Think(LCancelData *event_data);
 void Barrel_Toggle(GOBJ *menu_gobj, int value);
 GOBJ *Barrel_Spawn(int pos_kind);
@@ -72,6 +65,3 @@ int Barrel_OnHurt(GOBJ *barrel_gobj);
 int Barrel_OnDestroy(GOBJ *barrel_gobj);
 void Barrel_Null(void);
 void Event_Exit(GOBJ *menu);
-bool IsAerialLandingState(int state_id);
-bool IsEdgeCancelState(int state_id);
-bool IsAutoCancelLanding(FighterData *hmn_data);

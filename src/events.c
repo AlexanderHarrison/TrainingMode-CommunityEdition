@@ -339,6 +339,41 @@ EventDesc Powershield = {
     .callbackPriority = 3,
     .matchData = &Powershield_MatchData,
 };
+
+static EventMatchData EscapeDThrowKnee_MatchData = {
+    .timer = MATCH_TIMER_HIDE,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = true,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = true,
+    .isShowScore = false,
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc EscapeDThrowKnee = {
+    .eventName = "Escape DThrow Knee\n",
+    .eventDescription = "Airdodge out of Falcon's down\nthrow knee kill confirm!",
+    .eventFile = "dthrowknee",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = {
+        .hmn = CSSID_PEACH | CSSID_MARIO | CSSID_DOCTOR_MARIO | CSSID_LUIGI
+            | CSSID_MEWTWO | CSSID_ZELDA | CSSID_ICE_CLIMBERS | CSSID_MARTH,
+        .cpu = -1
+    },
+    .cpuKind = CKIND_FALCON,
+    .stage = GRKINDEXT_FD,
+    .disable_hazards = true,
+    .force_sopo = true,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 3,
+    .matchData = &EscapeDThrowKnee_MatchData,
+};
+
 EventDesc Ledgetech = {
     .eventName = "Ledgetech Training\n",
     .eventDescription = "Practice ledgeteching\nFalco's down-smash!",
@@ -672,6 +707,7 @@ static EventDesc *CharacterSpecific_Events[] = {
     &Edgeguard,
     &Sweetspot,
     &EscapeSheik,
+    &EscapeDThrowKnee,
     &FloatCancel,
 };
 static EventPage CharacterSpecific_Page = {
@@ -707,9 +743,11 @@ EventVars stc_event_vars = {
     .Tip_Destroy = Tip_Destroy,
     .GFX_Start = GFX_Start,
     .HUD_DrawRects = HUD_DrawRects,
+    .HUD_DrawTris = HUD_DrawTris,
     .HUD_DrawText = HUD_DrawText,
     .HUD_DrawActionLogBar = HUD_DrawActionLogBar,
     .HUD_DrawActionLogKey = HUD_DrawActionLogKey,
+    .HUD_DrawInfoPanel = HUD_DrawInfoPanel,
 };
 
 static GOBJ *stc_msgmgr;
@@ -785,13 +823,32 @@ void GFX_Start(u16 vtx_count, GFX_Params params)
     GXBegin(params.shape, GX_VTXFMT0, vtx_count);
 }
 
+void HUD_DrawTris(Tri *tris, GXColor *colors, int count)
+{
+    HUDCamData *cam_data = stc_event_vars.hudcam_gobj->userdata;
+    if (cam_data->hide) return;
+
+    COBJ *prev_camera = COBJ_GetCurrent();
+    CObj_SetCurrent(stc_event_vars.hudcam_gobj->hsd_object);
+
+    GFX_Start(count * 3, (GFX_Params) { .shape = GX_TRIANGLES });
+    for (int i = 0; i < count; ++i) {
+        GXColor color = colors[i];
+        Tri *tri = &tris[i];
+        GFX_AddVtx((*tri)[0].X, (*tri)[0].Y, 0.f, color);
+        GFX_AddVtx((*tri)[1].X, (*tri)[1].Y, 0.f, color);
+        GFX_AddVtx((*tri)[2].X, (*tri)[2].Y, 0.f, color);
+    }
+
+    CObj_SetCurrent(prev_camera);
+}
+
 void HUD_DrawRects(Rect *rects, GXColor *colors, int count)
 {
     HUDCamData *cam_data = stc_event_vars.hudcam_gobj->userdata;
-    if (cam_data->hide)
-        return;
+    if (cam_data->hide) return;
 
-    COBJ *cur_cam = COBJ_GetCurrent();
+    COBJ *prev_camera = COBJ_GetCurrent();
     CObj_SetCurrent(stc_event_vars.hudcam_gobj->hsd_object);
 
     GFX_Start(count * 4, (GFX_Params) { .shape = GX_QUADS });
@@ -809,12 +866,15 @@ void HUD_DrawRects(Rect *rects, GXColor *colors, int count)
         GFX_AddVtx(x2, y2, 0.f, color);
         GFX_AddVtx(x2, y1, 0.f, color);
     }
-    
-    CObj_SetCurrent(cur_cam);
+
+    CObj_SetCurrent(prev_camera);
 }
 
-void HUD_DrawText(const char *text, Rect *pos, float size)
-{
+void HUD_DrawTextEx(
+    const char *text, Rect *pos, float size,
+    GXColor text_color, GXColor border_color,
+    float border_offset, int align
+) {
     HUDCamData *hud = stc_event_vars.hudcam_gobj->userdata;
     
     // skip if already used up entire text cache
@@ -827,9 +887,9 @@ void HUD_DrawText(const char *text, Rect *pos, float size)
         Text *new_text = Text_CreateText(2, hud->canvas);
         *text_ptr = new_text;
         new_text->kerning = 1;
-        new_text->align = 1;
+        new_text->align = align;
         new_text->use_aspect = 1;
-        new_text->aspect.X = 165;
+        new_text->aspect.X = 80;
         new_text->viewport_scale.X = 0.1f;
         new_text->viewport_scale.Y = 0.1f;
         Text_AddSubtext(new_text, 0, 0, "");
@@ -837,26 +897,150 @@ void HUD_DrawText(const char *text, Rect *pos, float size)
         Text_AddSubtext(new_text, 0, 0, "");
         Text_AddSubtext(new_text, 0, 0, "");
         Text_AddSubtext(new_text, 0, 0, "");
-        
-        GXColor black = {0, 0, 0, 255};
-        for (int i = 0; i < 4; ++i)
-            Text_SetColor(new_text, i, &black);
     }
 
     Text *hud_text = *text_ptr;
+
+    for (int i = 0; i < 4; ++i)
+        Text_SetColor(hud_text, i, &border_color);
+    Text_SetColor(hud_text, 4, &text_color);
+
     hud_text->hidden = false;
     float x = pos->x * 10.f + pos->w * 5.f;
     float y = pos->y * -10.f + pos->h * -5.f - 25.f;
-    for (int i = 0; i < 5; ++i) {
-        Text_SetText(hud_text, i, text);
-        Text_SetScale(hud_text, i, size, size);
+    
+    if (border_offset != 0.f && border_color.a != 0) {
+        for (int i = 0; i < 4; ++i) {
+            Text_SetText(hud_text, i, text);
+            Text_SetScale(hud_text, i, size, size);
+        }
+    } else {
+        for (int i = 0; i < 4; ++i)
+            Text_SetText(hud_text, i, "");
     }
-    float border_offset = 1.f;
+
+    Text_SetText(hud_text, 4, text);
+    Text_SetScale(hud_text, 4, size, size);
     Text_SetPosition(hud_text, 0, x-border_offset, y-border_offset);
     Text_SetPosition(hud_text, 1, x+border_offset, y-border_offset);
     Text_SetPosition(hud_text, 2, x-border_offset, y+border_offset);
     Text_SetPosition(hud_text, 3, x+border_offset, y+border_offset);
     Text_SetPosition(hud_text, 4, x, y);
+}
+
+void HUD_DrawText(const char *text, Rect *pos, float size)
+{
+    HUD_DrawTextEx(
+        text, pos, size,
+        (GXColor) {255,255,255,255}, (GXColor) {0,0,0,255},
+        1.f, 1
+    );
+}
+
+static const Vec2 info_item_vtx[] = {
+    { 1.f, 5.f },    // 0: top left
+    { 0.f, 2.5f },    // 1: mid left
+    { 0.f, 0.f },    // 2: bottom left
+    { 9.f, 5.f },    // 3: top right
+    { 9.f, 2.5f },    // 4: mid right
+    { 9.f, 0.f },    // 5: bottom right
+    { 0.2f, 2.5f },   // 6: mid left (inset)
+    { 0.2f, 0.2f },  // 7: bottom left (inset)
+    { 9.f, 0.2f },   // 8: bottom right (inset)
+};
+static const u8 info_item_quad_grey_idx[] = {
+    0, 1, 4, 3,
+    1, 2, 7, 6,
+    2, 7, 8, 5,
+};
+static const u8 info_item_quad_black_idx[] = {
+    6, 7, 8, 4
+};
+static const Rect info_item_label_rect = { 0.8f, 2.5f, 8.6f, 2.5f };
+static const Rect info_item_info_rect = { 0.0f, 0.0f, 9.6f, 2.5f };
+
+void HUD_DrawInfoPanel(const char **label, const char **info, int count) {
+    HUDCamData *cam_data = stc_event_vars.hudcam_gobj->userdata;
+    if (cam_data->hide) return;
+    COBJ *prev_camera = COBJ_GetCurrent();
+    CObj_SetCurrent(stc_event_vars.hudcam_gobj->hsd_object);
+
+    float x = 18.f;
+    float y = 9.f;
+    GXColor grey = { 130, 130, 130, 180 };
+    GXColor black = { 0, 0, 0, 180 };
+
+    int vtx_count = countof(info_item_quad_grey_idx)*count // info model (grey)
+        + countof(info_item_quad_black_idx)*count // info model (black)
+        + /* border */ 16;
+    
+    // we could use indexed quads + non-direct grey here, but that's just a minor gain
+    GFX_Start(vtx_count, (GFX_Params) { .shape = GX_QUADS });
+
+    // draw info row
+    float cur_y = y;
+    for (int info_i = 0; info_i < count; ++info_i) {
+        for (u32 vtx_i = 0; vtx_i < countof(info_item_quad_grey_idx); ++vtx_i) {
+            Vec2 pos = info_item_vtx[info_item_quad_grey_idx[vtx_i]];
+            GFX_AddVtx(x + pos.X, cur_y + pos.Y, 0, grey);
+        }
+        for (u32 vtx_i = 0; vtx_i < countof(info_item_quad_black_idx); ++vtx_i) {
+            Vec2 pos = info_item_vtx[info_item_quad_black_idx[vtx_i]];
+            GFX_AddVtx(x + pos.X, cur_y + pos.Y, 0, black);
+        }
+        
+        Rect label_rect = info_item_label_rect;
+        label_rect.x += x;
+        label_rect.y += cur_y;
+        HUD_DrawTextEx(
+            label[info_i], &label_rect, 0.5f,
+            (GXColor) {0,0,0,255}, (GXColor) {0,0,0,0},
+            0, 1
+        );
+
+        Rect info_rect = info_item_info_rect;
+        info_rect.x += x;
+        info_rect.y += cur_y;
+        HUD_DrawTextEx(
+            info[info_i], &info_rect, 0.5f,
+            (GXColor) {220,220,220,255}, (GXColor) {0,0,0,0},
+            0, 1
+        );
+
+        cur_y -= 5.5f;
+    }
+
+    // draw border
+    float x0 = x - 0.7f;
+    float x1i = x + 9.f;
+    float y0 = y + 0.5f + 5.f;
+    float y1 = y0 - 5.5f*count - 0.5f;
+    float x0i = x0 + 0.3f;
+    float x1 = x1i + 0.4f;
+    float y0i = y0 - 0.3f;
+    float y1i = y1 + 0.3f;
+
+    GFX_AddVtx(x0, y0, 0, grey);
+    GFX_AddVtx(x0, y1, 0, grey);
+    GFX_AddVtx(x0i, y1i, 0, grey);
+    GFX_AddVtx(x0i, y0i, 0, grey);
+
+    GFX_AddVtx(x1, y0, 0, grey);
+    GFX_AddVtx(x1, y1, 0, grey);
+    GFX_AddVtx(x1i, y1i, 0, grey);
+    GFX_AddVtx(x1i, y0i, 0, grey);
+
+    GFX_AddVtx(x0, y0, 0, grey);
+    GFX_AddVtx(x1, y0, 0, grey);
+    GFX_AddVtx(x1i, y0i, 0, grey);
+    GFX_AddVtx(x0i, y0i, 0, grey);
+
+    GFX_AddVtx(x0, y1, 0, grey);
+    GFX_AddVtx(x1, y1, 0, grey);
+    GFX_AddVtx(x1i, y1i, 0, grey);
+    GFX_AddVtx(x0i, y1i, 0, grey);
+
+    CObj_SetCurrent(prev_camera);
 }
 
 static float log_size = 1.f;
@@ -868,7 +1052,7 @@ static float action_key_size_decrement = 1.2f;
 static float action_key_y_pos = 15.f;
 static float action_key_height = 6.f;
 
-void HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count) {
+Rect HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count) {
     Rect rects[log_count + 1];
     GXColor colors[log_count + 1];
     
@@ -878,16 +1062,20 @@ void HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count) 
     Rect background = { -w/2.f, log_y_pos, w, log_size + log_padding*2.f }; 
     rects[0] = background;
     colors[0] = log_background_color;
-    
+
     RectShrink(&background, log_padding);
+    Rect ret = background;
+    
     for (int i = 0; i < log_count; ++i) {
         RectSplitL(&rects[i+1], &background, log_size, log_padding);
         colors[i+1] = color_lookup[action_log[i]];
     }
 
     HUD_DrawRects(rects, colors, log_count + 1);
+
+    return ret;
 }
-    
+
 void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int action_count) {
     Rect rects[action_count*2];
     GXColor colors[action_count*2];
@@ -901,7 +1089,7 @@ void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int actio
     for (int i = 0; i < action_count; ++i) {
         RectSplitL(&cur_rect, &action_table_row, size, 0);
         HUD_DrawText(action_names[i], &cur_rect, 0.34f);
-        
+
         RectCentreW(&cur_rect, log_size + log_padding);
         RectCentreH(&cur_rect, log_size + log_padding);
         cur_rect.y += 2.f;
