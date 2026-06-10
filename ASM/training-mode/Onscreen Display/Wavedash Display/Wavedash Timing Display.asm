@@ -65,7 +65,7 @@ JumpInputsLoop:
     addi r10, r10, 3
     lbz r11, TM_Inputs(r10) # stick y
     extsb r11, r11
-    cmpwi r11, 44
+    cmpwi r11, 24
     bgt EndJumpInputsLoop
 
     # no jump input this frame
