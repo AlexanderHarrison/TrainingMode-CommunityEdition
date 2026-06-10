@@ -244,6 +244,43 @@ EventDesc Sweetspot = {
     .matchData = &Sweetspot_MatchData,
 };
 
+// Laser land training
+static EventMatchData LaserLand_MatchData = {
+    .timer = MATCH_TIMER_HIDE,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = false,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = true,
+    .isShowScore = false,
+
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc LaserLand = {
+    .eventName = "Laser Land Training\n",
+    .eventDescription = "Use Fox's laser to board platforms instantly!",
+    .eventFile = "laserland",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = {
+        .hmn = CSSID_FOX,
+        .cpu = -1,
+    },
+    .playerKind = -1,
+    .cpuKind = -1,
+    .stage = -1,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 15,
+    .matchData = &LaserLand_MatchData,
+};
+
+
 // Combo Training
 EventDesc Combo = {
     .eventName = "Combo Training\n",
@@ -706,6 +743,7 @@ static EventDesc *CharacterSpecific_Events[] = {
     &TechCounter,
     &Edgeguard,
     &Sweetspot,
+    &LaserLand,
     &EscapeSheik,
     &EscapeDThrowKnee,
     &FloatCancel,
