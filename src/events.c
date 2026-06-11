@@ -262,12 +262,12 @@ static EventMatchData LaserLand_MatchData = {
 };
 EventDesc LaserLand = {
     .eventName = "Laser Land Training\n",
-    .eventDescription = "Use Fox's laser to board platforms instantly!",
+    .eventDescription = "Use a laser to board platforms instantly!",
     .eventFile = "laserland",
     .jumpTableIndex = -1,
     .CSSType = SLCHRKIND_EVENT,
     .allowed_characters = {
-        .hmn = CSSID_FOX,
+        .hmn = CSSID_FOX | CSSID_FALCO,
         .cpu = -1,
     },
     .playerKind = -1,
