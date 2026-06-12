@@ -12,6 +12,8 @@ void Reset(void);
 void ChangeRandomFireDelayMin(GOBJ *event_menu, int value);
 void ChangeRandomFireDelayMax(GOBJ *event_menu, int value);
 int GetRandomLaserDelay(void);
+void ChangeAllowNana(GOBJ *event_menu, int value);
+void SaveOption(GOBJ *event_menu, int value);
 
 enum menu_options {
     OPT_FIRE_SPEED,
@@ -20,6 +22,8 @@ enum menu_options {
     OPT_LASER_HEIGHT,
     OPT_DIRECTION,
     OPT_MOVEMENT,
+    OPT_ALLOW_NANA,
+    OPT_EXIT,
 };
 
 enum fire_speed {
@@ -53,6 +57,7 @@ static const char *Options_FireSpeed[] = { "Random", "Slow", "Medium", "Fast" };
 static const char *Options_LaserHeight[] = { "Random", "Very Low", "Low", "Mid", "High" };
 static const char *Options_Direction[] = { "Right", "Left" };
 static const char *Options_Movement[] = { "In-Place", "Random", "Approaching", "Retreating" };
+static const char *Options_AllowNana[] = { "Off", "On" };
 
 static EventOption Options_Main[] = {
     {
@@ -89,6 +94,7 @@ static EventOption Options_Main[] = {
         .name = "Laser Height",
         .desc = {"Change the laser height."},
         .values = Options_LaserHeight,
+        .OnChange = SaveOption,
     },
     {
         .kind = OPTKIND_STRING,
@@ -104,6 +110,16 @@ static EventOption Options_Main[] = {
         .name = "Movement",
         .desc = {"Change how falco lasers around the stage."},
         .values = Options_Movement,
+        .OnChange = SaveOption,
+    },
+    {
+        .kind = OPTKIND_STRING,
+        .value_num = sizeof(Options_AllowNana) / 4,
+        .val = 1,  // Default to both climbers
+        .name = "Nana",
+        .desc = {"Toggle Nana on or off."},
+        .values = Options_AllowNana,
+        .OnChange = ChangeAllowNana,
     },
     {
         .kind = OPTKIND_FUNC,
@@ -129,6 +145,9 @@ static int falco_shoot_direction = 0;
 
 static void PutOnGround(GOBJ *ft);
 
+void Event_Init(GOBJ *event_gobj) {
+}
+
 void Event_Think(GOBJ *menu) {
     GOBJ *player = Fighter_GetGObj(0);
     FighterData *player_data = player->userdata;
@@ -136,6 +155,26 @@ void Event_Think(GOBJ *menu) {
     FighterData *falco_data = falco->userdata;
 
     if (event_vars->game_timer == 1) {
+        if (player_data->kind == FTKIND_POPO) {
+            if (Options_Main[6].kind != OPTKIND_STRING) {
+                EventOption temp = Options_Main[6];
+                Options_Main[6] = Options_Main[7];
+                Options_Main[7] = temp;
+            }
+            Menu_Main.option_num = 8;
+        } else {
+            if (Options_Main[6].kind != OPTKIND_FUNC) {
+                EventOption temp = Options_Main[6];
+                Options_Main[6] = Options_Main[7];
+                Options_Main[7] = temp;
+            }
+            Menu_Main.option_num = 7;
+        }
+        
+        bool disable_random_bounds = Options_Main[OPT_FIRE_SPEED].val != FIRE_SPEED_RANDOM;
+        Options_Main[OPT_FIRE_DELAY_RANDOM_MIN].disable = disable_random_bounds;
+        Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].disable = disable_random_bounds;
+        
         player_data->facing_direction = -1;
         PutOnGround(player);
         PutOnGround(falco);
@@ -149,6 +188,21 @@ void Event_Think(GOBJ *menu) {
     falco_data->flags.no_reaction_always = true;
     falco_data->grab.vuln = 0x1FF;
     player_data->shield.health = 60;
+    
+    // Manage Nana based on option
+    if (player_data->kind == FTKIND_POPO) {
+        GOBJ *nana = Fighter_GetSubcharGObj(0, 1);
+        int nana_option = Options_Main[OPT_ALLOW_NANA].val;
+        
+        if (nana_option == 0 && nana) {
+            FighterData *nana_data = nana->userdata;
+            if (nana_data->state_id != ASID_SLEEP) {
+                Fighter_EnterSleep(nana, 1);
+            }
+            nana_data->phys.pos.X = 999.f;
+            nana_data->phys.pos.Y = -999.f;
+        }
+    }
 
     int new_direction = -1;
     if (player_data->input.down & HSD_BUTTON_DPAD_LEFT) {
@@ -450,6 +504,26 @@ int GetRandomLaserDelay(void) {
     int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].val;
 
     return HSD_Randi(random_fire_delay_max - random_fire_delay_min) + random_fire_delay_min;
+}
+
+void ChangeAllowNana(GOBJ *event_menu, int value) {
+    GOBJ *player = Fighter_GetGObj(0);
+    if (!player) return;
+    
+    FighterData *player_data = player->userdata;
+    if (player_data->kind != FTKIND_POPO) return;
+    
+    GOBJ *nana = Fighter_GetSubcharGObj(0, 1);
+    
+    if (value == 1 && nana) {
+        FighterData *nana_data = nana->userdata;
+        if (nana_data->state_id == ASID_SLEEP) {
+            Fighter_EnterDeadDown(player);
+        }
+    }
+}
+
+void SaveOption(GOBJ *event_menu, int value) {
 }
 
 EventMenu *Event_Menu = &Menu_Main;
