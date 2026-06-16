@@ -1,5 +1,6 @@
 #include "../MexTK/mex.h"
 #include "events.h"
+#include "wavedash_common.h"
 
 #define TEXT_SCALE 4.2
 #define WDJOBJ_TEXT 6
@@ -7,7 +8,6 @@
 #define WDARROW_OFFSET 0.36
 #define WDARROW_ANIMFRAMES 4
 #define WDFRAMES 15
-#define FAILFRAMES 8
 
 #define TRGT_RANGEMAX 0.8
 #define TRGT_RANGEMIN 0.55
@@ -43,14 +43,7 @@ struct WavedashData
         u8 short_hop;
     } tip;
     float wd_maxdstn;
-    int timer;
-    int airdodge_count;
-    int airdodge_frame[8];
-    int result;
-    float angle;
-    int short_hop;
-    int wd_attempted;
-    int wd_succeeded;
+    WavedashCore core;
 };
 
 struct WavedashAssets
@@ -86,7 +79,6 @@ void Target_Think(GOBJ *target_gobj);
 void Target_ChangeState(GOBJ *target_gobj, int state);
 void Target_Manager(WavedashData *event_data, FighterData *hmn_data);
 void Target_Init(WavedashData *event_data, FighterData *hmn_data);
-void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data);
 void Wavedash_ChangeShowHUD(GOBJ *menu_gobj, int show);
 void HUD_GX(GOBJ *gobj, int pass);
 void Event_Exit(GOBJ *menu);

@@ -1,12 +1,6 @@
 #include "wavedash.h"
 #include "events.h"
 
-static char *panel_label[3] = {"Timing", "Angle", "Success Rate"};
-static char timing_text[24] = "-";
-static char angle_text[24] = "-";
-static char success_rate_text[24] = "-";
-static char *panel_info[3] = {timing_text, angle_text, success_rate_text};
-
 enum options {
     OPT_TARGET,
     OPT_SHORT_HOP,
@@ -89,8 +83,8 @@ void Event_Init(GOBJ *gobj)
     Target_Init(event_data, hmn_data);
 
     // init vars
-    event_data->timer = -1;
-    event_data->result = -1;
+    event_data->core.timer = -1;
+    event_data->core.result = -1;
     
     GObj_AddGXLink(gobj, HUD_GX, 5, 0);
 }
@@ -105,7 +99,11 @@ void Event_Think(GOBJ *event)
     // infinite shields
     hmn_data->shield.health = 60;
 
-    Wavedash_Think(event_data, hmn_data);
+    WavedashCoreConfig cfg = {
+        .show_hud = WdOptions_Main[OPT_HUD].val,
+        .short_hop_indicator = WdOptions_Main[OPT_SHORT_HOP].val,
+    };
+    WavedashCore_Think(&event_data->core, hmn_data, &cfg);
 
     // update target
     Target_Manager(event_data, hmn_data);
@@ -124,236 +122,13 @@ void Event_Exit(GOBJ *menu)
 
 void HUD_GX(GOBJ *gobj, int pass) {
     WavedashData *event_data = gobj->userdata;
-
-    if (WdOptions_Main[OPT_HUD].val == 0) return;
-    if (pass != 2) return;
-    
-    // Draw info panel
-    event_vars->HUD_DrawInfoPanel((const char**)panel_label, (const char**)panel_info, countof(panel_label));
-
-    #define W 1.6f // width of square
-    #define H 2.f // height of square
-    #define P 0.1f // amount of padding
-    #define SX (-W * 15.f * 0.5f - P/2) // starting x
-    #define SY 16.f // starting y
-    
-    static GXColor colors[16] = {
-        {0, 0, 0, 255}, // background
-        
-        // early
-        {0xff, 0x60, 0x60, 0xff},
-        {0xff, 0x60, 0x60, 0xff},
-        {0xff, 0x60, 0x60, 0xff},
-        {0xff, 0x60, 0x60, 0xff},
-        {0xff, 0x60, 0x60, 0xff},
-        {0xff, 0x60, 0x60, 0xff},
-        {0xff, 0x60, 0x60, 0xff},
-        
-        // interpolate green -> orange
-        { 0xb4, 0xff, 0xb4, 0xff },
-        { 0xc3, 0xf3, 0x99, 0xff },
-        { 0xd5, 0xe3, 0x79, 0xff },
-        { 0xe5, 0xd2, 0x61, 0xff },
-        { 0xf2, 0xc0, 0x51, 0xff },
-        { 0xfc, 0xab, 0x4e, 0xff },
-        { 0xff, 0x9d, 0x54, 0xff },
-        { 0xff, 0x90, 0x60, 0xff },
+    GOBJ *hmn = Fighter_GetGObj(0);
+    FighterData *hmn_data = hmn->userdata;
+    WavedashCoreConfig cfg = {
+        .show_hud = WdOptions_Main[OPT_HUD].val,
+        .short_hop_indicator = WdOptions_Main[OPT_SHORT_HOP].val,
     };
-    
-    static Rect rects[16] = {
-        {SX-P/2, SY, 15.f*W+P, H}, // background
-        {SX+P/2+W*0, SY+P, W-P, H-P*2},
-        {SX+P/2+W*1, SY+P, W-P, H-P*2},
-        {SX+P/2+W*2, SY+P, W-P, H-P*2},
-        {SX+P/2+W*3, SY+P, W-P, H-P*2},
-        {SX+P/2+W*4, SY+P, W-P, H-P*2},
-        {SX+P/2+W*5, SY+P, W-P, H-P*2},
-        {SX+P/2+W*6, SY+P, W-P, H-P*2},
-        {SX+P/2+W*7, SY+P, W-P, H-P*2},
-        {SX+P/2+W*8, SY+P, W-P, H-P*2},
-        {SX+P/2+W*9, SY+P, W-P, H-P*2},
-        {SX+P/2+W*10, SY+P, W-P, H-P*2},
-        {SX+P/2+W*11, SY+P, W-P, H-P*2},
-        {SX+P/2+W*12, SY+P, W-P, H-P*2},
-        {SX+P/2+W*13, SY+P, W-P, H-P*2},
-        {SX+P/2+W*14, SY+P, W-P, H-P*2},
-    };
-    event_vars->HUD_DrawRects(rects, colors, countof(rects));
-
-    Tri tris[countof(event_data->airdodge_frame)*2];
-    GXColor tri_color[countof(event_data->airdodge_frame)*2];
-
-    int ad_count = event_data->airdodge_count;
-    int *ad_frame = event_data->airdodge_frame;
-    GOBJ *ft = Fighter_GetGObj(0);
-    FighterData *hmn_data = ft->userdata;
-    
-    static float x_pos[countof(event_data->airdodge_frame)] = {0};
-    static int show_count = 0;
-
-    if (event_data->timer == -1) {
-        show_count = ad_count;
-
-        // animate
-        for (int i = 0; i < ad_count; ++i) {
-            int f = ad_frame[i];
-            float x = SX + ((float)f + (7.f - hmn_data->attr.jump_startup_time - 1.f) + 0.5f) * W;
-    
-            float px = x_pos[i];
-            float dx = x - px;
-            if (fabs(dx) > 0.01f) 
-                x = px + dx * 0.3f;
-            x_pos[i] = x;
-        }
-    }
-
-    for (int i = 0; i < show_count; ++i) {
-        float x = x_pos[i];
-        float y = SY - 0.8f;
-        int f = ad_frame[i];
-        if (i != 0 && ad_frame[i-1] == f)
-            y -= H;
-        #define B 0.3f
-        #define B2 0.1f
-        #define B3 0.15f
-        tris[i*2+1][0] = (Vec2) {x, y};
-        tris[i*2+1][1] = (Vec2) {x+W*0.3f, y-H*0.6f};
-        tris[i*2+1][2] = (Vec2) {x-W*0.3f, y-H*0.6f};
-        tri_color[i*2+1] = (GXColor) {255, 255, 255, 255};
-
-        tris[i*2+0][0].X = tris[i*2+1][0].X;
-        tris[i*2+0][0].Y = tris[i*2+1][0].Y + 0.3f;
-        tris[i*2+0][1].X = tris[i*2+1][1].X + 0.15f;
-        tris[i*2+0][1].Y = tris[i*2+1][1].Y - 0.1f;
-        tris[i*2+0][2].X = tris[i*2+1][2].X - 0.15f;
-        tris[i*2+0][2].Y = tris[i*2+1][2].Y - 0.1f;
-        tri_color[i*2+0] = (GXColor) {0, 0, 0, 200};
-    }
-
-    event_vars->HUD_DrawTris(tris, tri_color, show_count * 2);
-
-    static Rect early = { SX, SY + 3, 0, 0 };
-    static Rect timing0 = { 0, SY + 4.5f, 0, 0 };
-    static Rect timing1 = { 0, SY + 3, 0, 0 };
-    static Rect late = { -SX, SY + 3, 0, 0 };
-    event_vars->HUD_DrawText("Early", &early, 0.45f);
-    event_vars->HUD_DrawText("Wavedash", &timing0, 0.4f);
-    event_vars->HUD_DrawText("Timing", &timing1, 0.4f);
-    event_vars->HUD_DrawText("Late", &late, 0.45f);
-}
-
-void Wavedash_Think(WavedashData *event_data, FighterData *hmn_data)
-{
-    // start sequence on jump squat
-    if (hmn_data->state_id == ASID_KNEEBEND && hmn_data->TM.state_frame == 0)
-    {
-        event_data->timer = 0;
-        event_data->airdodge_count = 0;
-    }
-
-    // Do nothing if sequence hasn't started
-    if (event_data->timer < 0)
-        return;
-
-    // run sequence logic
-    event_data->timer++;
-
-    // The game tracks whether the current jump is going to be a short hop in
-    // `state_var1`. The value at the end of kneebend is what we want.
-    if (hmn_data->state_id == ASID_KNEEBEND)
-        event_data->short_hop = hmn_data->state_var.state_var1;
-    if (WdOptions_Main[OPT_SHORT_HOP].val && event_data->short_hop)
-        Fighter_ColAnim_Apply(hmn_data, 107, 0); // make sparkles
-    
-    // Record airdodge timings.
-    if (event_data->airdodge_count < (int)countof(event_data->airdodge_frame) && (hmn_data->input.down & PAD_TRIGGER_L))
-        event_data->airdodge_frame[event_data->airdodge_count++] = event_data->timer;
-    if (event_data->airdodge_count < (int)countof(event_data->airdodge_frame) && (hmn_data->input.down & PAD_TRIGGER_R))
-        event_data->airdodge_frame[event_data->airdodge_count++] = event_data->timer;
-
-    // Real airdodge
-    if (hmn_data->TM.state_frame == 0 &&
-            (hmn_data->state_id == ASID_ESCAPEAIR ||
-            (hmn_data->state_id == ASID_LANDINGFALLSPECIAL &&
-             hmn_data->TM.state_prev[0] == ASID_ESCAPEAIR &&
-             hmn_data->TM.state_prev_frames[0] == 0)))
-    {
-        PADStatus *stat = PadGetRaw(hmn_data->pad_index);
-        event_data->angle = -atan2(stat->stickY, fabs(stat->stickX)) / M_1DEGREE;
-    }
-    
-    if (event_data->result == -1) {
-        if (hmn_data->state_id == ASID_LANDINGFALLSPECIAL
-            && hmn_data->TM.state_frame == 0
-            && hmn_data->TM.state_prev[0] == ASID_ESCAPEAIR
-            && hmn_data->TM.state_prev[2] == ASID_KNEEBEND)
-        {
-            // success
-            event_data->wd_attempted++;
-            event_data->wd_succeeded++;
-    
-            // check for perfect
-            int perfect_frame = (int)hmn_data->attr.jump_startup_time + 1;
-            for (int i = 0; i < event_data->airdodge_count; ++i) {
-                if (
-                    event_data->airdodge_frame[i] == perfect_frame
-                    || (event_data->airdodge_frame[i] == perfect_frame+1 && event_data->short_hop)
-                ) {
-                    SFX_Play(303);
-                    break;
-                }
-            }
-            event_data->result = 1;
-        }
-        else if (hmn_data->TM.state_frame >= FAILFRAMES &&
-                event_data->airdodge_count != 0 &&
-                (hmn_data->state_id == ASID_JUMPF ||
-                hmn_data->state_id == ASID_JUMPB ||
-                hmn_data->state_id == ASID_ESCAPEAIR)) {
-            // failure
-            event_data->wd_attempted++;
-            SFX_PlayCommon(3);
-            event_data->result = 0;
-        }
-    }
-    
-    // We need to wait until the wavedash finishes to reset in order to capture late LR presses
-    if (event_data->timer == 13) {
-        // Reset
-        event_data->result = -1;
-        event_data->timer = -1;
-        Fighter_ColAnim_Remove(hmn_data, 107); // remove sparkles
-
-        // Wavedash not attempted
-        if (event_data->airdodge_count == 0)
-            return;
-    
-        // update timing
-        int timing = event_data->airdodge_frame[0] - (int)hmn_data->attr.jump_startup_time - 1;
-        for (int i = 1; i < event_data->airdodge_count; ++i) {
-            int new_timing = event_data->airdodge_frame[i] - (int)hmn_data->attr.jump_startup_time - 1;
-            if (timing < 0)
-                timing = new_timing;
-            else
-                break;
-        } 
-    
-        if (timing < 0)
-            sprintf(timing_text, "%df Early", -timing);
-        else if (timing > 0)
-            sprintf(timing_text, "%df Late", timing);
-        else
-            sprintf(timing_text, "Perfect");
-        
-        // update angle
-        sprintf(angle_text, "%.1f", event_data->angle);
-        
-        // update success rate
-        int success = event_data->wd_succeeded;
-        int attempted = event_data->wd_attempted;
-        float success_rate = (float)success * 100.f / (float)attempted;
-        sprintf(success_rate_text, "%d (%.2f%%)", success, success_rate);
-    }
+    WavedashCore_DrawHUD(&event_data->core, hmn_data, &cfg, pass);
 }
 
 // Target functions
@@ -702,8 +477,8 @@ void Tips_Think(WavedashData *event_data, FighterData *hmn_data)
             && hmn_data->TM.state_prev[0] == ASID_ESCAPEAIR
             && hmn_data->TM.state_prev_frames[0] > 3 // slow to hit ground from airdodge
             && hmn_data->TM.state_prev_frames[1] < 5 // slightly late airdodge timing
-            && event_data->angle > 0            // ignore horizontal airdodge
-            && !event_data->short_hop)               // full hop
+            && event_data->core.angle > 0       // ignore horizontal airdodge
+            && !event_data->core.short_hop)          // full hop
     {
         if (event_data->tip.short_hop++ % 8 == 2)
             event_vars->Tip_Display(5 * 60, "Tip:\nUse short hop for wavedash!\nit can help you land faster\nwhen you airdodge late.");
