@@ -644,6 +644,22 @@ EventDesc Slalom = {
     .matchData = &Slalom_MatchData,
 };
 
+static EventMatchData XmDash_MatchData = {
+    .timer = MATCH_TIMER_HIDE, .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true, .hideReady = true, .isCreateHUD = false,
+    .timerRunOnPause = false, .isCheckForZRetry = true, .isShowScore = false,
+    .isRunStockLogic = false, .isDisableHit = false, .useKOCounter = false, .timerSeconds = 0,
+};
+EventDesc XmDash = {
+    .eventName = "100m Dash\n",
+    .eventDescription = "Sprint the Home Run track as fast\nas you can! Start = options.",
+    .eventFile = "xmdash", .jumpTableIndex = -1, .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = { .hmn = -1, .cpu = -1 }, .cpuKind = -1,
+    .stage = GRKINDEXT_HOMERUN, // Home Run Contest stage (external 84 -> GRKIND_HOMERUN), confirmed by spike scan
+    .disable_hazards = true, .force_sopo = false,
+    .scoreType = SCORETYPE_TIME, .callbackPriority = 15, .matchData = &XmDash_MatchData, // 15 like Wavedash (not 3): xmdash reuses wavedash's frame-precise timing detection, which must run after the fighter's per-frame state update
+};
+
 EventDesc Multishine = {
     .eventName = "Shined Blind\n",
     .eventDescription = "How many shines can you\nperform in 10 seconds?",
@@ -703,6 +719,7 @@ EventDesc Ledgestall = {
 static EventDesc *Minigames_Events[] = {
     &Eggs,
     &Slalom,
+    &XmDash,
     &Multishine,
     &Reaction,
     &Ledgestall,

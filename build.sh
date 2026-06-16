@@ -95,6 +95,7 @@ mex_build "evFunction" "build/laserland.dat" "src/laserland.c" &
 mex_build "evFunction" "build/eggs.dat" "src/eggs.c" &
 mex_build "evFunction" "build/techchase.dat" "src/techchase.c" &
 mex_build "evFunction" "build/slalom.dat" "src/slalom.c" "dats/wavedash.dat" &
+mex_build "evFunction" "build/xmdash.dat" "src/xmdash.c src/wavedash_common.c" "dats/wavedash.dat" &
 
 # wait for compilation to finish
 wait
@@ -132,6 +133,7 @@ ${gc_fst} fs TM-CE.iso \
     insert TM/eggs.dat build/eggs.dat \
     insert TM/techchase.dat build/techchase.dat \
     insert TM/slalom.dat build/slalom.dat \
+    insert TM/xmdash.dat build/xmdash.dat \
     insert codes.gct build/codes.gct \
     insert Start.dol build/Start.dol \
     insert opening.bnr opening.bnr

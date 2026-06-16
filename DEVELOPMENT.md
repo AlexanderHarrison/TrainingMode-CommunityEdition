@@ -18,9 +18,49 @@ If you have any questions, feel free to ping me (Aitch) in the dev-discussion ch
 ### Linux / MacOS / WSL / MSYS2
 1. [Install DevKitPro](https://devkitpro.org/wiki/Getting_Started#Unix-like_platforms). Install the Gamecube (gamecube-dev) package.
 2. Install xdelta3. This should be simple to install through your package manager.
-3. Run the command `./build.sh path-to-melee.iso` in the console.
+3. Run the command `DEVKITPPC=/opt/devkitpro/devkitPPC ./build.sh path-to-melee.iso` in the console.
     - If the provided binaries fail (possibly due to libc issues), you can compile your own binaries from my repos:
 [gc_fst](https://github.com/AlexanderHarrison/gc_fst), [hmex](https://github.com/AlexanderHarrison/cdat), [hgecko](https://github.com/AlexanderHarrison/hgecko)
+
+#### Native arm64 macOS (Apple Silicon) Tool Build
+
+The committed `bin/` binaries are Linux x86-64 ELFs and will not run on macOS arm64. Build native replacements as follows:
+
+```bash
+# 1. Build gc_fst and hgecko (Rust — requires cargo)
+mkdir -p /tmp/tmtools && cd /tmp/tmtools
+git clone https://github.com/AlexanderHarrison/gc_fst.git
+git clone https://github.com/AlexanderHarrison/hgecko.git
+( cd gc_fst && cargo build --release )
+( cd hgecko && cargo build --release )
+
+# 2. Build hmex (C project — needs a byteswap.h shim for macOS clang)
+git clone https://github.com/AlexanderHarrison/cdat.git
+mkdir -p /tmp/tmtools/cdat/shim /tmp/tmtools/cdat/build
+cat > /tmp/tmtools/cdat/shim/byteswap.h << 'EOF'
+#pragma once
+#include <stdint.h>
+#define bswap_16(x) __builtin_bswap16(x)
+#define bswap_32(x) __builtin_bswap32(x)
+#define bswap_64(x) __builtin_bswap64(x)
+EOF
+clang -O2 -I/tmp/tmtools/cdat/shim /tmp/tmtools/cdat/src/hmex.c -o /tmp/tmtools/cdat/build/hmex
+
+# 3. Install into bin/ and keep git clean
+cd /path/to/TrainingMode-CommunityEdition
+cp /tmp/tmtools/gc_fst/target/release/gc_fst  bin/gc_fst
+cp /tmp/tmtools/hgecko/target/release/hgecko  bin/hgecko
+cp /tmp/tmtools/cdat/build/hmex               bin/hmex
+chmod +x bin/gc_fst bin/hgecko bin/hmex
+git update-index --skip-worktree bin/gc_fst bin/hgecko bin/hmex
+# Verify: should report Mach-O arm64
+file bin/gc_fst bin/hgecko bin/hmex
+```
+
+Then build normally:
+```bash
+DEVKITPPC=/opt/devkitpro/devkitPPC ./build.sh /path/to/vanilla/melee.iso
+```
 
 ### Build Mode
 The build script takes an optional additional mode argument called the mode - `build.sh iso [mode]`.

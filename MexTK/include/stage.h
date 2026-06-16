@@ -94,6 +94,7 @@ typedef enum GrExternal
     GRKINDEXT_OLDKONGO,
     GRKINDEXT_BATTLE,
     GRKINDEXT_FD,
+    GRKINDEXT_HOMERUN = 84, // Home Run Contest stage (GrHr); external 84 -> GRKIND_HOMERUN, found via spike
 } GrExternal;
 
 typedef enum MapRenderKind
