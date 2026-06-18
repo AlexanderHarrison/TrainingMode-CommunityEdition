@@ -26,6 +26,11 @@ if [[ "$(uname)" =~ "MSYS" ]]; then
     hgecko="bin/hgecko.exe"
     hmex="bin/hmex.exe"
     xdelta="bin/xdelta.exe"
+elif [[ "$(uname)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+    gc_fst="bin/gc_fst_macos_arm64"
+    hgecko="bin/hgecko_macos_arm64"
+    hmex="bin/hmex_macos_arm64"
+    xdelta="xdelta3"
 else
     gc_fst="bin/gc_fst"
     hgecko="bin/hgecko"
