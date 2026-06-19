@@ -12,6 +12,7 @@ void Reset(void);
 void ChangeRandomFireDelayMin(GOBJ *event_menu, int value);
 void ChangeRandomFireDelayMax(GOBJ *event_menu, int value);
 int GetRandomLaserDelay(void);
+void ChangeAllowNana(GOBJ *event_menu, int value);
 
 enum menu_options {
     OPT_FIRE_SPEED,
@@ -20,6 +21,8 @@ enum menu_options {
     OPT_LASER_HEIGHT,
     OPT_DIRECTION,
     OPT_MOVEMENT,
+    OPT_ALLOW_NANA,
+    OPT_EXIT,
 };
 
 enum fire_speed {
@@ -106,6 +109,13 @@ static EventOption Options_Main[] = {
         .values = Options_Movement,
     },
     {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,  // Default to both climbers
+        .name = "Nana",
+        .desc = {"Toggle Nana on or off."},
+        .OnChange = ChangeAllowNana,
+    },
+    {
         .kind = OPTKIND_FUNC,
         .name = "Exit",
         .desc = {"Return to the Event Select Screen."},
@@ -136,6 +146,9 @@ void Event_Think(GOBJ *menu) {
     FighterData *falco_data = falco->userdata;
 
     if (event_vars->game_timer == 1) {
+        // Disable Nana option for non-Ice Climbers
+        Options_Main[OPT_ALLOW_NANA].disable = (player_data->kind != FTKIND_POPO);
+        
         player_data->facing_direction = -1;
         PutOnGround(player);
         PutOnGround(falco);
@@ -149,6 +162,21 @@ void Event_Think(GOBJ *menu) {
     falco_data->flags.no_reaction_always = true;
     falco_data->grab.vuln = 0x1FF;
     player_data->shield.health = 60;
+    
+    // Manage Nana based on option
+    if (player_data->kind == FTKIND_POPO) {
+        GOBJ *nana = Fighter_GetSubcharGObj(0, 1);
+        int nana_option = Options_Main[OPT_ALLOW_NANA].val;
+        
+        if (nana_option == 0 && nana) {
+            FighterData *nana_data = nana->userdata;
+            if (nana_data->state_id != ASID_SLEEP) {
+                Fighter_EnterSleep(nana, 1);
+            }
+            nana_data->phys.pos.X = 999.f;
+            nana_data->phys.pos.Y = -999.f;
+        }
+    }
 
     int new_direction = -1;
     if (player_data->input.down & HSD_BUTTON_DPAD_LEFT) {
@@ -450,6 +478,23 @@ int GetRandomLaserDelay(void) {
     int random_fire_delay_max = Options_Main[OPT_FIRE_DELAY_RANDOM_MAX].val;
 
     return HSD_Randi(random_fire_delay_max - random_fire_delay_min) + random_fire_delay_min;
+}
+
+void ChangeAllowNana(GOBJ *event_menu, int value) {
+    GOBJ *player = Fighter_GetGObj(0);
+    if (!player) return;
+    
+    FighterData *player_data = player->userdata;
+    if (player_data->kind != FTKIND_POPO) return;
+    
+    GOBJ *nana = Fighter_GetSubcharGObj(0, 1);
+    
+    if (value == 1 && nana) {
+        FighterData *nana_data = nana->userdata;
+        if (nana_data->state_id == ASID_SLEEP) {
+            Fighter_EnterDeadDown(player);
+        }
+    }
 }
 
 EventMenu *Event_Menu = &Menu_Main;

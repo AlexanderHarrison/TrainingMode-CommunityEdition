@@ -371,7 +371,7 @@ EventDesc Powershield = {
     .cpuKind = CKIND_FALCO,
     .stage = GRKINDEXT_FD,
     .disable_hazards = true,
-    .force_sopo = true,
+    .force_sopo = false,
     .scoreType = SCORETYPE_KO,
     .callbackPriority = 3,
     .matchData = &Powershield_MatchData,
@@ -1231,8 +1231,9 @@ void EventInit(int page, int eventID, MatchInit *matchData)
         matchData->playerData[0].portNumberOverride = hmn_port;
 
         // Force Popo if required
-        if (event->force_sopo && matchData->playerData[0].c_kind == CKIND_ICECLIMBERS)
+        if (event->force_sopo && matchData->playerData[0].c_kind == CKIND_ICECLIMBERS) {
             matchData->playerData[0].c_kind = CKIND_POPO;
+        }
 
         // Determine the correct HUD position for this amount of players
         int hudPos = 0;
