@@ -32,9 +32,18 @@ elif [[ "$(uname)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
     hmex="bin/hmex_macos_arm64"
     xdelta="xdelta3"
 else
-    gc_fst="bin/gc_fst"
-    hgecko="bin/hgecko"
-    hmex="bin/hmex"
+    gc_fst="gc_fst"
+    if ! command -v gc_fst > /dev/null; then
+        gc_fst="bin/gc_fst"
+    fi
+    hgecko="hgecko"
+    if ! command -v hgecko > /dev/null; then
+        hgecko="bin/hgecko"
+    fi
+    hmex="hmex"
+    if ! command -v hmex > /dev/null; then
+        hmex="bin/hmex"
+    fi
     xdelta="xdelta3"
 fi
 

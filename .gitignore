@@ -39,3 +39,6 @@ TM-CE/
 
 # Mac files
 .DS_Store
+
+# Direnv folder
+.direnv/
