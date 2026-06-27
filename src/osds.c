@@ -202,12 +202,25 @@ static void RunOsd_PnJ(GOBJ *ft, GOBJ *ft_sub) {
     if (!ft || !ft_sub) return;
     const FighterData *ft_data = ft->userdata;
     const FighterData *ft_sub_data = ft_sub->userdata;
+    //if nana is dead return
+    if (ft_sub_data->flags.dead) return;
     if (ft_data->kind != FTKIND_POPO) return;
+
 
     bool pivot_was_active = pivot_frames[ft_data->ply] != 0;
 
     //SUCCESSFUL AND LATE PNJ DETECTION
     if (pivot_frames[ft_data->ply] != 0) {
+
+        //if nana is disconnected, reset and return. avoids false positives where a disconnect nana
+        //happens to jump on the same frame a pnj could occur
+        //isCopy flag documented in fighter.h:1325
+        const int CPU_FLAG_ISCOPY = 0x100;
+        if (!(ft_sub_data->cpu.xf8 & CPU_FLAG_ISCOPY)) {
+            pivot_frames[ft_data->ply] = 0;
+            jump_frames[ft_data->ply] = 0;
+            return;
+        }
         const int late_pnj_window = 4;
         const int timeout = 6 + late_pnj_window;
         //timeout.
