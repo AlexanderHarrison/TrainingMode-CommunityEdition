@@ -301,6 +301,7 @@ void Event_IncTimer(GOBJ *gobj);
 void Events_StoreEventScore(int event_id, int score);
 int Events_GetSavedScore(int event_id);
 void Event_Retry(void);
+bool Events_CheckIfEventWasPlayedYet(int event_id);
 void Events_SetEventAsPlayed(int event_id);
 void Test_Think(GOBJ *gobj);
 void Hazards_Disable(void);

@@ -169,6 +169,7 @@
 8005FDDC:Effect_SpawnSync
 80067624:Effect_CheckQueue
 80289158:Egg_Destroy
+8015cefc:Events_CheckIfEventWasPlayedYet
 8015CF5C:Events_GetSavedScore
 8015CEb4:Events_SetEventAsPlayed
 8015CF70:Events_StoreEventScore

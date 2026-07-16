@@ -95,6 +95,7 @@ mex_build "evFunction" "build/powershield.dat" "src/powershield.c" &
 mex_build "evFunction" "build/dthrowknee.dat" "src/dthrowknee.c" &
 mex_build "evFunction" "build/edgeguard.dat" "src/edgeguard.c" &
 mex_build "evFunction" "build/fc.dat" "src/fc.c" &
+mex_build "evFunction" "build/mash.dat" "src/mash.c" &
 mex_build "evFunction" "build/sweetspot.dat" "src/sweetspot.c" &
 mex_build "evFunction" "build/laserland.dat" "src/laserland.c" &
 mex_build "evFunction" "build/eggs.dat" "src/eggs.c" &
@@ -132,6 +133,7 @@ ${gc_fst} fs TM-CE.iso \
     insert TM/dthrowknee.dat build/dthrowknee.dat \
     insert TM/edgeguard.dat build/edgeguard.dat \
     insert TM/fc.dat build/fc.dat \
+    insert TM/mash.dat build/mash.dat \
     insert TM/sweetspot.dat build/sweetspot.dat \
     insert TM/laserland.dat build/laserland.dat \
     insert TM/eggs.dat build/eggs.dat \
