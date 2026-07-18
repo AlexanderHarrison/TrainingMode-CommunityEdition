@@ -93,7 +93,7 @@ static EventOption Options_Main[OPT_COUNT] = {
         .name = "Info",
         .desc =
             {"Luigi's mash window is from frame 6 to frame 43.",
-             "Max B presses = 18, Max Presses/s = 30.00",
+             "Max B presses = 19, Max Presses/s = 30.00",
              "Max Height Gain = 40.727"},
     },
     {
