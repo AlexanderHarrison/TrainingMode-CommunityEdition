@@ -94,7 +94,7 @@ static EventOption Options_Main[OPT_COUNT] = {
         .desc =
             {"Luigi's mash window is from frame 6 to frame 43.",
              "Max B presses = 18, Max Presses/s = 30.00",
-             "Max Height Gain = 38.312        Made by Ampp"},
+             "Max Height Gain = 40.727"},
     },
     {
         .kind = OPTKIND_FUNC,
@@ -458,7 +458,7 @@ void Event_Think(GOBJ *menu) {
                     (whole == 0 && fraction < 0) ? "-" : "", // if -0.something, then force negative symbol
                     whole, 
                     (fraction < 0) ? -fraction : fraction, // display only positive fraction
-                    (whole == 38 && fraction == 312) ? "!!!" : ""); // max possible height gained easter egg
+                    (whole == 40 && fraction == 727) ? "!!!" : ""); // max possible height gained easter egg
             } else {
                 Text_SetText(hud_best_height_text, i, "Best: -");
             } 
