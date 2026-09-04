@@ -1742,14 +1742,19 @@ void CPUOnHit(void) {
     
     // decide ASDI direction ----------------------------------------
     
-    // only apply ASDI setting when not using custom TDI.
-    if (custom_di) goto ASDI_AUTO;
+    // when using custom TDI, ASDI comes from the C-stick input that was recorded with it.
+    if (custom_di)
+    {
+        int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
+        eventData->cpu_asdi_cstick_x = (int)(custom_di->cstickX * 127.f) * dir_factor;
+        eventData->cpu_asdi_cstick_y = (int)(custom_di->cstickY * 127.f);
+        goto ASDI_DONE;
+    }
 
     int asdi_kind = LabOptions_CPU[OPTCPU_ASDI].val;
     switch (asdi_kind)
     {
         case (ASDI_AUTO):
-        ASDI_AUTO:
         {
             // follow TDI
             eventData->cpu_asdi_cstick_x = 0;
@@ -1793,6 +1798,7 @@ void CPUOnHit(void) {
             break;
         }
     }
+    ASDI_DONE:
 
     // decide SDI direction ------------------------------------
     
