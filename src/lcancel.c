@@ -148,8 +148,9 @@ void LCancel_GX(GOBJ *gobj, int pass) {
     event_vars->HUD_DrawRects(main_rects, main_colors, countof(main_rects));
     
     // hitlag values
-    #define HL_H 1.f // height of square
-    #define HL_SY SY-1.1f // starting y
+    #define HL_H 1.f // height of hitlag square
+    #define HL_SY SY-HL_H-P // starting y of the hitlag gauge (positioned below the l-cancel gauge, with padding)
+    #define ARROW_SY (HL_SY - (2*P)) // starting y of the arrow (positioned below the hitlag gauge, with padding)
 
     static Rect hitlag_rects[32] = {
         // background rects
@@ -237,7 +238,7 @@ void LCancel_GX(GOBJ *gobj, int pass) {
 
     for (int i = 0; i < show_count; ++i) {
         float x = x_pos[i];
-        float y = SY - 0.8f;
+        float y = ARROW_SY;
         int f = event_data->lrz_input_frame[i];
         if (i != 0 && event_data->lrz_input_frame[i-1] == f)
             y -= H;
