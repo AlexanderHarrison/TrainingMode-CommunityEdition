@@ -209,6 +209,37 @@ EventDesc FloatCancel = {
     .matchData = &FloatCancel_MatchData,
 };
 
+// Luigi Mash
+static EventMatchData LuigiMash_MatchData = {
+    .timer = MATCH_TIMER_HIDE,
+    .matchType = MATCH_MATCHTYPE_TIME,
+    .hideGo = true,
+    .hideReady = true,
+    .isCreateHUD = false,
+    .timerRunOnPause = false,
+    .isCheckForZRetry = false,
+    .isShowScore = false,
+    .isRunStockLogic = false,
+    .isDisableHit = false,
+    .useKOCounter = false,
+    .timerSeconds = 0,
+};
+EventDesc LuigiMash = {
+    .eventName = "Luigi Mash\n",
+    .eventDescription = "Cyclone Mash Training\n",
+    .eventFile = "mash",
+    .jumpTableIndex = -1,
+    .CSSType = SLCHRKIND_EVENT,
+    .allowed_characters = { .hmn = CSSID_LUIGI, .cpu = -1 },
+    .cpuKind = -1,
+    .stage = -1,
+    .disable_hazards = true,
+    .force_sopo = false,
+    .scoreType = SCORETYPE_KO,
+    .callbackPriority = 20,
+    .matchData = &LuigiMash_MatchData,
+};
+
 static EventMatchData Sweetspot_MatchData = {
     .timer = MATCH_TIMER_HIDE,
     .matchType = MATCH_MATCHTYPE_TIME,
@@ -747,6 +778,7 @@ static EventDesc *CharacterSpecific_Events[] = {
     &EscapeSheik,
     &EscapeDThrowKnee,
     &FloatCancel,
+    &LuigiMash,
 };
 static EventPage CharacterSpecific_Page = {
     .name = "Character-specific Tech",
