@@ -1511,7 +1511,39 @@ static EventOption LabOptions_CharacterRngIcies[] = {
         .value_num = countof(LabValues_CharacterRng_NanaThrow),
         .values = LabValues_CharacterRng_NanaThrow,
         .OnChange = Lab_ChangeCharacterRng_NanaThrow,
-    }
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Custom Pummel RNG",
+        .desc = {"Force Nana to pummel a random number of",
+                 "times within the range below, instead",
+                 "of her default AI behaviour."},
+        .OnChange = Lab_ChangeCharacterRng_NanaPummelEnable,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .disable = 1,
+        .value_min = 0,
+        .value_num = 21,
+        .val = 0,
+        .name = "Nana Min Pummels",
+        .desc = {"Adjust the minimum number of times",
+                 "Nana will pummel."},
+        .format = "%d",
+        .OnChange = Lab_ChangeCharacterRng_NanaPummelMin,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .disable = 1,
+        .value_min = 0,
+        .value_num = 21,
+        .val = 3,
+        .name = "Nana Max Pummels",
+        .desc = {"Adjust the maximum number of times",
+                 "Nana will pummel."},
+        .format = "%d",
+        .OnChange = Lab_ChangeCharacterRng_NanaPummelMax,
+    },
 };
 
 #define OPTCHARRNG_MAXCOUNT 8
