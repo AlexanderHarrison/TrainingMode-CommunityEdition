@@ -953,7 +953,7 @@ SWITCH_START_POS:
     {
         // place player in a random position in respawn wait
         float xpos_min = 40;
-        float xpos_max = 65;
+        float xpos_max = 50;
         float ypos_min = -30;
         float ypos_max = 30;
         hmn_data->phys.pos.X = ((ledge_dir * -1) * (xpos_min + HSD_Randi(xpos_max - xpos_min) + HSD_Randf())) + (ledge_pos.X);
