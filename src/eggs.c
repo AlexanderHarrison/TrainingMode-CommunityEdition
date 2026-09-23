@@ -12,6 +12,17 @@ static JOBJ *hud_score_jobj, *hud_best_jobj;
 static int canvas;
 static Text *hud_score_text, *hud_best_text;
 
+typedef struct HitboxTrail {
+    Vec3 a;
+    Vec3 b;
+    float size;
+    GXColor color;
+    int frame_created;
+} HitboxTrail;
+
+static u32 hitbox_trail_i;
+static HitboxTrail hitbox_trails[64];
+
 void Exit(GOBJ *menu) 
 {
     stc_match->state = 3;
@@ -144,6 +155,11 @@ int Egg_OnTakeDamage(GOBJ *gobj)
 
 void Event_Init(GOBJ *gobj)
 {
+    hitbox_trail_i = 0;
+    memset(hitbox_trails, 0, sizeof(hitbox_trails));
+    GObj_AddProc(gobj, Event_PostThink, 20);
+    GObj_AddGXLink(gobj, HitboxTrails_GX, 5, 0);
+
     // initialize egg camera subject
     cam = CameraSubject_Alloc();
     cam->boundleft_proj = -10;
@@ -189,6 +205,111 @@ void Event_Init(GOBJ *gobj)
     high_score = Events_GetSavedScore(stc_memcard->EventBackup.event);
 
     stc_match->end_kind = MATCHENDKIND_NONE;
+}
+
+static HitboxTrail *HitboxTrails_Add(void)
+{
+    HitboxTrail *trail = &hitbox_trails[hitbox_trail_i];
+    hitbox_trail_i = (hitbox_trail_i + 1) % countof(hitbox_trails);
+    return trail;
+}
+
+static GXColor HitboxTrails_Color(int dmg)
+{
+    u8 r = 255;
+    u8 g = 128 - (u8)(dmg * 10) / 2;
+    u8 b = g;
+    return (GXColor){r, g, b, 200};
+}
+
+void HitboxTrails_Think(void)
+{
+    if (!Options_HitboxTrails[OPT_HITBOXTRAILS_ENABLED].val)
+        return;
+
+    for (int ply = 0; ply < 4; ++ply)
+    {
+        GOBJ *fighter = Fighter_GetGObj(ply);
+        if (!fighter)
+            continue;
+
+        FighterData *fighter_data = fighter->userdata;
+        for (u32 hit_i = 0; hit_i < countof(fighter_data->hitbox); ++hit_i)
+        {
+            ftHit *hit = &fighter_data->hitbox[hit_i];
+            if (!hit->active)
+                continue;
+
+            *HitboxTrails_Add() = (HitboxTrail){
+                .a = hit->pos_prev,
+                .b = hit->pos,
+                .size = hit->size,
+                .color = HitboxTrails_Color(hit->dmg),
+                .frame_created = event_vars->game_timer,
+            };
+        }
+    }
+
+    for (GOBJ *gobj = (*stc_gobj_lookup)[MATCHPLINK_ITEM]; gobj; gobj = gobj->next)
+    {
+        ItemData *item = gobj->userdata;
+        for (u32 hit_i = 0; hit_i < countof(item->hitbox); ++hit_i)
+        {
+            itHit *hit = &item->hitbox[hit_i];
+            if (!hit->active)
+                continue;
+
+            *HitboxTrails_Add() = (HitboxTrail){
+                .a = hit->pos_prev,
+                .b = hit->pos,
+                .size = hit->size,
+                .color = HitboxTrails_Color(hit->dmg),
+                .frame_created = event_vars->game_timer,
+            };
+        }
+    }
+}
+
+void HitboxTrails_GX(GOBJ *gobj, int pass)
+{
+    if (!Options_HitboxTrails[OPT_HITBOXTRAILS_ENABLED].val)
+        return;
+
+    int decay = Options_HitboxTrails[OPT_HITBOXTRAILS_DECAY].val;
+    int decay_const = HitboxTrailDecayConst[decay];
+    int decay_factor = HitboxTrailDecayFactor[decay];
+
+    if (pass == 2)
+    {
+        int game_timer = event_vars->game_timer;
+
+        for (u32 i = 0; i < countof(hitbox_trails); ++i)
+        {
+            HitboxTrail *hit = &hitbox_trails[i];
+            if (hit->size == 0)
+                continue;
+            if (hit->frame_created > game_timer)
+                continue;
+
+            static GXColor hit_ambient = {0, 0, 0, 0};
+            GXColor hit_diffuse = hit->color;
+
+            int elapsed = game_timer - hit->frame_created;
+            int fade = (elapsed - decay_const) * decay_factor;
+            if (fade < 0)
+                fade = 0;
+            if (fade >= hit_diffuse.a)
+                continue;
+            hit_diffuse.a -= fade;
+
+            Develop_DrawSphere(hit->size, &hit->a, &hit->b, &hit_diffuse, &hit_ambient);
+        }
+    }
+}
+
+void Event_PostThink(GOBJ *event)
+{
+    HitboxTrails_Think();
 }
 
 void Event_Think(GOBJ *event)

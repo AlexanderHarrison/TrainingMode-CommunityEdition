@@ -12,6 +12,7 @@ enum options_main
     OPT_SCALE,
     OPT_VELOCITY,
     OPT_COLLISION,
+    OPT_HITBOXTRAILS,
     OPT_EXIT,
 
     OPT_COUNT
@@ -27,12 +28,48 @@ void Event_Init(GOBJ *gobj);
 float RandomRange(float low, float high);
 int Egg_OnTakeDamage(GOBJ *gobj);
 void Event_Think(GOBJ *event);
+void Event_PostThink(GOBJ *event);
+void HitboxTrails_GX(GOBJ *gobj, int pass);
+void HitboxTrails_Think(void);
 
 static GXColor text_gold = {255, 211, 0, 255};
 static GXColor text_white = {255, 255, 255, 255};
 
 static float EggOptions_Size[] = {1.0f, .5f, 2.0f};
 static const char *EggOptions_SizeText[] = {"Normal", "Small", "Large"};
+
+enum options_hitbox_trails
+{
+    OPT_HITBOXTRAILS_ENABLED,
+    OPT_HITBOXTRAILS_DECAY,
+
+    OPT_HITBOXTRAILS_COUNT
+};
+
+static const u8 HitboxTrailDecayConst[] = {15, 10, 30, 0};
+static const u8 HitboxTrailDecayFactor[] = {4, 8, 2, 0};
+static const char *HitboxTrailDecayText[] = {"Normal", "Fast", "Slow", "Off"};
+
+static EventOption Options_HitboxTrails[OPT_HITBOXTRAILS_COUNT] = {
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Enable",
+        .desc = {"Enable hitbox trails."},
+    },
+    {
+        .kind = OPTKIND_STRING,
+        .value_num = countof(HitboxTrailDecayText),
+        .name = "Decay",
+        .desc = {"How quickly the hitbox will fade away."},
+        .values = HitboxTrailDecayText,
+    },
+};
+
+static EventMenu Menu_HitboxTrails = {
+    .name = "Hitbox Trails",
+    .option_num = countof(Options_HitboxTrails),
+    .options = Options_HitboxTrails,
+};
 
 static EventOption Options_Main[OPT_COUNT] = {
     {
@@ -81,6 +118,12 @@ static EventOption Options_Main[OPT_COUNT] = {
                  "Hitboxes: (by priority) red, green, blue, purple."},
         .disable = 1,
         .OnChange = ChangeHitDisplay,
+    },
+    {
+        .kind = OPTKIND_MENU,
+        .menu = &Menu_HitboxTrails,
+        .name = "Hitbox Trails",
+        .desc = {"Create a trail of your hitboxes to visualize spacing."},
     },
     {
         .kind = OPTKIND_FUNC,
