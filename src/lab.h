@@ -1939,9 +1939,9 @@ enum hitbox_trails_option
     OPTHITBOXTRAILS_COUNT
 };
 
-const u8 LabValues_HitboxTrailDecayConst[] = { 15, 10, 30, 0 };
-const u8 LabValues_HitboxTrailDecayFactor[] = { 4, 8, 2, 0 };
-const char *LabOptions_HitboxTrailDecay[] = { "Normal", "Fast", "Slow", "Off" };
+const u8 LabValues_HitboxTrailDecayConst[] = { 15, 10, 0, 30, 0 };
+const u8 LabValues_HitboxTrailDecayFactor[] = { 4, 8, 200, 2, 0 };
+const char *LabOptions_HitboxTrailDecay[] = { "Normal", "Fast", "Instant", "Slow", "Off" };
 
 static EventOption LabOptions_HitboxTrails[OPTHITBOXTRAILS_COUNT] = {
     {
