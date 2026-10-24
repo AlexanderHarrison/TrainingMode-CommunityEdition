@@ -24,6 +24,7 @@ static EventMenu LabMenu_AlterInputs;
 static EventMenu LabMenu_OSDs;
 static EventMenu LabMenu_ActionLog;
 static EventMenu LabMenu_HitboxTrails;
+static EventMenu LabMenu_Display;
 
 #define AUTORESTORE_DELAY 20
 #define INTANG_COLANIM 10
@@ -109,6 +110,8 @@ void Lab_ChangeInputs(GOBJ *menu_gobj, int value);
 void Lab_ChangeAlterInputsFrame(GOBJ *menu_gobj, int value);
 int Lab_SetAlterInputsMenuOptions(GOBJ *menu_gobj);
 void Lab_ChangeActionNumber(GOBJ *menu_gobj, int value);
+void Lab_ChangeDisplay(GOBJ *menu_gobj, int value);
+void Lab_ChangeDisplayPreset(GOBJ *menu_gobj, int value);
 void Lab_SetActionLogState(GOBJ *menu_gobj);
 void ActionLog_GX(GOBJ *gobj, int pass);
 void ActionLog_Think(void);
@@ -882,7 +885,8 @@ enum lab_option
     OPTLAB_INFODISP_CPU,
     OPTLAB_CHAR_RNG,
     OPTLAB_STAGE,
-    OPTLAB_HELP,
+    OPTLAB_DISPLAY,
+    OPTLAB_CONTROLS,
     OPTLAB_EXIT,
 
     OPTLAB_COUNT
@@ -936,6 +940,12 @@ static EventOption LabOptions_Main[OPTLAB_COUNT] = {
         //.menu and .disable are set in Event_Init depending on stage
         .name = "Stage Options",
         .desc = {"Configure stage behavior."},
+    },
+    {
+        .kind = OPTKIND_MENU,
+        .menu = &LabMenu_Display,
+        .name = "Display Options",
+        .desc = {"Configure what shows on-screen."},
     },
     {
         .kind = OPTKIND_MENU,
@@ -1083,14 +1093,9 @@ enum gen_option
     OPTGEN_FRAME,
     OPTGEN_HMNPCNT,
     OPTGEN_HMNPCNTLOCK,
-    OPTGEN_MODEL,
-    OPTGEN_HIT,
-    OPTGEN_ITEMGRAB,
-    OPTGEN_COLL,
     OPTGEN_CAM,
     OPTGEN_OVERLAYS_HMN,
     OPTGEN_OVERLAYS_CPU,
-    OPTGEN_HUD,
     OPTGEN_DI,
     OPTGEN_INPUT,
     OPTGEN_SPEED,
@@ -1105,10 +1110,6 @@ enum gen_option
 
 static const char *LabOptions_CamMode[] = {"Normal", "Zoom", "Fixed", "Advanced", "Static"};
 static const char *LabOptions_ShowInputs[] = {"Off", "HMN", "CPU", "HMN and CPU"};
-
-static const char *LabOptions_ModelDisplay[] = {"On", "Stage Only", "Characters Only"};
-static const bool LabValues_CharacterModelDisplay[] = {true, false, true};
-static const bool LabValues_StageModelDisplay[] = {true, true, false};
 
 static float LabOptions_GameSpeeds[] = {1.f, 5.f/6.f, 2.f/3.f, 1.f/2.f, 1.f/4.f};
 static const char *LabOptions_GameSpeedText[] = {"1", "5/6", "2/3", "1/2", "1/4"};
@@ -1135,40 +1136,6 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
     },
     {
         .kind = OPTKIND_STRING,
-        .value_num =
-            sizeof(LabOptions_ModelDisplay) / sizeof(*LabOptions_ModelDisplay),
-        .val = 0,
-        .name = "Model Display",
-        .desc = {"Toggle player and item model visibility."},
-        .values = LabOptions_ModelDisplay,
-        .OnChange = Lab_ChangeModelDisplay,
-    },
-    {
-        .kind = OPTKIND_TOGGLE,
-        .name = "Fighter Collision",
-        .desc = {"Toggle hitbox and hurtbox visualization.",
-                 "Hurtboxes: yellow=hurt, purple=ungrabbable, blue=shield.",
-                 "Hitboxes: (by priority) red, green, blue, purple."},
-        .OnChange = Lab_ChangeHitDisplay,
-    },
-    {
-        .kind = OPTKIND_TOGGLE,
-        .name = "Item Grab Sizes",
-        .desc = {"Toggle item grab range visualization.",
-                 "Blue=z-catch, light grey=grounded catch,",
-                 "dark grey=unknown"},
-        .OnChange = Lab_ChangeItemGrabDisplay,
-    },
-    {
-        .kind = OPTKIND_TOGGLE,
-        .name = "Environment Collision",
-        .desc = {"Toggle environment collision visualization.",
-                 "Also displays the players' ECB (environmental ",
-                 "collision box)."},
-        .OnChange = Lab_ChangeEnvCollDisplay,
-    },
-    {
-        .kind = OPTKIND_STRING,
         .value_num = sizeof(LabOptions_CamMode) / 4,
         .name = "Camera Mode",
         .desc = {"Adjust the camera's behavior.",
@@ -1190,13 +1157,6 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
         .name = "CPU Color Overlays",
         .desc = {"Set up color indicators for",
                  "action states."},
-    },
-    {
-        .kind = OPTKIND_TOGGLE,
-        .val = 1,
-        .name = "HUD",
-        .desc = {"Toggle player percents and timer visibility."},
-        .OnChange = Lab_ChangeHUD,
     },
     {
         .kind = OPTKIND_TOGGLE,
@@ -1259,6 +1219,136 @@ static EventMenu LabMenu_General = {
     .name = "General",
     .option_num = sizeof(LabOptions_General) / sizeof(EventOption),
     .options = LabOptions_General,
+};
+
+// DISPLAY MENU --------------------------------------------------------------
+
+enum {
+    OPTDISP_PRESET,
+    OPTDISP_TOGGLE_START,
+    OPTDISP_HUD = OPTDISP_TOGGLE_START,
+    OPTDISP_HITBOXES,
+    OPTDISP_CHAR_MODEL,
+    OPTDISP_ENV,
+    OPTDISP_STAGE_MODEL,
+    OPTDISP_EFFECTS,
+    OPTDISP_ITEMGRAB,
+
+    OPTDISP_COUNT
+};
+
+typedef struct DisplayPreset {
+    u32 hud : 1;
+    u32 hitboxes : 2;
+    u32 models : 2;
+    u32 env : 1;
+    u32 stage : 1;
+    u32 effects : 1;
+    u32 item_grab : 1;
+} DisplayPreset;
+
+static const char *LabOptions_DisplayPresets[] = {
+    "Default",
+    "Hitboxes",
+    "Environment",
+};
+
+static const DisplayPreset LabValues_DisplayPresetFlags[] = {
+    {
+        .hud = 1,
+        .models = 3,
+        .stage = 1,
+        .effects = 1,
+    },
+    {
+        .hud = 1,
+        .hitboxes = 3,
+        .stage = 1,
+        .effects = 1,
+    },
+    {
+        .hud = 1,
+        .env = 1,
+        .stage = 1,
+    },
+};
+
+static const char *LabOptions_DisplayPerChar[] = { "None", "HMN", "CPU", "Both" };
+
+static EventOption LabOptions_Display[OPTDISP_COUNT] = {
+    {
+        .kind = OPTKIND_STRING,
+        .name = "Preset",
+        .desc = {"Cycle through common display settings."},
+        .values = LabOptions_DisplayPresets,
+        .value_num = countof(LabOptions_DisplayPresets),
+        .OnChange = Lab_ChangeDisplayPreset,
+    },
+
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "HUD",
+        .desc = {"Show fighter percents and timer."},
+        .OnChange = Lab_ChangeDisplay,
+    },
+    {
+        .kind = OPTKIND_STRING,
+        .name = "Hitboxes",
+        .desc = {"Toggle hitbox and hurtbox visualization.",
+                 "Hurtboxes: yellow=hurt, purple=ungrabbable, blue=shield.",
+                 "Hitboxes: (by priority) red, green, blue, purple."},
+        .values = LabOptions_DisplayPerChar,
+        .value_num = countof(LabOptions_DisplayPerChar),
+        .OnChange = Lab_ChangeDisplay,
+    },
+    {
+        .kind = OPTKIND_STRING,
+        .val = 3,
+        .name = "Character Models",
+        .desc = {"Show fighters."},
+        .values = LabOptions_DisplayPerChar,
+        .value_num = countof(LabOptions_DisplayPerChar),
+        .OnChange = Lab_ChangeDisplay,
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Environment Collision",
+        .desc = {"Toggle environment collision visualization.",
+                 "Also displays the players' ECB (environmental",
+                 "collision box)."},
+        .OnChange = Lab_ChangeDisplay,
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Stage Model",
+        .desc = {"Show the stage."},
+        .OnChange = Lab_ChangeDisplay,
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 1,
+        .name = "Effects",
+        .desc = {"Show or hide effects."},
+        .OnChange = Lab_ChangeDisplay,
+    },
+    {
+        .kind = OPTKIND_STRING,
+        .name = "Item Grab Sizes",
+        .desc = {"Toggle item grab range visualization.",
+                 "Blue=z-catch, light grey=grounded catch,",
+                 "dark grey=unknown"},
+        .values = LabOptions_DisplayPerChar,
+        .value_num = countof(LabOptions_DisplayPerChar),
+        .OnChange = Lab_ChangeDisplay,
+    },
+};
+
+static EventMenu LabMenu_Display = {
+    .name = "Display Options",
+    .option_num = countof(LabOptions_Display),
+    .options = LabOptions_Display,
 };
 
 // INFO DISPLAY MENU --------------------------------------------------------------
@@ -3496,7 +3586,7 @@ static Shortcut Lab_Shortcuts[] = {
     },
     {
         .button_mask = HSD_BUTTON_X,
-        .option = &LabOptions_General[OPTGEN_MODEL],
+        .option = &LabOptions_Display[OPTDISP_HITBOXES],
     },
     {
         .button_mask = HSD_BUTTON_DPAD_LEFT,

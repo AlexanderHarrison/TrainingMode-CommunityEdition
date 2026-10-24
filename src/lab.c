@@ -510,62 +510,58 @@ void Lab_ChangeCPUIntang(GOBJ *menu_gobj, int value)
         Fighter_ColAnim_Apply(fighter_data, INTANG_COLANIM, 0);
 }
 
-void Lab_ChangeModelDisplay(GOBJ *menu_gobj, int value)
-{
-    bool hide_chars = !LabValues_CharacterModelDisplay[value];
-
-    // loop through all fighters
-    GOBJ *this_fighter = (*stc_gobj_lookup)[MATCHPLINK_FIGHTER];
-    while (this_fighter != 0)
-    {
-        // get data
-        FighterData *thisFighterData = this_fighter->userdata;
-
-        // toggle
-        thisFighterData->show_model = !hide_chars;
-
-        // get next fighter
-        this_fighter = this_fighter->next;
-    }
-
-    bool hide_stage = !LabValues_StageModelDisplay[value];
-    stc_matchcam->hide_stage = hide_stage;
-    stc_matchcam->hide_stage2 = hide_stage;
-    stc_matchcam->hide_background = hide_stage;
-
-    bool hide_misc = hide_stage || hide_chars;
-
-    stc_matchcam->hide_effects = hide_misc;
+void Lab_ChangeDisplayPreset(GOBJ *menu_gobj, int value) {
+    DisplayPreset p = LabValues_DisplayPresetFlags[value];
+    EventOption *opt = LabOptions_Display;
+    opt[OPTDISP_HUD].val = p.hud;
+    opt[OPTDISP_HITBOXES].val = p.hitboxes;
+    opt[OPTDISP_CHAR_MODEL].val = p.models;
+    opt[OPTDISP_ENV].val = p.env;
+    opt[OPTDISP_STAGE_MODEL].val = p.stage;
+    opt[OPTDISP_EFFECTS].val = p.effects;
+    opt[OPTDISP_ITEMGRAB].val = p.item_grab;
+    Lab_ChangeDisplay(menu_gobj, 0);
 }
-void Lab_ChangeHitDisplay(GOBJ *menu_gobj, int value)
-{
-    // loop through all fighters
-    GOBJ *this_fighter = (*stc_gobj_lookup)[MATCHPLINK_FIGHTER];
-    while (this_fighter != 0)
-    {
-        // get data
-        FighterData *thisFighterData = this_fighter->userdata;
 
-        // toggle
-        thisFighterData->show_hit = value;
+void Lab_ChangeDisplay(GOBJ *menu_gobj, int unused) {
+    EventOption *opt = LabOptions_Display;
 
-        // get next fighter
-        this_fighter = this_fighter->next;
-    }
-}
-void Lab_ChangeEnvCollDisplay(GOBJ *menu_gobj, int value)
-{
-    stc_matchcam->show_coll = value;
-}
-void Lab_ChangeItemGrabDisplay(GOBJ *menu_gobj, int value)
-{
+    // hud
+    bool show_hud = opt[OPTDISP_HUD].val;
+    bool *hide_hud_ptr = (bool *)(R13 + -0x4948);
+    *hide_hud_ptr = !show_hud;
+    event_vars->watermark->hidden = !show_hud;
+
+    // char hitboxes, model, item grab
+    int show_hitboxes = opt[OPTDISP_HITBOXES].val;
+    int show_char_model = opt[OPTDISP_CHAR_MODEL].val;
+    int show_item_grab = opt[OPTDISP_ITEMGRAB].val;
+
     GOBJ *hmn = Fighter_GetGObj(0);
     GOBJ *cpu = Fighter_GetGObj(1);
-    FighterData *cpu_data = cpu->userdata;
     FighterData *hmn_data = hmn->userdata;
-    cpu_data->show_item_pickup = value;
-    hmn_data->show_item_pickup = value;
+    FighterData *cpu_data = cpu->userdata;
+
+    hmn_data->show_hit = (show_hitboxes & 1) != 0;
+    hmn_data->show_model = (show_char_model & 1) != 0;
+    hmn_data->show_item_pickup = (show_item_grab & 1) != 0;
+    cpu_data->show_hit = (show_hitboxes & 2) != 0;
+    cpu_data->show_model = (show_char_model & 2) != 0;
+    cpu_data->show_item_pickup = (show_item_grab & 2) != 0;
+
+    // env
+    bool show_env = opt[OPTDISP_ENV].val;
+    stc_matchcam->show_coll = show_env;
+
+    // stage model
+    int show_stage_model = opt[OPTDISP_STAGE_MODEL].val;
+    stc_matchcam->hide_stage = (show_stage_model & 1) == 0;
+
+    // effects
+    bool show_effects = opt[OPTDISP_EFFECTS].val;
+    stc_matchcam->hide_effects = !show_effects;
 }
+
 void Lab_ChangeCamMode(GOBJ *menu_gobj, int value)
 {
     // normal cam
@@ -609,13 +605,6 @@ void Lab_ChangeInfoPresetHMN(GOBJ *menu_gobj, int preset_id)
 void Lab_ChangeInfoPresetCPU(GOBJ *menu_gobj, int preset_id)
 {
     Lab_ChangeInfoPreset(LabOptions_InfoDisplayCPU, preset_id);
-}
-
-void Lab_ChangeHUD(GOBJ *menu_gobj, int show_hud)
-{
-    bool *hide_hud_ptr = (bool *)(R13 + -0x4948);
-    *hide_hud_ptr = !show_hud;
-    event_vars->watermark->hidden = !show_hud;
 }
 
 void Lab_Exit(GOBJ *menu)
@@ -5945,7 +5934,7 @@ static void UpdateOverlays(GOBJ *character, EventOption *overlays) {
         memset(&data->color[1], 0, sizeof(ColorOverlay));
         memset(&data->color[0], 0, sizeof(ColorOverlay));
         data->flags.invisible = 0;
-        data->show_hit = LabOptions_General[OPTGEN_HIT].val;
+        data->show_hit = LabOptions_Display[OPTDISP_HITBOXES].val;
         *overlay_running = -1;
     }
 }
