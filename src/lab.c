@@ -820,8 +820,8 @@ void InfoDisplay_Update(GOBJ *menu_gobj, EventOption menu[], GOBJ *fighter, GOBJ
                         float animFrameTotal = animStruct->frame_num;
                         float animFrameCurr = fighter_data->state.frame;
                         float animSpeed = fighter_data->state.rate;
-                        frameTotal = (animFrameTotal / animSpeed);
-                        frameCurr = (animFrameCurr / animSpeed);
+                        frameTotal = (int)(animFrameTotal / animSpeed + 0.5f);
+                        frameCurr = (int)(animFrameCurr / animSpeed + 0.5f);
                     }
 
                     Text_SetText(text, i, "State Frame: %d/%d", frameCurr, frameTotal);
