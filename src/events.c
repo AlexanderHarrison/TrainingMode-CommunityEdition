@@ -1730,7 +1730,6 @@ void Message_Init(void)
 }
 GOBJ *Message_Display(int msg_kind, int queue_num, int msg_color, char *format, ...)
 {
-
     va_list args;
 
     MsgMngrData *mgr_data = stc_msgmgr->userdata;
@@ -1760,6 +1759,12 @@ GOBJ *Message_Display(int msg_kind, int queue_num, int msg_color, char *format, 
     msg_text->align = 1;
     msg_text->use_aspect = 1;
     msg_text->color = stc_msg_colors[msg_color];
+
+    Playerblock *source = Fighter_GetPlayerblock(queue_num);
+    if (source && source->p_kind != PKIND_HMN) {
+        JOBJ_SetFlagsAll(msg_jobj, JOBJ_HIDDEN);
+        msg_text->hidden = true;
+    }
 
     // adjust scale
     Vec3 scale = msg_jobj->scale;
