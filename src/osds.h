@@ -18,6 +18,7 @@ void OSD_Think(GOBJ *event);
 #define OSD_BoostGrab 14
 #define OSD_Miscellaneous 15
 #define OSD_ActOoWait 16
+#define OSD_ActOoAerial 17
 #define OSD_ActOoAirborne 18
 #define OSD_ActOoJumpSquat 19
 #define OSD_Fastfall 20

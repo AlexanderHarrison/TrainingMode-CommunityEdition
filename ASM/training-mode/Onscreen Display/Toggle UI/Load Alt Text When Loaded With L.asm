@@ -337,7 +337,7 @@ TextASCIIRight:
     .string "Boost Grab"
     .string "" # DO NOT USE - reserved for custom events
     .string "Act OoLag"
-    .string "" # OSD ID 17
+    .string "Act OoAerial" # OSD ID 17 !!!!!!!!!!!!!!!!!!!!!!!
     .string "Act OoAirborne"
     .string "Jump Cancel Timing"
     .string "Fastfall Timing"

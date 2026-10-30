@@ -30,7 +30,154 @@ static bool CheckIASA(FighterData *data) {
     return data->TM.iasa_frames && data->TM.iasa_frames <= data->TM.state_frame;
 }
 
-static void RunOSD_FrameAdvantage(GOBJ *ft, GOBJ *ft_sub) {
+
+static bool IsAerialState(const int ft_kind, const int state_id) {
+    if (ft_kind == FTKIND_GAW) {
+        return (state_id == ASID_ATTACKAIRLW
+            || state_id == ASID_ATTACKAIRF
+            || (state_id >= 347 && state_id <= 349));
+    } else {
+        return (state_id >= ASID_ATTACKAIRN && state_id <= ASID_ATTACKAIRLW);
+    }
+}
+
+static bool IsAirSpecialMoveStartupState(const int ft_kind, const int sid) {
+    switch(ft_kind) {
+        case FTKIND_BOWSER:
+            return (sid == 344 || sid == 353 || sid == 354 || sid == 360 || sid == 362);
+        case FTKIND_FALCON:
+            return (sid==348 || sid==351 || sid==354 || sid==355 || sid==359);
+        case FTKIND_DK:
+            return ((sid>=374 && sid<=378) || sid==380 || sid==382);
+        case FTKIND_MARIO:
+        case FTKIND_DRMARIO:
+            return (sid==344 || sid==346 || sid==348 || sid==350);
+        case FTKIND_FALCO:
+        case FTKIND_FOX:
+            return ((sid>=344 && sid <=346) || sid==350 || sid==354 || sid==365);
+        case FTKIND_GANONDORF:
+            return (sid==348 || sid==351 || (sid>=354 && sid<=356) || sid==359);
+        case FTKIND_POPO:
+            return (sid==342 || sid==345 || sid==346 || (sid>=352 && sid<=356) || sid==358);
+        case FTKIND_JIGGLYPUFF:
+            return (sid==354 || sid==355 || sid==364 || sid==366 || sid==368 || sid==370 || sid==372);
+        case FTKIND_LINK:
+        case FTKIND_YOUNGLINK:
+            return (sid==347 || (sid>=353 && sid<=355) || sid==357 || sid==359 || sid==360);
+        case FTKIND_LUIGI:
+            return (sid==342 || (sid>=349 && sid<=354) || sid==356 || sid==358);
+        case FTKIND_MARTH:
+            return ((sid>=345 && sid<=348) || sid==358 || sid==368 || sid==371);
+        case FTKIND_MEWTWO:
+            return ((sid>=346 && sid<=350) || sid==352 || sid==356 || sid==360);
+        case FTKIND_GAW:
+            return (sid==354 || (sid>=364 && sid<=372) || sid==374 || (sid>=378 && sid<=380));
+        case FTKIND_NESS:
+            return (sid==352 || sid==357 || sid==362 || sid==372);
+        case FTKIND_PEACH:
+            return (sid==357 || sid==363 || sid==367);
+        case FTKIND_PICHU:
+        case FTKIND_PIKACHU:
+            return (sid == 342 || (sid>=348 && sid<=352) || sid==356 || sid==363);
+        case FTKIND_ROY:
+            return (sid==345 || sid==358 || sid==368 || sid==371);
+        case FTKIND_SAMUS:
+            return (sid==347 || sid==348 || sid==351 || sid==352 || sid==354 || sid==356 || sid==357);
+        case FTKIND_SHEIK:
+            return ((sid>=345 && sid <= 348) || sid==352 || sid==358 || sid==363);
+        case FTKIND_YOSHI:
+            return (sid==351 || sid==360 || sid==365 || sid==368);
+        case FTKIND_ZELDA:
+            return (sid==342 || sid==346 || sid==352 || sid==357);
+        case FTKIND_KIRBY:
+            return (sid==371 || sid==384 || sid==389 || sid==396 || sid==400 || sid==404 || sid==411 
+                || sid==412 || sid==418 || sid==419 || sid==426 || sid==430 || sid==432 || sid==434 
+                || sid==439 || sid==446 || sid==451 || sid==454 || (sid>=460 && sid<=464) || sid==466
+                || sid==466 || (sid>=471 && sid<=474) || sid==483 || sid==484 || sid==496 
+                || (sid>=505 && sid<=509) || sid==511 || sid==513 || sid==517 || sid==523 || sid==527
+                || sid==529 || sid==534); //kirby lmao
+        default:
+            return false;
+    }
+}
+
+static bool DoubleJumpCheck(const int ft_kind, const int state_id) {
+    if (ft_kind == FTKIND_JIGGLYPUFF) {
+        return state_id >= 341 && state_id <= 345;
+    } else if (ft_kind == FTKIND_KIRBY) {
+        return state_id >= 341 && state_id <=350;
+    } else {
+        return state_id == ASID_JUMPAERIALF || state_id == ASID_JUMPAERIALB;
+    }
+}
+
+static void RunOSD_ActOoAerial(GOBJ *ft, GOBJ *ft_sub) { 
+    FighterData *ft_data = ft->userdata;
+    
+    int ply = ft_data->ply;
+    static int atk_hit_state[6] = {0}; //0 means waiting/not in an aerial
+    static int prev_state_frame[6] = {0};
+
+    // Detect when aerial happens
+    if (atk_hit_state[ply] == 0) {
+        if (IsAerialState(ft_data->kind, ft_data->state_id)) 
+            atk_hit_state[ply] = ft_data->state_id;
+        return;
+    }
+
+    int atk_state = ft_data->state_id; 
+
+    static int osd_start_frame = 0;
+    static int IASA_start_frame = 0;
+
+    const int timeout = 15;
+
+    //checks for state changing
+    //also checks for state not changing but state frames being decreased in case of frame one same aerial
+    if ((atk_hit_state[ply] != atk_state || (atk_hit_state[ply] == atk_state && ft_data->TM.state_frame < prev_state_frame[ply]))
+        && osd_start_frame == 0)
+        osd_start_frame = stc_match->time_frames;
+    
+    //checks for if IASA frames and starts timer for them for aerial and dj which can use IASA frames 
+    if (CheckIASA(ft_data) && IASA_start_frame == 0)
+        IASA_start_frame = stc_match->time_frames;
+
+    //reset if hit ground
+    if (atk_state == ASID_LANDING || (atk_state >= ASID_LANDINGAIRN && atk_state <= ASID_LANDINGAIRLW)) {
+        osd_start_frame = 0;
+        atk_hit_state[ply] = 0;
+    }
+
+    if (osd_start_frame != 0 || IASA_start_frame != 0) {
+        int speed_frames = 0;                            //vvv  prevents it calling the residual frames of the first aerial a new aerial thats out frame one during its iasa
+        if ((IsAerialState(ft_data->kind, atk_state) && !CheckIASA(ft_data)) || DoubleJumpCheck(ft_data->kind, atk_state)){
+            speed_frames = IASA_start_frame != 0 ? IASA_start_frame : osd_start_frame;
+
+            osd_start_frame = 0;
+            IASA_start_frame = 0;
+            atk_hit_state[ply] = 0;
+        }
+        if (IsAirSpecialMoveStartupState(ft_data->kind, atk_state) || atk_state == ASID_ESCAPEAIR || ASID_LANDINGFALLSPECIAL){
+            speed_frames = osd_start_frame; //these actions can't be used during IASA frames
+
+            osd_start_frame = 0;
+            IASA_start_frame = 0;
+            atk_hit_state[ply] = 0;
+        }
+
+        speed_frames = stc_match->time_frames - speed_frames + 1;
+        if (speed_frames <= timeout && speed_frames > 0){
+            Message_Display(
+                OSD_ActOoAerial, ft_data->ply,
+                speed_frames == 1 ? MSGCOLOR_GREEN : MSGCOLOR_WHITE, 
+                "Act OoAerial\nFrame: %d", speed_frames
+            );
+        }
+    }
+    prev_state_frame[ply] = ft_data->TM.state_frame;
+}
+
+static void RunOSD_FrameAdvantage(GOBJ *ft, GOBJ *ft_sub) { 
     /*
     Detect when your shield is hit. This is ez, look for GuardSetOff.
         If the attacker is actionable and the defender is not,
@@ -327,6 +474,7 @@ void OSD_Think(GOBJ *event) {
 
 
         if (osd_enabled & (1u << OSD_FrameAdvantage)) RunOSD_FrameAdvantage(ft, ft_sub);
+        if (osd_enabled & (1u << OSD_ActOoAerial)) RunOSD_ActOoAerial(ft, ft_sub); 
         if (osd_enabled & (1u << OSD_FighterSpecificTech)) {
             // ICE CLIMBERS OSDS
             static HandoffState handoff_states[6][2];
