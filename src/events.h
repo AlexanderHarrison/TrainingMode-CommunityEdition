@@ -230,6 +230,9 @@ typedef struct RNGControl
     u8 luigi_misfire;   // 0x2
     u8 gnw_hammer;      // 0x3
     u8 nana_throw;      // 0x4
+    u8 nana_pummel_enable;
+    u8 nana_pummel_min;
+    u8 nana_pummel_max;
 } RNGControl;
 
 typedef struct HUDCamData {
