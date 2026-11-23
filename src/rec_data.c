@@ -23,6 +23,7 @@ u32 rec_event_data_sizes[RecEvent_Count] = {
     sizeof(RecEventData_MenuSettings_CustomOSDs),
     sizeof(RecEventData_MenuSettings_Overlays),
     sizeof(RecEventData_MenuSettings_RNGControl),
+    sizeof(RecEventData_MenuSettings_DisplayOptions),
 };
 
 static ParsedExportData_v2 ExportData_Import_v2(u8 *transfer_buf) {

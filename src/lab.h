@@ -979,10 +979,10 @@ enum export_option
     OPTEXP_SETTINGS_ACTION_LOG,
     OPTEXP_SETTINGS_CUSTOM_OSDS,
     OPTEXP_SETTINGS_OVERLAYS,
+    OPTEXP_SETTINGS_DISPLAY,
 
     OPTEXP_COUNT
 };
-
 
 static EventOption LabOptions_Export[OPTEXP_COUNT] = {
     {
@@ -1038,6 +1038,12 @@ static EventOption LabOptions_Export[OPTEXP_COUNT] = {
         .val = 1,
         .name = "Action Log",
         .desc = {"Export the Action Log."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .val = 0,
+        .name = "Display",
+        .desc = {"Export Display settings."},
     },
     {
         .kind = OPTKIND_TOGGLE,

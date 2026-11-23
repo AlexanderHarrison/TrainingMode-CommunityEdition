@@ -184,6 +184,7 @@ typedef enum RecEvent {
     RecEvent_MenuSettings_CustomOSDs,
     RecEvent_MenuSettings_Overlays,
     RecEvent_MenuSettings_RNGControl,
+    RecEvent_MenuSettings_DisplayOptions,
     // TODO Stage 
 
     RecEvent_Count
@@ -370,5 +371,15 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_RNGControl {
     u8 gnw_hammer;
     u8 nana_throw;
 } RecEventData_MenuSettings_RNGControl;
+
+typedef struct ALIGN_4 RecEventData_MenuSettings_DisplayOptions {
+    u8 hud;
+    u8 hitboxes;
+    u8 char_models;
+    u8 env_collision;
+    u8 stage_model;
+    u8 effects;
+    u8 item_grab_sizes;
+} RecEventData_MenuSettings_DisplayOptions;
 
 #endif

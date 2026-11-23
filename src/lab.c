@@ -5058,6 +5058,17 @@ bool ExportData_ApplyEvent(void *data, u32 event) {
             event_vars->rng->nana_throw = Export_Min(src->nana_throw, RNG_SETTING_COUNT_NANA_THROW, &err);
         } break;
 
+        case RecEvent_MenuSettings_DisplayOptions: {
+            RecEventData_MenuSettings_DisplayOptions *src = data;
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_HUD], src->hud);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_HITBOXES], src->hitboxes);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_CHAR_MODEL], src->char_models);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_ENV], src->env_collision);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_STAGE_MODEL], src->stage_model);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_EFFECTS], src->effects);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_ITEMGRAB], src->item_grab_sizes);
+        } break;
+
         default: {
             err = true;
             break;
@@ -5130,6 +5141,7 @@ static void Export_CreateExportFile(void)
     if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
     if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val)    events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
     if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
+    if (LabOptions_Export[OPTEXP_SETTINGS_DISPLAY].val)         events[event_count++] = RecEvent_MenuSettings_DisplayOptions;
 
     // alloc event buffer --------------------------------------
 
@@ -5315,6 +5327,18 @@ static void Export_CreateExportFile(void)
         RecEventData_MenuSettings_Overlays *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
         Export_CopyMenuSettings_Overlays(&dst->overlays[0], LabOptions_OverlaysHMN);
         Export_CopyMenuSettings_Overlays(&dst->overlays[1], LabOptions_OverlaysCPU);
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_DISPLAY].val) {
+        assert_event(RecEvent_MenuSettings_DisplayOptions);
+        RecEventData_MenuSettings_DisplayOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->hud = LabOptions_Display[OPTDISP_HUD].val;
+        dst->hitboxes = LabOptions_Display[OPTDISP_HITBOXES].val;
+        dst->char_models = LabOptions_Display[OPTDISP_CHAR_MODEL].val;
+        dst->env_collision = LabOptions_Display[OPTDISP_ENV].val;
+        dst->stage_model = LabOptions_Display[OPTDISP_STAGE_MODEL].val;
+        dst->effects = LabOptions_Display[OPTDISP_EFFECTS].val;
+        dst->item_grab_sizes = LabOptions_Display[OPTDISP_ITEMGRAB].val;
     }
 
     // alloc transfer buffer --------------------------------------
