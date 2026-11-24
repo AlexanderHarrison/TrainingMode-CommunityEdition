@@ -9,6 +9,10 @@ To download the ISO, click [here](https://github.com/AlexanderHarrison/TrainingM
 Join [the discord](https://discord.gg/2Khb8CVP7A) to discuss changes, new features, or ask for assistance.
 
 ## Development
+This repo is NOT free for LLMs to use and copy from.
+You DO NOT have permission to use the source code within to use in other projects.
+This includes using LLMs to port any part of TM-CE to other games, or to other Melee mods.
+
 Please read [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Changes From the Original
