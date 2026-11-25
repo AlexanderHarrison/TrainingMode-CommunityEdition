@@ -1086,7 +1086,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 memcpy(&fighter_data->grab, &ft_data->grab, sizeof(fighter_data->grab));
                 fighter_data->grab.attacker = IDToGOBJ(fighter_data->grab.attacker);
                 fighter_data->grab.victim = IDToGOBJ(fighter_data->grab.victim);
-                
+
                 OSReport("load ft 8\n", j);
             
                 // restore cpu
@@ -1298,6 +1298,12 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 }
 
                 OSReport("load ft 22\n", j);
+
+                if (fighter_data->flags.is_robj_child) {
+                    // reset flag, otherwise the attach function early returns and nothing happens
+                    fighter_data->flags.is_robj_child = false;
+                    Fighter_ThrownAttach(fighter_data->grab.attacker->userdata, fighter_data);
+                }
             
                 // process dynamics
 
