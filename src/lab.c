@@ -355,6 +355,48 @@ void Lab_ChangeCharacterRng_NanaThrow(GOBJ *menu_gobj, int value) {
     event_vars->rng->nana_throw = value;
 }
 
+static EventOption *Lab_FindCharRngOption(void (*OnChange)(GOBJ *menu_gobj, int value)) {
+    MenuData *menu_data = event_vars->menu_gobj->userdata;
+    EventMenu *menu = menu_data->curr_menu;
+    for (int i = 0; i < menu->option_num; ++i) {
+        if (menu->options[i].OnChange == OnChange)
+            return &menu->options[i];
+    }
+    return NULL;
+}
+
+void Lab_ChangeCharacterRng_NanaPummelEnable(GOBJ *menu_gobj, int value) {
+    event_vars->rng->nana_pummel_enable = value;
+
+    EventOption *min_opt = Lab_FindCharRngOption(Lab_ChangeCharacterRng_NanaPummelMin);
+    if (min_opt) min_opt->disable = !value;
+    EventOption *max_opt = Lab_FindCharRngOption(Lab_ChangeCharacterRng_NanaPummelMax);
+    if (max_opt) max_opt->disable = !value;
+
+    if (value) {
+        if (min_opt) event_vars->rng->nana_pummel_min = min_opt->val;
+        if (max_opt) event_vars->rng->nana_pummel_max = max_opt->val;
+    }
+}
+
+void Lab_ChangeCharacterRng_NanaPummelMin(GOBJ *menu_gobj, int value) {
+    event_vars->rng->nana_pummel_min = value;
+    if (value > event_vars->rng->nana_pummel_max) {
+        event_vars->rng->nana_pummel_max = value;
+        EventOption *max_opt = Lab_FindCharRngOption(Lab_ChangeCharacterRng_NanaPummelMax);
+        if (max_opt) max_opt->val = value;
+    }
+}
+
+void Lab_ChangeCharacterRng_NanaPummelMax(GOBJ *menu_gobj, int value) {
+    event_vars->rng->nana_pummel_max = value;
+    if (value < event_vars->rng->nana_pummel_min) {
+        event_vars->rng->nana_pummel_min = value;
+        EventOption *min_opt = Lab_FindCharRngOption(Lab_ChangeCharacterRng_NanaPummelMin);
+        if (min_opt) min_opt->val = value;
+    }
+}
+
 // --------------------------------------------------------
 
 void Lab_StartMoveCPU(GOBJ *menu_gobj) {
