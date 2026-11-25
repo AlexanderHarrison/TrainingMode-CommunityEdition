@@ -35,10 +35,6 @@ static bool IsObjectPtr(void *ptr) {
     return true;
 }
 
-// static bool IsObjectPtrOrNull(void *ptr) {
-//     return ptr == 0 || IsObjectPtr(ptr);
-// }
-
 static GOBJ *GOBJToID(GOBJ *gobj) {
     if (!IsObjectPtr(gobj))
         return 0;
@@ -348,32 +344,6 @@ static bool PotentialJOBJ(JOBJ *ptr) {
 int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
 {
     OSReport("START SAVE --------------------------------------\n");
-    // ensure no players are in problematic states
-    if (flags & Savestate_Checks) {
-        GOBJ **gobj_list = R13_PTR(-0x3E74);
-        GOBJ *fighter = gobj_list[8];
-        while (fighter != 0)
-        {
-            FighterData *fighter_data = fighter->userdata;
-            
-            // TODO remove
-            if ((fighter_data->cb.OnDeath_Persist != 0) ||
-                (fighter_data->cb.OnDeath_State != 0) ||
-                (fighter_data->cb.OnDeath3 != 0) ||
-                (fighter_data->item.held != 0) ||
-                (fighter_data->item.held_2 != 0) ||
-                (fighter_data->accessory != 0) ||
-                ((fighter_data->kind == FTKIND_NESS) && ((fighter_data->state_id >= 342) && (fighter_data->state_id <= 344)))) // hardcode ness' usmash because it doesnt destroy the yoyo via onhit callback...
-            {
-                // cannot save
-                if ((flags & Savestate_Silent) == 0)
-                    SFX_PlayCommon(3);
-                return false;
-            }
-    
-            fighter = fighter->next;
-        }
-    }
 
     savestate->header.version_major = 2;
     savestate->header.version_minor = 0;
@@ -1429,6 +1399,6 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         SFX_PlayCommon(0);
 
     OSReport("load finish\n");
-    
+
     return true;
 }

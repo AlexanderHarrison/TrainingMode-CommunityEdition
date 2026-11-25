@@ -366,7 +366,8 @@ typedef struct Savestate_v1
 } Savestate_v1;
 
 enum savestate_flags {
-    // save: perform initial safety checks 
+    // save: perform initial safety checks
+    // not used in v2
     Savestate_Checks = 1 << 0,
     
     // save/load: don't play sfx and screen flash 
