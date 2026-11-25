@@ -62,6 +62,7 @@
     .set OSD.BoostGrab, 14
     .set OSD.Miscellaneous, 15
     .set OSD.ActOoWait, 16
+    .set OSD.ActOoAerial, 17
     .set OSD.ActOoAirborne, 18
     .set OSD.ActOoJumpSquat, 19
     .set OSD.Fastfall, 20
