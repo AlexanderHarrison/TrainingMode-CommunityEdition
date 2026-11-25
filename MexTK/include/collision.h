@@ -120,10 +120,6 @@ struct CollData
     u8 ceil_type;                // 0x18E, platform/ledgegrab
     u8 ceil_mat;                 // 0x18F, grass/ice etc
     Vec3 ceil_slope;             // 0x190
-    union                        // 0x19c,
-    {                            //
-        int ecb_bot_lock_frames; // fighters use this. frames until ecb bottom offset is no longer locked
-    } u;                         //
 };
 
 struct CollGroupDesc // exists in stage file

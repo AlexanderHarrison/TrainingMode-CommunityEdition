@@ -8,15 +8,8 @@ static DIDraw didraws[6];
 static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
-static RecData rec_data;
-static Savestate_v1 *rec_state;
-static _HSD_ImageDesc snap_image = {0};
-static _HSD_ImageDesc resized_image = {
-    .format = 4,
-    .height = RESIZE_HEIGHT,
-    .width = RESIZE_WIDTH,
-};
-static u8 snap_status;
+static RecData_v1 rec_data;
+static SavestateHeader *rec_state;
 static u8 export_status;
 static Arch_LabData *stc_lab_data;
 static char *tm_filename = "TMREC_%02d%02d%04d_%02d%02d%02d";
@@ -67,23 +60,33 @@ static float hmn_locked_percent = 0;
 // so we calculate it on the first frame of landing and store it here. 
 static bool did_player_miss_lcancel[2] = {false, false};
 
+// Aitch: Because we record and restore the RNG seed each playback frame for playback consistency,
+// we can't use the built-in HSD_Rand* function in the lab. So we use our own!
+static u32 stc_lab_rng_seed;
+static u32 Lab_Rand(void) {
+    stc_lab_rng_seed = stc_lab_rng_seed * 214013 + 2531011;
+    return stc_lab_rng_seed >> 0x10;
+}
+static f32 Lab_Randf(void) { return (f32)Lab_Rand() / (1 << 16u); }
+static int Lab_Randi(int max_val) { return max_val * Lab_Rand() / (1 << 16u); }
+
 // Menu Callbacks
 
-RecInputData *Lab_GetAlteringRecording(void) {
+RecInputData_v1 *Lab_GetAlteringRecording(void) {
     int ply = LabOptions_SlotManagement[OPTSLOT_PLAYER].val;
     int slot = LabOptions_SlotManagement[OPTSLOT_SRC].val;
-    RecInputData **rec_list = ply == PLAYER_HMN ? rec_data.hmn_inputs : rec_data.cpu_inputs;
+    RecInputData_v1 **rec_list = ply == PLAYER_HMN ? rec_data.hmn_inputs : rec_data.cpu_inputs;
     return rec_list[slot];
 }
 
 RecInputs *Lab_GetAlteringInputs(void) {
-    RecInputData *rec = Lab_GetAlteringRecording();
+    RecInputData_v1 *rec = Lab_GetAlteringRecording();
     int frame_idx = LabOptions_AlterInputs[OPTINPUT_FRAME].val - 1;
     return &rec->inputs[frame_idx];
 }
 
 void Lab_ChangeAlterInputsFrame(GOBJ *menu_gobj, int value) {
-    RecInputData *rec = Lab_GetAlteringRecording();
+    RecInputData_v1 *rec = Lab_GetAlteringRecording();
     int frame = LabOptions_AlterInputs[OPTINPUT_FRAME].val;
     if (rec->num < frame)
         rec->num = frame;
@@ -946,7 +949,7 @@ void InfoDisplay_Update(GOBJ *menu_gobj, EventOption menu[], GOBJ *fighter, GOBJ
                 }
                 case (INFDISP_ECBLOCK):
                 {
-                    Text_SetText(text, i, "ECB Lock: %d", fighter_data->coll_data.u.ecb_bot_lock_frames);
+                    Text_SetText(text, i, "ECB Lock: %d", fighter_data->ecb_bot_lock_frames);
                     break;
                 }
                 case (INFDISP_ECBBOT):
@@ -1385,7 +1388,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
             
             // choose random normal counter action in action list 
             for (;;) {
-                action_id = actions[HSD_Randi(action_count)];
+                action_id = actions[Lab_Randi(action_count)];
                 if (CPUACT_NORMAL_START <= action_id && action_id < CPUACT_NORMAL_END)
                     break;
             }
@@ -1428,7 +1431,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
             if (custom_action_ids_count == 0)
                 return true;
     
-            action_id = custom_action_ids[HSD_Randi(custom_action_ids_count)];
+            action_id = custom_action_ids[Lab_Randi(custom_action_ids_count)];
             stc_rndm_counter_slot = action_id;
         }
 
@@ -1451,7 +1454,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
         } else {
             rec_idx = recSlot-1;
         }
-        RecInputData *data = rec_data.cpu_inputs[rec_idx];
+        RecInputData_v1 *data = rec_data.cpu_inputs[rec_idx];
 
         if (data->start_frame < 0 || frame >= data->num) {
             stc_rndm_counter_slot = -1;
@@ -1518,7 +1521,7 @@ int Lab_CPUPerformAction(GOBJ *cpu, int action_id, GOBJ *hmn)
             dir = -cpu_data->facing_direction;
             break;
         case STICKDIR_RDM:
-            dir = HSD_Randi(2) ? -1 : 1;
+            dir = Lab_Randi(2) ? -1 : 1;
             break;
         default:
             assert("Invalid stick dir");
@@ -1635,7 +1638,7 @@ void CPUOnHit(void) {
         case (CPUTDI_RANDOM):
         TDI_RANDOM:
         {
-            switch (HSD_Randi(3)) {
+            switch (Lab_Randi(3)) {
                 case 0: goto TDI_IN;
                 case 1: goto TDI_OUT;
                 case 2: goto TDI_NONE;
@@ -1690,7 +1693,7 @@ void CPUOnHit(void) {
             };
             
             int di_num = eventData->cpu_hitnum > 1 ? 8 : 5;
-            struct DI di = di_options[HSD_Randi(di_num)];
+            struct DI di = di_options[Lab_Randi(di_num)];
             
             eventData->cpu_tdi_lstick_x = di.x;
             eventData->cpu_tdi_lstick_y = di.y;
@@ -1714,7 +1717,7 @@ void CPUOnHit(void) {
         }
         case (CPUTDI_RANDOM_CUSTOM):
         {
-            custom_di = &stc_tdi_vals[HSD_Randi(stc_tdi_val_num)];
+            custom_di = &stc_tdi_vals[Lab_Randi(stc_tdi_val_num)];
             int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
             eventData->cpu_tdi_lstick_x = (int)(custom_di->lstickX * 127.f) * dir_factor;
             eventData->cpu_tdi_lstick_y = (int)(custom_di->lstickY * 127.f);
@@ -1801,13 +1804,13 @@ void CPUOnHit(void) {
             // when grounded, only left right
             if (cpu_data->phys.air_state == 0)
             {
-                eventData->cpu_sdi_lstick_x = HSD_Randi(2) ? -127 : 127;
+                eventData->cpu_sdi_lstick_x = Lab_Randi(2) ? -127 : 127;
                 eventData->cpu_sdi_lstick_y = 0;
             }
             // when airborne, any direction
             else
             {
-                float angle = HSD_Randf() * (2.f * M_PI);
+                float angle = Lab_Randf() * (2.f * M_PI);
                 eventData->cpu_sdi_lstick_x = cos(angle) * 127.f;
                 eventData->cpu_sdi_lstick_y = sin(angle) * 127.f;
             }
@@ -2092,8 +2095,8 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         if (mash == CPUMASH_NONE) {
             Fighter_ZeroCPUInputs(cpu_data);
         }
-        else if ((mash == CPUMASH_MED && HSD_Randi(100) <= CPUMASHRNG_MED)
-                || (mash == CPUMASH_HIGH && HSD_Randi(100) <= CPUMASHRNG_HIGH)
+        else if ((mash == CPUMASH_MED && Lab_Randi(100) <= CPUMASHRNG_MED)
+                || (mash == CPUMASH_HIGH && Lab_Randi(100) <= CPUMASHRNG_HIGH)
                 || mash == CPUMASH_PERFECT)
         {
             // remove last frame inputs
@@ -2241,7 +2244,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
         // perform tech behavior
         int tech = LabOptions_Tech[OPTTECH_TECH].val;
         if (tech == CPUTECH_RANDOM) {
-            float roll = HSD_Randf() * 100.0f;
+            float roll = Lab_Randf() * 100.0f;
             float tip_chance = LabOptions_Tech[OPTTECH_TECHINPLACECHANCE].val;
             float away_chance = LabOptions_Tech[OPTTECH_TECHAWAYCHANCE].val;
             float toward_chance = LabOptions_Tech[OPTTECH_TECHTOWARDCHANCE].val;
@@ -2299,7 +2302,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
             break;
         } else {
             int wait_chance = LabOptions_Tech[OPTTECH_GETUPWAITCHANCE].val;
-            if (HSD_Randi(100) < wait_chance) {
+            if (Lab_Randi(100) < wait_chance) {
                 eventData->cpu_miss_tech_wait_timer = 15;
                 break;
             }
@@ -2307,7 +2310,7 @@ void CPUThink(GOBJ *event, GOBJ *hmn, GOBJ *cpu)
 
         int getup = LabOptions_Tech[OPTTECH_GETUP].val;
         if (getup == CPUGETUP_RANDOM) {
-            float roll = HSD_Randf() * 100.0f;
+            float roll = Lab_Randf() * 100.0f;
             float stand_chance = LabOptions_Tech[OPTTECH_GETUPSTANDCHANCE].val;
             float away_chance = LabOptions_Tech[OPTTECH_GETUPAWAYCHANCE].val;
             float toward_chance = LabOptions_Tech[OPTTECH_GETUPTOWARDCHANCE].val;
@@ -2577,7 +2580,7 @@ int Update_CheckAdvance()
             timer_dec++;
 
             int curr_frame = Record_GetCurrFrame();
-            if (rec_state->is_exist == 1 && (timer_dec == 1 || timer_dec > 30)) {
+            if (rec_state->is_initialized == 1 && (timer_dec == 1 || timer_dec > 30)) {
                 Record_Restart(rec_state, Savestate_Silent);
                 if (curr_frame > 0) {
                     stc_recording_target_frame = curr_frame - 1;
@@ -2806,7 +2809,7 @@ void DIDraw_Update(void)
                 {
 
                     // update bone positions.  If loop count < noECBUpdate-remaining hitlag fraes, use current ECB bottom Y offset
-                    if (vertices_num < (fighter_data->coll_data.u.ecb_bot_lock_frames - fighter_data->dmg.hitlag_frames))
+                    if (vertices_num < (fighter_data->ecb_bot_lock_frames - fighter_data->dmg.hitlag_frames))
                     {
 
                         ecb_size.topY = fighter_data->coll_data.ecbCurr_top.Y;
@@ -3555,7 +3558,7 @@ void Record_CopySlot(GOBJ *menu_gobj) {
     int target_slot = LabOptions_SlotManagement[OPTSLOT_DST].val;
     if (copy_slot == target_slot) return;
 
-    RecInputData **data;
+    RecInputData_v1 **data;
     EventOption *chances;
     if (player == PLAYER_HMN) {
         data = rec_data.hmn_inputs;
@@ -3567,7 +3570,7 @@ void Record_CopySlot(GOBJ *menu_gobj) {
 
     chances[target_slot].disable = chances[copy_slot].disable;
     chances[target_slot].val = chances[copy_slot].val;
-    memcpy(data[target_slot], data[copy_slot], sizeof(RecInputData));
+    memcpy(data[target_slot], data[copy_slot], sizeof(RecInputData_v1));
 
     s16 *values[REC_SLOTS];
     int value_count = EnabledSlotChances(chances, values);
@@ -3578,7 +3581,7 @@ void Record_DeleteSlot(GOBJ *menu_gobj) {
     int player = LabOptions_SlotManagement[OPTSLOT_PLAYER].val;
     int delete_slot = LabOptions_SlotManagement[OPTSLOT_SRC].val;
 
-    RecInputData **data;
+    RecInputData_v1 **data;
     EventOption *chances;
     if (player == PLAYER_HMN) {
         data = rec_data.hmn_inputs;
@@ -3593,8 +3596,8 @@ void Record_DeleteSlot(GOBJ *menu_gobj) {
     data[delete_slot]->num = 0;
 }
 
-void InitInputSlot(RecInputData **data) {
-    *data = calloc(sizeof(RecInputData));
+void InitInputSlot(RecInputData_v1 **data) {
+    *data = calloc(sizeof(RecInputData_v1));
     (*data)->start_frame = -1;
     (*data)->num = 0;
 }
@@ -3605,6 +3608,7 @@ GOBJ *Record_Init()
     // Create GOBJ
     GOBJ *rec_gobj = GObj_Create(0, 7, 0);
     // Add per frame process
+    GObj_AddProc(rec_gobj, Record_UpdateRNGSeed, 0);
     GObj_AddProc(rec_gobj, Record_Think, 3);
 
     evMenu *menuAssets = event_vars->menu_assets;
@@ -3652,9 +3656,9 @@ GOBJ *Record_Init()
     rec_data.text = text;
 
     // alloc rec_state
-    rec_state = calloc(sizeof(Savestate_v1));
+    rec_state = calloc(sizeof(Savestate_v2));
     // set as not exist
-    rec_state->is_exist = 0;
+    rec_state->is_initialized = 0;
 
     // disable menu options
     for (u32 i = 0; i < countof(LabOptions_Record); i++)
@@ -3672,31 +3676,13 @@ GOBJ *Record_Init()
     InitInputSlot(&rec_data.hmn_rerecord_inputs);
     InitInputSlot(&rec_data.cpu_rerecord_inputs);
 
+    rec_data.rng_seed_recording = calloc(REC_LENGTH * sizeof(*rec_data.rng_seed_recording));
+    rec_data.rng_seed_recording_num = 0;
+
     // init memcard stuff
     Memcard_InitWorkArea();
     Memcard_InitSnapshotList(HSD_MemAlloc(2112), HSD_MemAlloc(256064));
 
-    // Create snapshot cam
-    snap_image.img_ptr = 0;
-    GOBJ *snap_gobj = GObj_Create(18, 18, 0);
-    GOBJ_InitCamera(snap_gobj, Snap_CObjThink, 4);
-    GX_AllocImageData(&snap_image, EXP_SCREENSHOT_WIDTH, EXP_SCREENSHOT_HEIGHT, 4, 2006);
-    export_status = EXSTAT_NONE;
-
-    /*
-    // init dev text
-    int height = 18;
-    int width = 28;
-    int x = -50;
-    int y = 410;
-    DevText *dev_text = DevelopText_CreateDataTable(x, y, 0, width, height, HSD_MemAlloc(height * width * 2));
-    stc_devtext = dev_text;
-    DevelopText_Activate(0, dev_text);
-    dev_text->cursorBlink = 0;
-    GXColor color = {21, 20, 59, 135};
-    DevelopText_StoreBGColor(dev_text, &color);
-    DevelopText_StoreTextScale(dev_text, 7.5, 10);
-    */
     return rec_gobj;
 }
 void Record_GX(GOBJ *gobj, int pass)
@@ -3800,18 +3786,46 @@ void Record_GX(GOBJ *gobj, int pass)
     GXLink_Common(gobj, pass);
 }
 
+/*
+Aitch: It's a bit tricky to maintain consistent RNG.
+I wanted each recording to have the same outcome each time through internal game RNG.
+But we can't record the rng for each cpu/hmn slot independently.
+Should I record one for each cpu slot? For each hmn slot? For each combination?
+Hard to say. For now, just record rng from the last recording and use that for every playback.
+This does mean that recording one slot might fail during playback after recording a different slots.
+But in that case, you usually are mix and matching slots anyways so rng doesn't matter too much.
+The case where you only have one single recording slot is the most important to have consistent.
+This method also allows rwing exports to easily send the rng seeds for playback, removing randomness desyncs.
+*/
+void Record_UpdateRNGSeed(GOBJ *rec_gobj) {
+    int curr_frame = Record_GetCurrFrame();
+    if (Record_HMN_IsRecording() || Record_CPU_IsRecording()) {
+        // record seed
+        if (curr_frame < REC_LENGTH) {
+            rec_data.rng_seed_recording[curr_frame] = *stc_rng_seed;
+            if (curr_frame >= rec_data.rng_seed_recording_num)
+                rec_data.rng_seed_recording_num = curr_frame + 1;
+        }
+    } else if (Record_HMN_IsPlayback() || Record_CPU_IsPlayback()) {
+        // replay seed
+        if (curr_frame < rec_data.rng_seed_recording_num)
+            *stc_rng_seed = rec_data.rng_seed_recording[curr_frame];
+    }
+}
+
 void Record_Think(GOBJ *rec_gobj)
 {
-    if (rec_state->is_exist != 1) return;
+    if (rec_state->is_initialized != 1) return;
 
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
 
     int hmn_slot = Record_GetSlot(0);
     int cpu_slot = Record_GetSlot(1);
+    int curr_frame = Record_GetCurrFrame();
 
-    RecInputData *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
-    RecInputData *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
+    RecInputData_v1 *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
+    RecInputData_v1 *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
     int hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
     int cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
     
@@ -3825,6 +3839,7 @@ void Record_Think(GOBJ *rec_gobj)
     int adjusted_hmn_mode = hmn_mode;
     if (adjusted_hmn_mode > 0) // adjust hmn_mode to match cpu_mode
         adjusted_hmn_mode++;
+
     Record_Update(0, hmn_inputs, rec_data.hmn_rerecord_inputs, adjusted_hmn_mode);
     Record_Update(1, cpu_inputs, rec_data.cpu_rerecord_inputs, cpu_mode);
 
@@ -3835,7 +3850,7 @@ void Record_Think(GOBJ *rec_gobj)
         && !Record_CPU_IsRecording()
         && cpu_mode != RECMODE_CPU_CONTROL;
     int has_inputs = input_num != 0;
-    int past_last_input = Record_GetCurrFrame() >= input_num;
+    int past_last_input = curr_frame >= input_num;
     if (loop_mode & modes_allow_loop & has_inputs & past_last_input)
     {
         event_vars->game_timer = rec_state->frame;
@@ -3881,7 +3896,6 @@ void Record_Think(GOBJ *rec_gobj)
             Record_LoadSavestate(rec_state);
     }
 
-    int curr_frame = Record_GetCurrFrame();
     if (curr_frame >= stc_recording_target_frame) {
         event_vars->flags &= ~EventVarsFlag_ForceGameLoop;
         stc_recording_target_frame = -1;
@@ -3971,7 +3985,7 @@ static void Record_ClampPad(s8 *store_x, s8 *store_y, s8 prev_raw_x, s8 prev_raw
 }
 
 // assumes rec_mode_cpu
-void Record_Update(int ply, RecInputData *input_data, RecInputData *rerecord_input_data, int rec_mode)
+void Record_Update(int ply, RecInputData_v1 *input_data, RecInputData_v1 *rerecord_input_data, int rec_mode)
 {
     GOBJ *fighter = Fighter_GetGObj(ply);
     FighterData *fighter_data = fighter->userdata;
@@ -4120,8 +4134,9 @@ void Record_InitState(GOBJ *menu_gobj)
 {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
-    if (event_vars->Savestate_Save_v1(rec_state, 0))
+    if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
         Record_OnSuccessfulSave(1);
+    }
 }
 
 // returns time_diff
@@ -4130,8 +4145,9 @@ int Record_RemakeState(void)
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     int prev_frame = rec_state->frame;
-    if (event_vars->Savestate_Save_v1(rec_state, 0))
+    if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
         Record_OnSuccessfulSave(0);
+    }
     int new_frame = rec_state->frame;
     int time_diff = new_frame - prev_frame;
     
@@ -4147,7 +4163,7 @@ int Record_RemakeState(void)
         
         for (int ply = 0; ply < 2; ++ply) {
             for (int slot = 0; slot < REC_SLOTS; ++slot) {
-                RecInputData *input_data;
+                RecInputData_v1 *input_data;
                 if (ply == 0)
                     input_data = rec_data.hmn_inputs[slot];
                 else
@@ -4173,7 +4189,7 @@ void Record_ResaveState(GOBJ *menu_gobj)
     // change start frame
     for (int ply = 0; ply < 2; ++ply) {
         for (int slot = 0; slot < REC_SLOTS; ++slot) {
-            RecInputData *input_data;
+            RecInputData_v1 *input_data;
             if (ply == 0)
                 input_data = rec_data.hmn_inputs[slot];
             else
@@ -4192,7 +4208,7 @@ void Record_PruneState(GOBJ *menu_gobj)
     // change start frame
     for (int ply = 0; ply < 2; ++ply) {
         for (int slot = 0; slot < REC_SLOTS; ++slot) {
-            RecInputData *input_data;
+            RecInputData_v1 *input_data;
             if (ply == 0)
                 input_data = rec_data.hmn_inputs[slot];
             else
@@ -4216,7 +4232,7 @@ void Record_PruneState(GOBJ *menu_gobj)
 }
 void Record_DeleteState(GOBJ *menu_gobj)
 {
-    rec_state->is_exist = 0;
+    rec_state->is_initialized = 0;
 
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
@@ -4266,9 +4282,9 @@ void Record_ChangeHMNSlot(GOBJ *menu_gobj, int value)
     {
         int prev_slot = LabOptions_Record[OPTREC_HMNSLOT].val_prev;
         if (prev_slot != 0)
-            memcpy(rec_data.hmn_inputs[prev_slot - 1], rec_data.hmn_rerecord_inputs, sizeof(RecInputData));
+            memcpy(rec_data.hmn_inputs[prev_slot - 1], rec_data.hmn_rerecord_inputs, sizeof(RecInputData_v1));
 
-        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData));
+        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData_v1));
     }
 
     // reload save
@@ -4290,9 +4306,9 @@ void Record_ChangeCPUSlot(GOBJ *menu_gobj, int value)
     {
         int prev_slot = LabOptions_Record[OPTREC_CPUSLOT].val_prev;
         if (prev_slot != 0)
-            memcpy(rec_data.cpu_inputs[prev_slot - 1], rec_data.cpu_rerecord_inputs, sizeof(RecInputData));
+            memcpy(rec_data.cpu_inputs[prev_slot - 1], rec_data.cpu_rerecord_inputs, sizeof(RecInputData_v1));
 
-        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData));
+        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData_v1));
     }
 
     // reload save
@@ -4329,11 +4345,11 @@ void Record_ChangeHMNMode(GOBJ *menu_gobj, int value)
 {
     // copy rerecorded slot
     if (LabOptions_Record[OPTREC_HMNMODE].val == RECMODE_HMN_RERECORD)
-        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData));
+        memcpy(rec_data.hmn_rerecord_inputs, rec_data.hmn_inputs[Record_GetSlot(0)], sizeof(RecInputData_v1));
     
     // copy back rerecorded slot
     if (LabOptions_Record[OPTREC_HMNMODE].val_prev == RECMODE_HMN_RERECORD)
-        memcpy(rec_data.hmn_inputs[Record_GetSlot(0)], rec_data.hmn_rerecord_inputs, sizeof(RecInputData));
+        memcpy(rec_data.hmn_inputs[Record_GetSlot(0)], rec_data.hmn_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_HMN_PLAYBACK || value == RECMODE_HMN_RERECORD)
         Record_LoadSavestate(rec_state);
@@ -4343,11 +4359,11 @@ void Record_ChangeCPUMode(GOBJ *menu_gobj, int value)
 {
     // copy rerecorded slot
     if (LabOptions_Record[OPTREC_CPUMODE].val == RECMODE_CPU_RERECORD)
-        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData));
+        memcpy(rec_data.cpu_rerecord_inputs, rec_data.cpu_inputs[Record_GetSlot(1)], sizeof(RecInputData_v1));
     
     // copy back rerecorded slot
     if (LabOptions_Record[OPTREC_CPUMODE].val_prev == RECMODE_CPU_RERECORD)
-        memcpy(rec_data.cpu_inputs[Record_GetSlot(1)], rec_data.cpu_rerecord_inputs, sizeof(RecInputData));
+        memcpy(rec_data.cpu_inputs[Record_GetSlot(1)], rec_data.cpu_rerecord_inputs, sizeof(RecInputData_v1));
     
     if (value == RECMODE_CPU_PLAYBACK || value == RECMODE_CPU_RERECORD)
         Record_LoadSavestate(rec_state);
@@ -4369,7 +4385,7 @@ void Record_ChangeMirroredPlayback(GOBJ *menu_gobj, int value)
 
     Record_LoadSavestate(rec_state);
 }
-int Record_GetRandomSlot(RecInputData **input_data, EventOption slot_menu[])
+int Record_GetRandomSlot(RecInputData_v1 **input_data, EventOption slot_menu[])
 {
     s16 *chances[REC_SLOTS];
     int chance_count = EnabledSlotChances(slot_menu, chances);
@@ -4382,7 +4398,7 @@ int Record_GetRandomSlot(RecInputData **input_data, EventOption slot_menu[])
             slots[slot_num++] = i;
     }
 
-    int rand = HSD_Randi(100);
+    int rand = Lab_Randi(100);
 
     for (int i = 0; i < chance_count; ++i) {
         int chance = (int)*chances[i];
@@ -4416,7 +4432,7 @@ int Record_PastLastInput(int ply)
 {
     int slot = Record_GetSlot(ply);
     int curr_frame = Record_GetCurrFrame();
-    RecInputData *inputs;
+    RecInputData_v1 *inputs;
     if (ply == 0)
         inputs = rec_data.hmn_inputs[slot];
     else
@@ -4434,8 +4450,8 @@ int Record_GetEndFrame(void)
     int cpu_slot = Record_GetSlot(1);
     int curr_frame = Record_GetCurrFrame();
 
-    RecInputData *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
-    RecInputData *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
+    RecInputData_v1 *hmn_inputs = rec_data.hmn_inputs[hmn_slot];
+    RecInputData_v1 *cpu_inputs = rec_data.cpu_inputs[cpu_slot];
 
     // get what frame the longest recording ends on (savestate frame + recording start frame + recording time)
     int hmn_end_frame = 0;
@@ -4446,7 +4462,7 @@ int Record_GetEndFrame(void)
         cpu_end_frame = (cpu_inputs->start_frame + cpu_inputs->num);
 
     // find the larger recording
-    RecInputData *input_data = hmn_inputs;
+    RecInputData_v1 *input_data = hmn_inputs;
     if (cpu_end_frame > hmn_end_frame)
         input_data = cpu_inputs;
 
@@ -4482,8 +4498,8 @@ void Record_OnSuccessfulSave(int deleteRecordings)
         for (int i = 0; i < REC_SLOTS; i++)
         {
             // clear data
-            memset(rec_data.hmn_inputs[i], 0, sizeof(RecInputData));
-            memset(rec_data.cpu_inputs[i], 0, sizeof(RecInputData));
+            memset(rec_data.hmn_inputs[i], 0, sizeof(RecInputData_v1));
+            memset(rec_data.cpu_inputs[i], 0, sizeof(RecInputData_v1));
 
             // init frame this recording starts on
             rec_data.hmn_inputs[i]->start_frame = -1;
@@ -4500,11 +4516,9 @@ void Record_OnSuccessfulSave(int deleteRecordings)
     }
 
     // also save to personal savestate
-    event_vars->Savestate_Save_v1(event_vars->savestate, 0);
+    
+    event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
     event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
-
-    // take screenshot
-    snap_status = 1;
 }
 void Memcard_Wait()
 {
@@ -4565,7 +4579,6 @@ void Record_MemcardLoad(int slot, int file_no)
     {
 
         // setup load
-        MemcardSave memcard_save;
         memcard_save.data = HSD_MemAlloc(file_size);
         memcard_save.x4 = 3;
         memcard_save.size = file_size;
@@ -4582,58 +4595,16 @@ void Record_MemcardLoad(int slot, int file_no)
         // if file loaded successfully
         if (memcard_status == 0)
         {
+            ParsedExportData_v2 ed = ExportData_Import(memcard_save.data);
 
-            // enable other options
-            for (u32 i = 1; i < countof(LabOptions_Record); i++)
-            {
-                LabOptions_Record[i].disable = 0;
+            for (u32 event_idx = 0; event_idx < ed.event_count; ++event_idx) {
+                u32 event = ed.events[event_idx];
+                u32 event_offset = ed.event_offsets[event_idx];
+                OSReport("apply event %u\n", event);
+                ExportData_ApplyEvent(ed.event_data_stream + event_offset, event);
             }
 
-            // take screenshot
-            snap_status = 1;
-
-            // begin unpacking
-            u8 *transfer_buf = memcard_save.data;
-            ExportHeader *header = (ExportHeader *)transfer_buf;
-            u8 *compressed_recording = transfer_buf + header->lookup.ofst_recording;
-            ExportMenuSettings *menu_settings = (ExportMenuSettings *)(transfer_buf + header->lookup.ofst_menusettings);
-
-            // decompress
-            RecordingSave *loaded_recsave = calloc(sizeof(RecordingSave) * 1.06);
-            lz77Decompress(compressed_recording, (u8 *)loaded_recsave);
-
-            // copy buffer to savestate
-            memcpy(rec_state, &loaded_recsave->savestate, sizeof(Savestate_v1));
-            event_vars->savestate_saved_while_mirrored = false;
-            event_vars->loaded_mirrored = false;
-
-            // restore controller indices
-            rec_state->ft_state[0].player_block.controller = stc_hmn_controller;
-            rec_state->ft_state[1].player_block.controller = stc_cpu_controller;
-
-            // load state
-            Record_LoadSavestate(rec_state);
-
-            // copy recordings
-            for (int i = 0; i < REC_SLOTS; i++)
-            {
-                memcpy(rec_data.hmn_inputs[i], &loaded_recsave->hmn_inputs[i], sizeof(RecInputData));
-                memcpy(rec_data.cpu_inputs[i], &loaded_recsave->cpu_inputs[i], sizeof(RecInputData));
-            }
-
-            HSD_Free(loaded_recsave);
-
-            // copy recording settings
-            LabOptions_Record[OPTREC_HMNMODE].val = menu_settings->hmn_mode;
-            LabOptions_Record[OPTREC_HMNSLOT].val = menu_settings->hmn_slot;
-            LabOptions_Record[OPTREC_CPUMODE].val = menu_settings->cpu_mode;
-            LabOptions_Record[OPTREC_CPUSLOT].val = menu_settings->cpu_slot;
-            LabOptions_Record[OPTREC_LOOP].val = menu_settings->loop_inputs;
-            LabOptions_Record[OPTREC_AUTORESTORE].val = menu_settings->auto_restore;
-
-            // save to personal savestate
-            event_vars->Savestate_Save_v1(event_vars->savestate, 0);
-            event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
+            ExportData_Free(&ed);
         }
 
         HSD_Free(memcard_save.data);
@@ -4662,7 +4633,7 @@ void Record_RerollSlotRNG(void) {
         FighterData *fighter_data = fighter->userdata;
         int percent = fighter_data->dmg.percent;
         
-        int change = HSD_Randi(chance+1);
+        int change = Lab_Randi(chance+1);
         percent += change;
         if (percent > 999) percent = 999;
         fighter_data->dmg.percent = percent;
@@ -4671,10 +4642,12 @@ void Record_RerollSlotRNG(void) {
     }
 }
 
-void Record_Restart(Savestate_v1 *savestate, int flags) {
+void Record_Restart(SavestateHeader *savestate, int flags) {
+    if (!savestate->is_initialized) return;
+
     int mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
     if (mirror == OPTMIRROR_RANDOM)
-        mirror = HSD_Randi(2);
+        mirror = Lab_Randi(2);
 
     // if a non-major savestate is saved while mirrored, we need to unmirror again.
     if (savestate != rec_state)
@@ -4695,23 +4668,14 @@ void Record_Restart(Savestate_v1 *savestate, int flags) {
     stc_playback_cancelled_cpu = false;
     
     if (mirror) flags |= Savestate_Mirror;
-    event_vars->Savestate_Load_v1(savestate, flags);
+    event_vars->Savestate_Load(savestate, flags);
 }
 
-void Record_LoadSavestate(Savestate_v1 *savestate) {
+void Record_LoadSavestate(SavestateHeader *savestate) {
     Record_Restart(savestate, 0);
     Record_RerollSlotRNG();
 }
 
-void Snap_CObjThink(GOBJ *gobj)
-{
-    if (snap_status == 1)
-    {
-        // take snap
-        HSD_ImageDescCopyFromEFB(&snap_image, 0, 0, 0);
-        snap_status = 0;
-    }
-}
 void Savestates_Update()
 {
 
@@ -4755,7 +4719,7 @@ void Savestates_Update()
                     if (save_timer[port] == SAVE_THRESHOLD)
                     {
                         // save state
-                        event_vars->Savestate_Save_v1(event_vars->savestate, 0);
+                        event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
                         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
                         save_timer[port] = 0; // Reset timer after saving
                         lockout_timer = LOCKOUT_DURATION;
@@ -4770,7 +4734,7 @@ void Savestates_Update()
                 if (pad->down & loadstate_mask)
                 {
                     // load state
-                    Record_LoadSavestate(event_vars->savestate);
+                    Record_LoadSavestate(&event_vars->savestate2->header);
                     stc_playback_cancelled_hmn = false;
                     stc_playback_cancelled_cpu = false;
 
@@ -4832,13 +4796,609 @@ void ImageScale(RGB565 *out_img, RGB565 *in_img, int OutWidth, int OutHeight, in
         }
     }
 }
-void Export_Init(GOBJ *menu_gobj)
+
+static void OptionSetEnabled(int i, bool enabled) {
+    LabOptions_Export[i].val = enabled;
+    LabOptions_Export[i].disable = !enabled;
+}
+
+void Export_MenuOpen(GOBJ *menu) {
+    OptionSetEnabled(OPTEXP_RECORDING, rec_state->is_initialized);
+    OptionSetEnabled(OPTEXP_SETTINGS_RECORDING, rec_state->is_initialized);
+    OptionSetEnabled(OPTEXP_SETTINGS_ACTION_LOG, ActionLog_IsShowing());
+    OptionSetEnabled(OPTEXP_SETTINGS_CUSTOM_OSDS, stc_custom_osd_state_num != 0);
+
+    bool has_overlays = false;
+    for (int i = 0; i < OVERLAY_COUNT; ++i) {
+        has_overlays |= LabOptions_OverlaysHMN[i].val != 0;
+        has_overlays |= LabOptions_OverlaysCPU[i].val != 0;
+    }
+    OptionSetEnabled(OPTEXP_SETTINGS_OVERLAYS, has_overlays);
+    
+    bool has_info_display = false;
+    for (int i = 0; i < OPTINF_ROW_COUNT; ++i) {
+        has_info_display |= LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val != 0;
+        has_info_display |= LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val != 0;
+    }
+    OptionSetEnabled(OPTEXP_SETTINGS_INFO_DISPLAY, has_info_display);
+}
+
+static void Export_ApplySetting(EventOption *opt, s16 value) {
+    s16 value_num = opt->kind == OPTKIND_TOGGLE ? 2 : opt->value_num;
+    s16 value_min = opt->value_min;
+    s16 value_max = value_min + value_num - 1;
+    if (value < value_min || value_max < value) return;
+    opt->val = value;
+    if (opt->OnChange) opt->OnChange(event_vars->menu_gobj, opt->val);
+}
+
+static u32 Export_Min(u32 val, u32 max, bool *err) {
+    if (val > max) {
+        val = max;
+        *err = true;
+    }
+    return val;
+}
+
+bool ExportData_ApplyEvent(void *data, u32 event) {
+    bool err = false;
+
+    #define fallthrough __attribute__((fallthrough));
+    switch (event) {
+        case RecEvent_Null: break;
+        case RecEvent_MatchInit: break; // saved, but not actually used in v1!
+
+        case RecEvent_Savestate_v1: {
+            RecEventData_Savestate_v1 *state = data;
+            memcpy(rec_state, state, sizeof(Savestate_v1));
+            Record_LoadSavestate(rec_state);
+            Record_OnSuccessfulSave(false);
+        } break;
+
+        case RecEvent_Savestate_v2: {
+            RecEventData_Savestate_v2 *state = data;
+            memcpy(rec_state, state, sizeof(Savestate_v2));
+            Record_LoadSavestate(rec_state);
+            Record_OnSuccessfulSave(false);
+        } break;
+
+        case RecEvent_RecordingSlot_v1: {
+            static int slot_idx = 0;
+            RecEventData_RecordingSlot_v1 *slot = data;
+            if (slot_idx < 6) {
+                memcpy(rec_data.hmn_inputs[slot_idx], &slot->rec_input_data, sizeof(RecInputData_v1));
+            } else if (slot_idx < 12) {
+                memcpy(rec_data.cpu_inputs[slot_idx-6], &slot->rec_input_data, sizeof(RecInputData_v1));
+            } else {
+                return true;
+            }
+            slot_idx++;
+        } break;
+        
+        case RecEvent_RecordingSlot_v2: {
+            RecEventData_RecordingSlot_v2 *src = data;
+
+            RecInputData_v1 **slots;
+            if (src->ply == 0) slots = rec_data.hmn_inputs;
+            else if (src->ply == 1) slots = rec_data.cpu_inputs;
+            else return true; 
+
+            if (src->slot_idx >= REC_SLOTS) return true;
+            RecInputData_v1 *slot = slots[src->slot_idx];
+            slot->start_frame = src->start_frame;
+            u32 input_count = Export_Min(src->input_count, REC_LENGTH, &err);
+            slot->num = input_count;
+            memcpy(slot->inputs, src->inputs, sizeof(RecInputs)*input_count);
+        } break;
+
+        case RecEvent_RNGSeedRecording: {
+            RecEventData_RNGSeedRecording *src = data;
+            u32 count = Export_Min(src->count, REC_LENGTH, &err);
+            rec_data.rng_seed_recording_num = count;
+            memcpy(rec_data.rng_seed_recording, src->seeds, sizeof(u32)*count);
+        } break;
+
+        case RecEvent_MenuSettings_Record_v2: {
+            RecEventData_MenuSettings_Record_v2 *src = data;
+            Export_ApplySetting(&LabOptions_Record[OPTREC_MIRRORED_PLAYBACK], src->mirror);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_PLAYBACK_COUNTER], src->cpu_counter);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_STARTPAUSED], src->start_paused);
+            Export_ApplySetting(&LabOptions_SlotChancesHMN[OPTSLOTCHANCE_PERCENT], src->hmn_random_percent);
+            Export_ApplySetting(&LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT], src->cpu_random_percent);
+
+            u32 count = Export_Min(countof(src->hmn_slot_chances), REC_SLOTS, &err);
+            for (u32 i = 0; i < count; ++i) {
+                Export_ApplySetting(&LabOptions_SlotChancesHMN[OPTSLOTCHANCE_1 + i], src->hmn_slot_chances[i]);
+                Export_ApplySetting(&LabOptions_SlotChancesCPU[OPTSLOTCHANCE_1 + i], src->cpu_slot_chances[i]);
+            }
+        } fallthrough; // apply v1 afterwards
+
+        case RecEvent_MenuSettings_Record_v1: {
+            RecEventData_MenuSettings_Record_v1 *src = data;
+            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNMODE], src->hmn_mode);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_HMNSLOT], src->hmn_slot);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUMODE], src->cpu_mode);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_CPUSLOT], src->cpu_slot);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_LOOP], src->loop_inputs);
+            Export_ApplySetting(&LabOptions_Record[OPTREC_AUTORESTORE], src->auto_restore);
+        } break;
+        
+        case RecEvent_MenuSettings_BehaviorOptions: {
+            RecEventData_MenuSettings_BehaviorOptions *src = data;
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_BEHAVE], src->behavior);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELDDIR], src->shield_angle);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_MASH], src->mash);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELD], src->inf_shield);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELDHEALTH], src->inf_shield_health);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SHIELDDIR], src->shield_dir);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_INTANG], src->intang);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_GRABRELEASE], src->grab_release);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRAIR], src->counter_air);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRGRND], src->counter_ground);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRSHIELD], src->counter_shield);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_CTRFRAMES], src->counter_delay);
+
+            u32 count = Export_Min(countof(src->counter_advanced), ADV_COUNTER_COUNT, &err);
+            for (u32 i = 0; i < count; ++i) {
+                EventOption *adv_dst = LabOptions_AdvCounter[i];
+                AdvancedCounterAction *adv_src = &src->counter_advanced[i];
+                Export_ApplySetting(&adv_dst[OPTCTR_LOGIC], adv_src->counter_logic);
+                Export_ApplySetting(&adv_dst[OPTCTR_CTRAIR], adv_src->counter_air);
+                Export_ApplySetting(&adv_dst[OPTCTR_CTRGRND], adv_src->counter_ground);
+                Export_ApplySetting(&adv_dst[OPTCTR_CTRSHIELD], adv_src->counter_shield);
+                Export_ApplySetting(&adv_dst[OPTCTR_DELAYAIR], adv_src->counter_delay_air);
+                Export_ApplySetting(&adv_dst[OPTCTR_DELAYGRND], adv_src->counter_delay_ground);
+                Export_ApplySetting(&adv_dst[OPTCTR_DELAYSHIELD], adv_src->counter_delay_shield);
+            }
+        } break;
+
+        case RecEvent_MenuSettings_DIOptions: {
+            RecEventData_MenuSettings_DIOptions *src = data;
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_TDI], src->tdi_direction);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SDINUM], src->sdi_count);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_SDIDIR], src->sdi_direction);
+            Export_ApplySetting(&LabOptions_CPU[OPTCPU_ASDI], src->asdi_direction);
+            
+            for (u32 i = 0; i < countof(src->custom_tdi); ++i)
+                stc_tdi_vals[i] = src->custom_tdi[i];
+            stc_tdi_val_num = src->custom_tdi_count;
+        } break;
+
+        case RecEvent_MenuSettings_TechOptions: {
+            RecEventData_MenuSettings_TechOptions *src = data;
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECH], src->tech_direction);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUP], src->getup_direction);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_INVISIBLE], src->invisibility);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_INVISIBLE_DELAY], src->invisibility_delay);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_SOUND], src->tech_sound);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TRAP], src->simulate_tech_trap);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_LOCKOUT], src->tech_lockout);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECHINPLACECHANCE], src->chance_tech_in_place);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECHAWAYCHANCE], src->chance_tech_away);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_TECHTOWARDCHANCE], src->chance_tech_toward);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_MISSTECHCHANCE], src->chance_tech_miss);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPWAITCHANCE], src->chance_miss_wait);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPSTANDCHANCE], src->chance_miss_getup_in_place);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPAWAYCHANCE], src->chance_miss_getup_away);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPTOWARDCHANCE], src->chance_miss_getup_toward);
+            Export_ApplySetting(&LabOptions_Tech[OPTTECH_GETUPATTACKCHANCE], src->chance_miss_getup_attack);
+        } break;
+        
+        case RecEvent_MenuSettings_InfoDisplay: {
+            RecEventData_MenuSettings_InfoDisplay *src = data;
+            
+            static EventOption *info_dst[2] = { LabOptions_InfoDisplayHMN, LabOptions_InfoDisplayCPU };
+            for (u32 ply = 0; ply < 2; ++ply) {
+                u32 count = Export_Min(countof(src->info[ply]), OPTINF_ROW_COUNT, &err);
+                EventOption *dst = info_dst[ply];
+                for (u32 i = 0; i < count; ++i)
+                    Export_ApplySetting(&dst[OPTINF_ROW1 + i], src->info[ply][i]);
+            }
+        } break;
+
+        case RecEvent_MenuSettings_ActionLog: {
+            RecEventData_MenuSettings_ActionLog *src = data;
+            u32 count = Export_Min(countof(src->actions), OPTCUSTOMOSD_MAX_ADDED, &err);
+            for (u32 i = 0; i < count; ++i) {
+                ActionLogAction *action_src = &src->actions[i];
+                EventOption *action_dst = LabOptions_ActionLog[i];
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_ACTION], action_src->behavior);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_STATE], action_src->state);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_FRAME], action_src->min_state_frame);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_LSTICK_X], action_src->min_lstick_x);
+                Export_ApplySetting(&action_dst[OPTACTIONLOG_LSTICK_Y], action_src->min_lstick_y);
+            }
+        } break;
+
+        case RecEvent_MenuSettings_CustomOSDs: {
+            RecEventData_MenuSettings_CustomOSDs *src = data;
+            u32 count = Export_Min(countof(src->states), OPTCUSTOMOSD_MAX_ADDED, &err); 
+            stc_custom_osd_state_num = 0;
+            for (u32 i = 0; i < count; ++i) {
+                if (src->states[i] < 0) break;
+                stc_custom_osd_states[i] = src->states[i];
+                stc_custom_osd_state_num++;
+            }
+        } break;
+
+        case RecEvent_MenuSettings_Overlays: {
+            RecEventData_MenuSettings_Overlays *src_array = data;
+
+            static EventOption *overlays_dst[2] = { LabOptions_OverlaysHMN, LabOptions_OverlaysCPU };
+            for (u32 i = 0; i < 2; ++i) {
+                EventOption *dst = overlays_dst[i];
+                MenuSettings_Overlays_PerPly *src = &src_array->overlays[i];
+
+                Export_ApplySetting(&dst[OVERLAY_ACTIONABLE], src->actionable);
+                Export_ApplySetting(&dst[OVERLAY_HITSTUN], src->hitstun);
+                Export_ApplySetting(&dst[OVERLAY_INVINCIBLE], src->invincible);
+                Export_ApplySetting(&dst[OVERLAY_LEDGE_ACTIONABLE], src->ledge_actionable);
+                Export_ApplySetting(&dst[OVERLAY_MISSED_LCANCEL], src->missed_lcancel);
+                Export_ApplySetting(&dst[OVERLAY_CAN_FASTFALL], src->can_fastfall);
+                Export_ApplySetting(&dst[OVERLAY_AUTOCANCEL], src->autocancel);
+                Export_ApplySetting(&dst[OVERLAY_CROUCH], src->crouch);
+                Export_ApplySetting(&dst[OVERLAY_WAIT], src->wait);
+                Export_ApplySetting(&dst[OVERLAY_WALK], src->walk);
+                Export_ApplySetting(&dst[OVERLAY_DASH], src->dash);
+                Export_ApplySetting(&dst[OVERLAY_RUN], src->run);
+                Export_ApplySetting(&dst[OVERLAY_JUMPS_USED], src->jumps_used);
+                Export_ApplySetting(&dst[OVERLAY_FULLHOP], src->fullhop);
+                Export_ApplySetting(&dst[OVERLAY_SHORTHOP], src->shorthop);
+                Export_ApplySetting(&dst[OVERLAY_IASA], src->iasa);
+                Export_ApplySetting(&dst[OVERLAY_SHIELD_STUN], src->shield_stun);
+            }
+        } break;
+    
+        case RecEvent_MenuSettings_RNGControl: {
+            RecEventData_MenuSettings_RNGControl *src = data;
+            event_vars->rng->peach_item = Export_Min(src->peach_item, RNG_SETTING_COUNT_PEACH_ITEM, &err);
+            event_vars->rng->peach_fsmash = Export_Min(src->peach_fsmash, RNG_SETTING_COUNT_PEACH_FSMASH, &err);
+            event_vars->rng->luigi_misfire = Export_Min(src->luigi_misfire, RNG_SETTING_COUNT_LUIGI_MISFIRE, &err);
+            event_vars->rng->gnw_hammer = Export_Min(src->gnw_hammer, RNG_SETTING_COUNT_GNW_HAMMER, &err);
+            event_vars->rng->nana_throw = Export_Min(src->nana_throw, RNG_SETTING_COUNT_NANA_THROW, &err);
+        } break;
+
+        case RecEvent_MenuSettings_DisplayOptions: {
+            RecEventData_MenuSettings_DisplayOptions *src = data;
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_HUD], src->hud);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_HITBOXES], src->hitboxes);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_CHAR_MODEL], src->char_models);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_ENV], src->env_collision);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_STAGE_MODEL], src->stage_model);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_EFFECTS], src->effects);
+            Export_ApplySetting(&LabOptions_Display[OPTDISP_ITEMGRAB], src->item_grab_sizes);
+        } break;
+
+        default: {
+            err = true;
+            break;
+        }
+    }
+    
+    return err;
+}
+
+static void Export_CopyMenuSettings_Overlays(MenuSettings_Overlays_PerPly *dst, EventOption *options) {
+    dst->actionable = options[OVERLAY_ACTIONABLE].val;
+    dst->hitstun = options[OVERLAY_HITSTUN].val;
+    dst->invincible = options[OVERLAY_INVINCIBLE].val;
+    dst->ledge_actionable = options[OVERLAY_LEDGE_ACTIONABLE].val;
+    dst->missed_lcancel = options[OVERLAY_MISSED_LCANCEL].val;
+    dst->can_fastfall = options[OVERLAY_CAN_FASTFALL].val;
+    dst->autocancel = options[OVERLAY_AUTOCANCEL].val;
+    dst->crouch = options[OVERLAY_CROUCH].val;
+    dst->wait = options[OVERLAY_WAIT].val;
+    dst->walk = options[OVERLAY_WALK].val;
+    dst->dash = options[OVERLAY_DASH].val;
+    dst->run = options[OVERLAY_RUN].val;
+    dst->jumps_used = options[OVERLAY_JUMPS_USED].val;
+    dst->fullhop = options[OVERLAY_FULLHOP].val;
+    dst->shorthop = options[OVERLAY_SHORTHOP].val;
+    dst->iasa = options[OVERLAY_IASA].val;
+    dst->shield_stun = options[OVERLAY_SHIELD_STUN].val;
+}
+
+static inline void StreamAppend(u8** dst, void *src, size_t size) {
+    memcpy(*dst, src, size);
+    *dst += size;
+}
+
+#define assert_event(name) if (events[event_write_i] != name) assert("bad " #name)
+
+static void Export_CreateExportFile(void)
+{
+    #define EXPORT_MAX_EVENTS 64
+    
+    u32 events[EXPORT_MAX_EVENTS];
+    u32 event_offsets[EXPORT_MAX_EVENTS];
+    u32 event_count = 0;
+    
+    // find events to be saved --------------------------------------
+    
+    if (!rec_state->is_initialized) LabOptions_Export[OPTEXP_RECORDING].val = false;
+
+    if (LabOptions_Export[OPTEXP_RECORDING].val) {
+        if (rec_state->version_major <= 1) {
+            events[event_count++] = RecEvent_Savestate_v1;
+        } else if (rec_state->version_major == 2) {
+            events[event_count++] = RecEvent_Savestate_v2;
+        } else {
+            assert("invalid savestate version!");
+        }
+
+        for (u32 i = 0; i < REC_SLOTS; ++i)
+            if (rec_data.hmn_inputs[i]->start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+        for (u32 i = 0; i < REC_SLOTS; ++i)
+            if (rec_data.cpu_inputs[i]->start_frame >= 0) events[event_count++] = RecEvent_RecordingSlot_v2;
+    }
+    
+    if (LabOptions_Export[OPTEXP_SETTINGS_RECORDING].val)       events[event_count++] = RecEvent_MenuSettings_Record_v2;
+    if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val)        events[event_count++] = RecEvent_MenuSettings_BehaviorOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val)              events[event_count++] = RecEvent_MenuSettings_DIOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val)            events[event_count++] = RecEvent_MenuSettings_TechOptions;
+    if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val)   events[event_count++] = RecEvent_MenuSettings_RNGControl;
+    if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val)      events[event_count++] = RecEvent_MenuSettings_ActionLog;
+    if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val)     events[event_count++] = RecEvent_MenuSettings_CustomOSDs;
+    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val)    events[event_count++] = RecEvent_MenuSettings_InfoDisplay;
+    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val)        events[event_count++] = RecEvent_MenuSettings_Overlays;
+    if (LabOptions_Export[OPTEXP_SETTINGS_DISPLAY].val)         events[event_count++] = RecEvent_MenuSettings_DisplayOptions;
+
+    // alloc event buffer --------------------------------------
+
+    u32 eventbuf_size = 0;
+    for (u32 i = 0; i < event_count; ++i) {
+        event_offsets[i] = eventbuf_size;
+        eventbuf_size += rec_event_data_sizes[events[i]];
+    }
+    u8 *eventbuf = HSD_MemAlloc(eventbuf_size + 32);
+    memset(eventbuf, 0, eventbuf_size + 32);
+
+    // write events --------------------------------------
+
+    u32 event_write_i = 0;
+
+    if (LabOptions_Export[OPTEXP_RECORDING].val) {
+        if (rec_state->version_major <= 1) {
+            RecEventData_Savestate_v1 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+            memcpy(dst, rec_state, sizeof(RecEventData_Savestate_v1));
+        } else if (rec_state->version_major == 2) {
+            RecEventData_Savestate_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+            memcpy(dst, rec_state, sizeof(RecEventData_Savestate_v2));
+        }
+
+        for (u32 i = 0; i < REC_SLOTS; ++i) {
+            if (rec_data.hmn_inputs[i]->start_frame >= 0) {
+                assert_event(RecEvent_RecordingSlot_v2);
+                RecEventData_RecordingSlot_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+                dst->ply = 0;
+                dst->slot_idx = i;
+                dst->input_count = (u16)rec_data.hmn_inputs[i]->num;
+                dst->start_frame = rec_data.hmn_inputs[i]->start_frame;
+                memcpy(dst->inputs, rec_data.hmn_inputs[i]->inputs, sizeof(dst->inputs));
+            }
+        }
+        for (u32 i = 0; i < REC_SLOTS; ++i) {
+            if (rec_data.cpu_inputs[i]->start_frame >= 0) {
+                assert_event(RecEvent_RecordingSlot_v2);
+                RecEventData_RecordingSlot_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+                dst->ply = 1;
+                dst->slot_idx = i;
+                dst->input_count = (u16)rec_data.cpu_inputs[i]->num;
+                dst->start_frame = rec_data.cpu_inputs[i]->start_frame;
+                memcpy(dst->inputs, rec_data.cpu_inputs[i]->inputs, sizeof(dst->inputs));
+            }
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_RECORDING].val) {
+        assert_event(RecEvent_MenuSettings_Record_v2);
+        RecEventData_MenuSettings_Record_v2 *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->v1.hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
+        dst->v1.hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
+        dst->v1.cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
+        dst->v1.cpu_slot = LabOptions_Record[OPTREC_CPUSLOT].val;
+        dst->v1.loop_inputs = LabOptions_Record[OPTREC_LOOP].val;
+        dst->v1.auto_restore = LabOptions_Record[OPTREC_AUTORESTORE].val;
+        dst->mirror = LabOptions_Record[OPTREC_MIRRORED_PLAYBACK].val;
+        dst->cpu_counter = LabOptions_Record[OPTREC_PLAYBACK_COUNTER].val;
+        dst->start_paused = LabOptions_Record[OPTREC_STARTPAUSED].val;
+        dst->hmn_random_percent = LabOptions_SlotChancesHMN[OPTSLOTCHANCE_PERCENT].val;
+        dst->cpu_random_percent = LabOptions_SlotChancesCPU[OPTSLOTCHANCE_PERCENT].val;
+        
+        if (REC_SLOTS > countof(dst->hmn_slot_chances)) assert("not enough rec slots!");
+        for (u32 i = 0; i < REC_SLOTS; ++i) {
+            dst->hmn_slot_chances[i] = LabOptions_SlotChancesHMN[OPTSLOTCHANCE_1 + i].val;
+            dst->cpu_slot_chances[i] = LabOptions_SlotChancesCPU[OPTSLOTCHANCE_1 + i].val;
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_BEHAVIOR].val) {
+        assert_event(RecEvent_MenuSettings_BehaviorOptions);
+        RecEventData_MenuSettings_BehaviorOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->behavior = LabOptions_CPU[OPTCPU_BEHAVE].val;
+        dst->shield_angle = LabOptions_CPU[OPTCPU_SHIELDDIR].val;
+        dst->mash = LabOptions_CPU[OPTCPU_MASH].val;
+        dst->inf_shield = LabOptions_CPU[OPTCPU_SHIELD].val;
+        dst->inf_shield_health = LabOptions_CPU[OPTCPU_SHIELDHEALTH].val;
+        dst->shield_dir = LabOptions_CPU[OPTCPU_SHIELDDIR].val;
+        dst->intang = LabOptions_CPU[OPTCPU_INTANG].val;
+        dst->grab_release = LabOptions_CPU[OPTCPU_GRABRELEASE].val;
+        dst->counter_air = LabOptions_CPU[OPTCPU_CTRAIR].val;
+        dst->counter_ground = LabOptions_CPU[OPTCPU_CTRGRND].val;
+        dst->counter_shield = LabOptions_CPU[OPTCPU_CTRSHIELD].val;
+        dst->counter_delay = LabOptions_CPU[OPTCPU_CTRFRAMES].val;
+
+        if (ADV_COUNTER_COUNT > countof(dst->counter_advanced)) assert("not enough counter slots!");
+        for (u32 i = 0; i < ADV_COUNTER_COUNT; ++i) {
+            AdvancedCounterAction *adv_dst = &dst->counter_advanced[i];
+            EventOption *adv_src = LabOptions_AdvCounter[i];
+            adv_dst->counter_logic = adv_src[OPTCTR_LOGIC].val; 
+            adv_dst->counter_air = adv_src[OPTCTR_CTRAIR].val; 
+            adv_dst->counter_ground = adv_src[OPTCTR_CTRGRND].val; 
+            adv_dst->counter_shield = adv_src[OPTCTR_CTRSHIELD].val; 
+            adv_dst->counter_delay_air = adv_src[OPTCTR_DELAYAIR].val; 
+            adv_dst->counter_delay_ground = adv_src[OPTCTR_DELAYGRND].val; 
+            adv_dst->counter_delay_shield = adv_src[OPTCTR_DELAYSHIELD].val; 
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_DI].val) {
+        assert_event(RecEvent_MenuSettings_DIOptions);
+        RecEventData_MenuSettings_DIOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->tdi_direction = LabOptions_CPU[OPTCPU_TDI].val;
+        dst->sdi_count = LabOptions_CPU[OPTCPU_SDINUM].val;
+        dst->sdi_direction = LabOptions_CPU[OPTCPU_SDIDIR].val;
+        dst->asdi_direction = LabOptions_CPU[OPTCPU_ASDI].val;
+        
+        if (stc_tdi_val_num > countof(dst->custom_tdi)) assert("not enough custom tdi slots!");
+        dst->custom_tdi_count = stc_tdi_val_num;
+        for (u32 i = 0; i < TDI_HITNUM; ++i)
+            dst->custom_tdi[i] = stc_tdi_vals[i];
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_TECH].val) {
+        assert_event(RecEvent_MenuSettings_TechOptions);
+        RecEventData_MenuSettings_TechOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->tech_direction = LabOptions_Tech[OPTTECH_TECH].val;
+        dst->getup_direction = LabOptions_Tech[OPTTECH_GETUP].val;
+        dst->invisibility = LabOptions_Tech[OPTTECH_INVISIBLE].val;
+        dst->invisibility_delay = LabOptions_Tech[OPTTECH_INVISIBLE_DELAY].val;
+        dst->tech_sound = LabOptions_Tech[OPTTECH_SOUND].val;
+        dst->simulate_tech_trap = LabOptions_Tech[OPTTECH_TRAP].val;
+        dst->tech_lockout = LabOptions_Tech[OPTTECH_LOCKOUT].val;
+        dst->chance_tech_in_place = LabOptions_Tech[OPTTECH_TECHINPLACECHANCE].val;
+        dst->chance_tech_away = LabOptions_Tech[OPTTECH_TECHAWAYCHANCE].val;
+        dst->chance_tech_toward = LabOptions_Tech[OPTTECH_TECHTOWARDCHANCE].val;
+        dst->chance_tech_miss = LabOptions_Tech[OPTTECH_MISSTECHCHANCE].val;
+        dst->chance_miss_wait = LabOptions_Tech[OPTTECH_GETUPWAITCHANCE].val;
+        dst->chance_miss_getup_in_place = LabOptions_Tech[OPTTECH_GETUPSTANDCHANCE].val;
+        dst->chance_miss_getup_away = LabOptions_Tech[OPTTECH_GETUPAWAYCHANCE].val;
+        dst->chance_miss_getup_toward = LabOptions_Tech[OPTTECH_GETUPTOWARDCHANCE].val;
+        dst->chance_miss_getup_attack = LabOptions_Tech[OPTTECH_GETUPATTACKCHANCE].val;
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_CHARACTER_RNG].val) {
+        assert_event(RecEvent_MenuSettings_RNGControl);
+        RecEventData_MenuSettings_RNGControl *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->peach_item = event_vars->rng->peach_item;
+        dst->peach_fsmash = event_vars->rng->peach_fsmash;
+        dst->luigi_misfire = event_vars->rng->luigi_misfire;
+        dst->gnw_hammer = event_vars->rng->gnw_hammer;
+        dst->nana_throw = event_vars->rng->nana_throw;
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_ACTION_LOG].val) {
+        assert_event(RecEvent_MenuSettings_ActionLog);
+        RecEventData_MenuSettings_ActionLog *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        if (ACTION_LOG_MAX > countof(dst->actions)) assert("not enough action log slots!");
+        for (u32 i = 0; i < ACTION_LOG_MAX; ++i) {
+            ActionLogAction *action_dst = &dst->actions[i];
+            EventOption *action_src = LabOptions_ActionLog[i];
+            action_dst->behavior = action_src[OPTACTIONLOG_ACTION].val;
+            action_dst->state = action_src[OPTACTIONLOG_STATE].val;
+            action_dst->min_state_frame = action_src[OPTACTIONLOG_FRAME].val;
+            action_dst->min_lstick_x = action_src[OPTACTIONLOG_LSTICK_X].val;
+            action_dst->min_lstick_y = action_src[OPTACTIONLOG_LSTICK_Y].val;
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_CUSTOM_OSDS].val) {
+        assert_event(RecEvent_MenuSettings_CustomOSDs);
+        RecEventData_MenuSettings_CustomOSDs *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        if (OPTCUSTOMOSD_MAX_ADDED > countof(dst->states)) assert("not enough custom OSD slots!");
+        for (u32 i = 0; i < stc_custom_osd_state_num; ++i)
+            dst->states[i] = stc_custom_osd_states[i];
+        for (u32 i = stc_custom_osd_state_num; i < OPTCUSTOMOSD_MAX_ADDED; ++i)
+            dst->states[i] = -1;
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_INFO_DISPLAY].val) {
+        assert_event(RecEvent_MenuSettings_InfoDisplay);
+        RecEventData_MenuSettings_InfoDisplay *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        if (OPTINF_ROW_COUNT > countof(dst->info[0])) assert("not enough info display slots!");
+        for (u32 i = 0; i < OPTINF_ROW_COUNT; ++i) {
+            dst->info[0][i] = LabOptions_InfoDisplayHMN[OPTINF_ROW1 + i].val;
+            dst->info[1][i] = LabOptions_InfoDisplayCPU[OPTINF_ROW1 + i].val;
+        }
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_OVERLAYS].val) {
+        assert_event(RecEvent_MenuSettings_Overlays);
+        RecEventData_MenuSettings_Overlays *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        Export_CopyMenuSettings_Overlays(&dst->overlays[0], LabOptions_OverlaysHMN);
+        Export_CopyMenuSettings_Overlays(&dst->overlays[1], LabOptions_OverlaysCPU);
+    }
+
+    if (LabOptions_Export[OPTEXP_SETTINGS_DISPLAY].val) {
+        assert_event(RecEvent_MenuSettings_DisplayOptions);
+        RecEventData_MenuSettings_DisplayOptions *dst = (void*)&eventbuf[event_offsets[event_write_i++]];
+        dst->hud = LabOptions_Display[OPTDISP_HUD].val;
+        dst->hitboxes = LabOptions_Display[OPTDISP_HITBOXES].val;
+        dst->char_models = LabOptions_Display[OPTDISP_CHAR_MODEL].val;
+        dst->env_collision = LabOptions_Display[OPTDISP_ENV].val;
+        dst->stage_model = LabOptions_Display[OPTDISP_STAGE_MODEL].val;
+        dst->effects = LabOptions_Display[OPTDISP_EFFECTS].val;
+        dst->item_grab_sizes = LabOptions_Display[OPTDISP_ITEMGRAB].val;
+    }
+
+    // alloc transfer buffer --------------------------------------
+
+    u32 buf_noncompressed_size = sizeof(ExportMetadata) + 8 + countof(events)*sizeof(u32)*2;
+
+    ExportData_v2 *buf = HSD_MemAlloc(buf_noncompressed_size + eventbuf_size); // overalloc, just in case
+    memset(&buf->metadata, 0, sizeof(buf->metadata));
+
+    // write export header --------------------------------------
+
+    buf->event_count = event_count;
+    buf->decompressed_event_data_stream_size = eventbuf_size;
+
+    OSCalendarTime td;
+    OSTicksToCalendarTime(OSGetTime(), &td);
+    buf->metadata.version = 2;
+    buf->metadata.image_width = RESIZE_WIDTH;
+    buf->metadata.image_height = RESIZE_HEIGHT;
+    buf->metadata.image_fmt = 4;
+    buf->metadata.enable_hazards = !event_vars->event_desc->disable_hazards;
+    buf->metadata.hmn = Fighter_GetExternalID(0);
+    buf->metadata.hmn_costume = Fighter_GetCostumeID(0);
+    buf->metadata.cpu = Fighter_GetExternalID(1);
+    buf->metadata.cpu_costume = Fighter_GetCostumeID(1);
+    buf->metadata.stage_external = Stage_GetExternalID();
+    buf->metadata.stage_internal = Stage_ExternalToInternal(buf->metadata.stage_external);
+    buf->metadata.month = td.mon + 1;
+    buf->metadata.day = td.mday;
+    buf->metadata.year = td.year;
+    buf->metadata.hour = td.hour;
+    buf->metadata.minute = td.min;
+    buf->metadata.second = td.sec;
+
+    // write events lists --------------------------------------
+
+    u8 *stream = buf->stream;
+    StreamAppend(&stream, events, event_count * sizeof(*events));
+    StreamAppend(&stream, event_offsets, event_count * sizeof(*event_offsets));
+    
+    // write compressed events ---------------------------------
+
+    stream += ExportData_Compress(stream, eventbuf, eventbuf_size);
+
+    // we're done with the uncompressed event stream, so free it
+    HSD_Free(eventbuf);
+
+    // Transfer to memcard! ---------------------------------
+
+    stc_transfer_buf = (u8*)buf;
+    stc_transfer_buf_size = (u32)(stream - (u8*)buf);
+}
+
+void Export_StartExport(GOBJ *menu_gobj)
 {
     MenuData *menu_data = menu_gobj->userdata;
 
     // create gobj
     GOBJ *export_gobj = GObj_Create(0, 0, 0);
-    ExportData *export_data = calloc(sizeof(ExportData));
+    ExportData_v1 *export_data = calloc(sizeof(ExportData_v1));
     GObj_AddUserData(export_gobj, 4, HSD_Free, export_data);
 
     // load menu joint
@@ -4859,103 +5419,19 @@ void Export_Init(GOBJ *menu_gobj)
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
     JOBJ_SetFlags(export_data->textbox_jobj, JOBJ_HIDDEN);
 
-    // alloc a buffer for all of the recording data
-    RecordingSave *temp_rec_save = calloc(sizeof(RecordingSave));
-
-    // copy match data to buffer
-    memcpy(&temp_rec_save->match_data, &stc_match->match, sizeof(MatchInit));
-    // copy savestate to buffer
-    memcpy(&temp_rec_save->savestate, rec_state, sizeof(Savestate_v1));
-    // copy recordings
-    for (int i = 0; i < REC_SLOTS; i++)
-    {
-        memcpy(&temp_rec_save->hmn_inputs[i], rec_data.hmn_inputs[i], sizeof(RecInputData));
-        memcpy(&temp_rec_save->cpu_inputs[i], rec_data.cpu_inputs[i], sizeof(RecInputData));
-    }
-
-    // compress all recording data
-    u8 *recording_buffer = calloc(sizeof(RecordingSave));
-    int compress_size = Export_Compress(recording_buffer, (u8 *)temp_rec_save, sizeof(RecordingSave));
-    HSD_Free(temp_rec_save); // free original data buffer
-
-    // resize screenshot
-    int img_size = GXGetTexBufferSize(RESIZE_WIDTH, RESIZE_HEIGHT, 4, 0, 0);
-    RGB565 *orig_img = snap_image.img_ptr;
-    RGB565 *new_img = calloc(img_size);
-    export_data->scaled_image = new_img;
-    ImageScale(new_img, orig_img, RESIZE_WIDTH, RESIZE_HEIGHT, EXP_SCREENSHOT_WIDTH, EXP_SCREENSHOT_HEIGHT);
-    resized_image.img_ptr = new_img;                                            // store pointer to resized image
-    export_data->screenshot_jobj->dobj->mobj->tobj->imagedesc = &resized_image; // replace pointer to imagedesc
-
-    // get curr date
-    OSCalendarTime td;
-    OSTicksToCalendarTime(OSGetTime(), &td);
-
-    // alloc a buffer to transfer to memcard
-    stc_transfer_buf_size = sizeof(ExportHeader) + img_size + sizeof(ExportMenuSettings) + compress_size;
-    stc_transfer_buf = calloc(stc_transfer_buf_size);
-
-    // init header
-    ExportHeader *header = (ExportHeader *)stc_transfer_buf;
-    header->metadata.version = REC_VERS;
-    header->metadata.image_width = RESIZE_WIDTH;
-    header->metadata.image_height = RESIZE_HEIGHT;
-    header->metadata.image_fmt = 4;
-    header->metadata.hmn = Fighter_GetExternalID(0);
-    header->metadata.hmn_costume = Fighter_GetCostumeID(0);
-    header->metadata.cpu = Fighter_GetExternalID(1);
-    header->metadata.cpu_costume = Fighter_GetCostumeID(1);
-    header->metadata.stage_external = Stage_GetExternalID();
-    header->metadata.stage_internal = Stage_ExternalToInternal(header->metadata.stage_external);
-    header->metadata.month = td.mon + 1;
-    header->metadata.day = td.mday;
-    header->metadata.year = td.year;
-    header->metadata.hour = td.hour;
-    header->metadata.minute = td.min;
-    header->metadata.second = td.sec;
-    header->lookup.ofst_screenshot = sizeof(ExportHeader);
-    header->lookup.ofst_recording = sizeof(ExportHeader) + img_size;
-    header->lookup.ofst_menusettings = sizeof(ExportHeader) + img_size + compress_size;
-
-    // copy data to buffer
-    // image
-    memcpy(stc_transfer_buf + header->lookup.ofst_screenshot, new_img, img_size);
-    // menu settings
-    ExportMenuSettings *menu_settings = (ExportMenuSettings *)(stc_transfer_buf + header->lookup.ofst_menusettings);
-    menu_settings->hmn_mode = LabOptions_Record[OPTREC_HMNMODE].val;
-    menu_settings->hmn_slot = LabOptions_Record[OPTREC_HMNSLOT].val;
-    menu_settings->cpu_mode = LabOptions_Record[OPTREC_CPUMODE].val;
-    menu_settings->cpu_slot = LabOptions_Record[OPTREC_CPUSLOT].val;
-    
-    // Recording replay versions are forwards and backwards compatible.
-    // Since we added the Re-Record option, we cannot export it because then it would crash with an invalid
-    // menu setting when importing on a version without the Re-Record setting.
-    if (menu_settings->hmn_mode > RECMODE_HMN_PLAYBACK)
-        menu_settings->hmn_mode = RECMODE_HMN_PLAYBACK;
-    if (menu_settings->cpu_mode > RECMODE_CPU_PLAYBACK)
-        menu_settings->cpu_mode = RECMODE_CPU_PLAYBACK;
-        
-    menu_settings->loop_inputs = LabOptions_Record[OPTREC_LOOP].val;
-    menu_settings->auto_restore = LabOptions_Record[OPTREC_AUTORESTORE].val;
-    // recording data
-    memcpy(stc_transfer_buf + header->lookup.ofst_recording, recording_buffer, compress_size); // compressed recording
-
-    // free compresed data buffer
-    HSD_Free(recording_buffer);
-
-    // alloc filename buffer
     export_data->filename_buffer = calloc(32 + 2); // +2 for terminator and cursor
-
-    // initialize memcard menu
     Export_SelCardInit(export_gobj);
 
     menu_data->custom_gobj = export_gobj;            // set custom gobj
     menu_data->custom_gobj_think = Export_Think;     // set think function
     menu_data->custom_gobj_destroy = Export_Destroy; // set destroy function
+
+    Export_CreateExportFile();
 }
+
 int Export_Think(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     int can_unpause = 0;
 
     switch (export_data->menu_index)
@@ -4981,7 +5457,7 @@ int Export_Think(GOBJ *export_gobj)
 }
 void Export_Destroy(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     switch (export_data->menu_index)
@@ -5001,7 +5477,6 @@ void Export_Destroy(GOBJ *export_gobj)
     // free buffer allocs
     HSD_Free(stc_transfer_buf);
     HSD_Free(export_data->filename_buffer);
-    HSD_Free(export_data->scaled_image);
 
     // destroy gobj
     GObj_Destroy(export_gobj);
@@ -5013,7 +5488,7 @@ void Export_Destroy(GOBJ *export_gobj)
 }
 void Export_SelCardInit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     // show menu jobjs
@@ -5069,7 +5544,7 @@ void Export_SelCardInit(GOBJ *export_gobj)
 int Export_SelCardThink(GOBJ *export_gobj)
 {
 
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     int req_blocks = (divide_roundup(stc_transfer_buf_size, 8192) + 1);
 
@@ -5219,7 +5694,7 @@ int Export_SelCardThink(GOBJ *export_gobj)
 }
 void Export_SelCardExit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // hide menu jobjs
     JOBJ_SetFlags(export_data->memcard_jobj[0], JOBJ_HIDDEN);
@@ -5231,7 +5706,7 @@ void Export_SelCardExit(GOBJ *export_gobj)
 }
 void Export_EnterNameInit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     // show menu jobjs
@@ -5263,7 +5738,7 @@ void Export_EnterNameInit(GOBJ *export_gobj)
     Export_EnterNameUpdateKeyboard(export_gobj);
 
     // create file details
-    ExportHeader *header = (ExportHeader *)stc_transfer_buf;
+    ExportHeader_v1 *header = (ExportHeader_v1 *)stc_transfer_buf;
     char *stage_name = stage_names[header->metadata.stage_internal];
     char *hmn_name = Fighter_GetName(header->metadata.hmn);
     char *cpu_name = Fighter_GetName(header->metadata.cpu);
@@ -5327,7 +5802,7 @@ void Export_EnterNameInit(GOBJ *export_gobj)
 int Export_EnterNameThink(GOBJ *export_gobj)
 {
 
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // get pausing players inputs
     HSD_Pad *pad = PadGetMaster(stc_hmn_controller);
@@ -5527,7 +6002,7 @@ int Export_EnterNameThink(GOBJ *export_gobj)
 }
 void Export_EnterNameExit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // hide menu jobjs
     JOBJ_SetFlags(export_data->screenshot_jobj, JOBJ_HIDDEN);
@@ -5541,7 +6016,7 @@ void Export_EnterNameExit(GOBJ *export_gobj)
 }
 void Export_ConfirmInit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     MenuData *menu_data = event_vars->menu_gobj->userdata;
 
     // create gobj
@@ -5573,7 +6048,7 @@ void Export_ConfirmInit(GOBJ *export_gobj)
 }
 int Export_ConfirmThink(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     // get pausing players inputs
     HSD_Pad *pad = PadGetMaster(stc_hmn_controller);
@@ -5706,7 +6181,7 @@ int Export_ConfirmThink(GOBJ *export_gobj)
 }
 void Export_ConfirmExit(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
 
     GObj_Destroy(export_data->confirm_gobj);
     Text_Destroy(export_data->confirm_text);
@@ -5715,7 +6190,7 @@ void Export_ConfirmExit(GOBJ *export_gobj)
 }
 void Export_EnterNameUpdateKeyboard(GOBJ *export_gobj)
 {
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     Text *text_keyboard = export_data->text_keyboard;
     u8 *cursor = export_data->key_cursor;
 
@@ -5753,23 +6228,21 @@ void Export_EnterNameUpdateKeyboard(GOBJ *export_gobj)
 int Export_Process(GOBJ *export_gobj)
 {
 
-    ExportData *export_data = export_gobj->userdata;
+    ExportData_v1 *export_data = export_gobj->userdata;
     Text *text = export_data->confirm_text;
 
     int finished = 0;
 
-    // if snapshot is processing, dont update
     switch (export_status)
     {
     case (EXSTAT_REQSAVE):
     {
-
         int slot = export_data->slot;
 
         save_pre_tick = OSGetTick();
 
         // create filename string
-        ExportHeader *header = (ExportHeader *)stc_transfer_buf;
+        ExportHeader_v1 *header = (ExportHeader_v1 *)stc_transfer_buf;
         char filename[32];
         sprintf(filename, tm_filename, header->metadata.month, header->metadata.day, header->metadata.year, header->metadata.hour, header->metadata.minute, header->metadata.second); // generate filename based on date, time, fighters, and stage
 
@@ -5825,7 +6298,7 @@ int Export_Process(GOBJ *export_gobj)
                 stc_memcard_work->is_done = 0;
             }
         }
-
+        
         // setup save
         memcpy(stc_memcard_info->file_name, &stc_save_name, sizeof(stc_save_name));
         memset(stc_memcard_info->file_desc, '\0', 32);                                                   // fill with spaces
@@ -5843,7 +6316,6 @@ int Export_Process(GOBJ *export_gobj)
     }
     case (EXSTAT_SAVEWAIT):
     {
-
         // wait to finish writing
         if (Memcard_CheckStatus() != 11)
         {
@@ -5866,7 +6338,6 @@ int Export_Process(GOBJ *export_gobj)
     }
     case (EXSTAT_DONE):
     {
-
         export_status = EXSTAT_NONE;
         finished = 1;
 
@@ -5876,11 +6347,6 @@ int Export_Process(GOBJ *export_gobj)
     }
 
     return finished;
-}
-int Export_Compress(u8 *dest, u8 *source, u32 size)
-{
-    int compress_size = lz77Compress(source, size, dest, 8);
-    return compress_size;
 }
 
 static void UpdateOverlays(GOBJ *character, EventOption *overlays) {
@@ -6579,8 +7045,8 @@ void Event_Think(GOBJ *event)
 {
     // Save a minor state at event start, so people can reset if they SD.
     // This cannot be done in Event_Init, so we do it here.
-    if (!event_vars->savestate->is_exist) {
-        event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
+    if (!event_vars->savestate2->header.is_initialized) {
+        event_vars->Savestate_Save_v2(event_vars->savestate2, Savestate_Silent);
         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
     }
 
@@ -6599,7 +7065,7 @@ void Event_Think(GOBJ *event)
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *cpu_data = cpu->userdata;
     HSD_Pad *pad = PadGetEngine(hmn_data->pad_index);
-    
+
     // We allow negative values to track how long we have not been in lockout for.
     // If the CPU is in hitlag, do not finish the lockout. This prevents insta techs
     // when the tech windows is the 1f between hitlag and knockdown.
@@ -7050,93 +7516,6 @@ static void ReboundChances(s16 *chances[], unsigned int chance_count, int just_c
 
         just_changed_option = rebound_option;
     }
-}
-
-static int pow_n(int x, int n)
-{
-    int res = 1;
-    for (; n; n--)
-        res *= x;
-    return res;
-}
-
-// lz77 functions credited to https://github.com/andyherbert/lz1
-static u32 lz77Compress(u8 *uncompressed_text, u32 uncompressed_size, u8 *compressed_text, u8 pointer_length_width)
-{
-    u16 pointer_pos, temp_pointer_pos, output_pointer, pointer_length, temp_pointer_length;
-    u32 compressed_pointer, output_size, coding_pos, output_lookahead_ref, look_behind, look_ahead;
-    u16 pointer_pos_max, pointer_length_max;
-    pointer_pos_max = pow_n(2, 16 - pointer_length_width);
-    pointer_length_max = pow_n(2, pointer_length_width);
-
-    *((u32 *)compressed_text) = uncompressed_size;
-    *(compressed_text + 4) = pointer_length_width;
-    compressed_pointer = output_size = 5;
-
-    for (coding_pos = 0; coding_pos < uncompressed_size; ++coding_pos)
-    {
-        pointer_pos = 0;
-        pointer_length = 0;
-        for (temp_pointer_pos = 1; (temp_pointer_pos < pointer_pos_max) && (temp_pointer_pos <= coding_pos); ++temp_pointer_pos)
-        {
-            look_behind = coding_pos - temp_pointer_pos;
-            look_ahead = coding_pos;
-            for (temp_pointer_length = 0; uncompressed_text[look_ahead++] == uncompressed_text[look_behind++]; ++temp_pointer_length)
-                if (temp_pointer_length == pointer_length_max)
-                    break;
-            if (temp_pointer_length > pointer_length)
-            {
-                pointer_pos = temp_pointer_pos;
-                pointer_length = temp_pointer_length;
-                if (pointer_length == pointer_length_max)
-                    break;
-            }
-        }
-        coding_pos += pointer_length;
-        if ((coding_pos == uncompressed_size) && pointer_length)
-        {
-            output_pointer = (pointer_length == 1) ? 0 : ((pointer_pos << pointer_length_width) | (pointer_length - 2));
-            output_lookahead_ref = coding_pos - 1;
-        }
-        else
-        {
-            output_pointer = (pointer_pos << pointer_length_width) | (pointer_length ? (pointer_length - 1) : 0);
-            output_lookahead_ref = coding_pos;
-        }
-        *((u16 *)(compressed_text + compressed_pointer)) = output_pointer;
-        compressed_pointer += 2;
-        *(compressed_text + compressed_pointer++) = *(uncompressed_text + output_lookahead_ref);
-        output_size += 3;
-    }
-
-    return output_size;
-}
-
-static u32 lz77Decompress(u8 *compressed_text, u8 *uncompressed_text)
-{
-    u8 pointer_length_width;
-    u16 input_pointer, pointer_length, pointer_pos, pointer_length_mask;
-    u32 compressed_pointer, coding_pos, pointer_offset, uncompressed_size;
-
-    uncompressed_size = *((u32 *)compressed_text);
-    pointer_length_width = *(compressed_text + 4);
-    compressed_pointer = 5;
-
-    pointer_length_mask = pow_n(2, pointer_length_width) - 1;
-
-    for (coding_pos = 0; coding_pos < uncompressed_size; ++coding_pos)
-    {
-        input_pointer = *((u16 *)(compressed_text + compressed_pointer));
-        compressed_pointer += 2;
-        pointer_pos = input_pointer >> pointer_length_width;
-        pointer_length = pointer_pos ? ((input_pointer & pointer_length_mask) + 1) : 0;
-        if (pointer_pos)
-            for (pointer_offset = coding_pos - pointer_pos; pointer_length > 0; --pointer_length)
-                uncompressed_text[coding_pos++] = uncompressed_text[pointer_offset++];
-        *(uncompressed_text + coding_pos) = *(compressed_text + compressed_pointer++);
-    }
-
-    return coding_pos;
 }
 
 // adapted from decomp github.com/doldecomp/melee/blob/7f0e2ddb83fa974b64b05d0a7e5b374cf12c0541/src/melee/ft/ftwalljump.c

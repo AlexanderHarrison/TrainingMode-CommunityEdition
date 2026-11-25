@@ -1,5 +1,111 @@
 #include "events.h"
 
+static GOBJ *FtGOBJToID(GOBJ *gobj)
+{
+    // ensure valid pointer
+    if (gobj == 0)
+        return (GOBJ *)-1;
+
+    // ensure its a fighter
+    if (gobj->entity_class != 4)
+        return (GOBJ *)-1;
+
+    // access the data
+    FighterData *ft_data = gobj->userdata;
+    u8 ply = ft_data->ply;
+    u8 ms = ft_data->flags.ms;
+
+    return (GOBJ *)((ply << 4) | ms);
+}
+static FighterData *FtDataToID(FighterData *fighter_data)
+{
+    // ensure valid pointer
+    if (fighter_data == 0)
+        return (FighterData *)-1;
+
+    // ensure its a fighter
+    if (fighter_data->fighter == 0)
+        return (FighterData *)-1;
+
+    // get ply and ms
+    u8 ply = fighter_data->ply;
+    u8 ms = fighter_data->flags.ms;
+
+    return (FighterData *)((ply << 4) | ms);
+}
+static JOBJ *BoneToID(FighterData *fighter_data, JOBJ *bone)
+{
+    // ensure bone exists
+    if (bone == 0)
+        return (JOBJ *)-1;
+
+    int bone_id = -1;
+
+    // painstakingly look for a match
+    for (int i = 0; i < fighter_data->bone_num; i++)
+    {
+        if (bone == fighter_data->bones[i].joint)
+        {
+            bone_id = i;
+            break;
+        }
+    }
+
+    // no bone found
+    if (bone_id == -1)
+        TMLOG("no bone found %x\n", bone);
+
+    return (JOBJ *)bone_id;
+}
+static GOBJ *FtIDToGOBJ(GOBJ *id_as_ptr)
+{
+    int id = (int)id_as_ptr;
+
+    // ensure valid pointer
+    if (id == -1)
+        return (GOBJ *)0;
+
+    // get ply and ms
+    u8 ply = (id >> 4) & 0xF;
+    u8 ms = id & 0xF;
+
+    // get the gobj for this fighter
+    GOBJ *gobj = Fighter_GetSubcharGObj(ply, ms);
+
+    return gobj;
+}
+static FighterData *IDToFtData(FighterData *id_as_ptr)
+{
+    int id = (int)id_as_ptr;
+
+    // ensure valid pointer
+    if (id == -1)
+        return 0;
+
+    // get ply and ms
+    u8 ply = (id >> 4) & 0xF;
+    u8 ms = id & 0xF;
+
+    // get the gobj for this fighter
+    GOBJ *gobj = Fighter_GetSubcharGObj(ply, ms);
+    FighterData *fighter_data = gobj->userdata;
+
+    return fighter_data;
+}
+static JOBJ *IDToBone(FighterData *fighter_data, JOBJ *id_as_ptr)
+{
+    int id = (int)id_as_ptr;
+
+    // ensure valid pointer
+    if (id == -1)
+        return 0;
+
+    // get the bone
+    JOBJ *bone = fighter_data->bones[id].joint;
+
+    return bone;
+}
+
 // use enum savestate_flags for flags
 int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
 {
@@ -22,8 +128,8 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
            if ((fighter_data->cb.OnDeath_Persist != 0) ||
               (fighter_data->cb.OnDeath_State != 0) ||
               (fighter_data->cb.OnDeath3 != 0) ||
-              (fighter_data->item_held != 0) ||
-              (fighter_data->x1978 != 0) ||
+              (fighter_data->item.held != 0) ||
+              (fighter_data->item.held_2 != 0) ||
               (fighter_data->accessory != 0) ||
               ((fighter_data->kind == FTKIND_NESS) && ((fighter_data->state_id >= 342) && (fighter_data->state_id <= 344)))) // hardcode ness' usmash because it doesnt destroy the yoyo via onhit callback...
            {
@@ -40,11 +146,12 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
     int isSaved = 0;
     if (canSave == 1)
     {
-
-        savestate->is_exist = 1;
+        savestate->header.version_major = 1;
+        savestate->header.version_minor = 0;
+        savestate->header.is_initialized = true;
 
         // save frame
-        savestate->frame = event_vars->game_timer;
+        savestate->header.frame = event_vars->game_timer;
 
         // save event data
         memcpy(&savestate->event_data, event_vars->event_gobj->userdata, sizeof(savestate->event_data));
@@ -106,6 +213,7 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
                         memcpy(&ft_data->color, &fighter_data->color, sizeof(fighter_data->color));                            // copy color overlay
                         memcpy(&ft_data->input, &fighter_data->input, sizeof(fighter_data->input));                            // copy inputs
                         memcpy(&ft_data->coll_data, &fighter_data->coll_data, sizeof(fighter_data->coll_data));                // copy collision
+                        ft_data->ecb_bot_lock_frames = fighter_data->ecb_bot_lock_frames;
                         memcpy(&ft_data->camera_subject, fighter_data->camera_subject, sizeof(ft_data->camera_subject));       // copy camerabox
                         memcpy(&ft_data->hitbox, &fighter_data->hitbox, sizeof(fighter_data->hitbox));                         // copy hitbox
                         memcpy(&ft_data->throw_hitbox, &fighter_data->throw_hitbox, sizeof(fighter_data->throw_hitbox));       // copy hitbox
@@ -127,12 +235,12 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
                         // copy dmg
                         // latest MexTK and savestate have different sizes for dmg struct, so we use savestates's size
                         memcpy(&ft_data->dmg, &fighter_data->dmg, sizeof(ft_data->dmg));
-                        ft_data->dmg.hit_log.source = GOBJToID(ft_data->dmg.hit_log.source);
+                        ft_data->dmg.hit_log.source = FtGOBJToID(ft_data->dmg.hit_log.source);
 
                         // copy grab
                         memcpy(&ft_data->grab, &fighter_data->grab, sizeof(fighter_data->grab));
-                        ft_data->grab.attacker = GOBJToID(ft_data->grab.attacker);
-                        ft_data->grab.victim = GOBJToID(ft_data->grab.victim);
+                        ft_data->grab.attacker = FtGOBJToID(ft_data->grab.attacker);
+                        ft_data->grab.victim = FtGOBJToID(ft_data->grab.victim);
 
                         // copy callbacks
                         memcpy(&ft_data->cb, &fighter_data->cb, sizeof(fighter_data->cb)); // copy hitbox
@@ -198,6 +306,7 @@ int Savestate_Save_v1(Savestate_v1 *savestate, int flags)
 
     return isSaved;
 }
+
 // use enum savestate_flags for flags
 int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 {
@@ -312,6 +421,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
                     JOBJ *joint_6 = thiscoll->joint_6;                                                      // 0x11c
                     JOBJ *joint_7 = thiscoll->joint_7;                                                      // 0x120
                     memcpy(&fighter_data->coll_data, &ft_data->coll_data, sizeof(fighter_data->coll_data)); // copy collision
+                    fighter_data->ecb_bot_lock_frames = ft_data->ecb_bot_lock_frames; 
                     thiscoll->gobj = gobj;
                     thiscoll->joint_1 = joint_1;
                     thiscoll->joint_2 = joint_2;
@@ -367,8 +477,8 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 
                     // copy grab
                     memcpy(&fighter_data->grab, &ft_data->grab, sizeof(fighter_data->grab));
-                    fighter_data->grab.attacker = IDToGOBJ(fighter_data->grab.attacker);
-                    fighter_data->grab.victim = IDToGOBJ(fighter_data->grab.victim);
+                    fighter_data->grab.attacker = FtIDToGOBJ(fighter_data->grab.attacker);
+                    fighter_data->grab.victim = FtIDToGOBJ(fighter_data->grab.victim);
 
                     // convert pointers
 
@@ -433,7 +543,7 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
 
                     // restore damage variables
                     memcpy(&fighter_data->dmg, &ft_data->dmg, sizeof(ft_data->dmg)); // copy hitbox
-                    fighter_data->dmg.hit_log.source = IDToGOBJ(fighter_data->dmg.hit_log.source);
+                    fighter_data->dmg.hit_log.source = FtIDToGOBJ(fighter_data->dmg.hit_log.source);
 
                     // restore jump variables
                     memcpy(&fighter_data->jump, &ft_data->jump, sizeof(fighter_data->jump)); // copy hitbox
@@ -590,8 +700,8 @@ int Savestate_Load_v1(Savestate_v1 *savestate, int flags)
     if (isLoaded == 1) {
         // restore frame
         Match *match = stc_match;
-        match->time_frames = savestate->frame;
-        event_vars->game_timer = savestate->frame;
+        match->time_frames = savestate->header.frame;
+        event_vars->game_timer = savestate->header.frame;
 
         // update timer
         int frames = match->time_frames - 1; // this is because the scenethink function runs once before the gobj procs do

@@ -175,7 +175,7 @@ static void Reset_CPU(GOBJ *cpu, int side_idx, int dmg, float kb_mag, float kb_a
 }
 
 static void Reset(void) {
-    event_vars->Savestate_Load_v1(event_vars->savestate, Savestate_Silent);
+    event_vars->Savestate_Load(&event_vars->savestate->header, Savestate_Silent);
     edgeguard_timer = 0;
 
     for (int ply = 0; ply < 2; ++ply) {

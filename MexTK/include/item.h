@@ -206,14 +206,6 @@ enum ItUnkKind
 
 /*** Structs ***/
 
-struct ItemModelDesc
-{
-    JOBJ *model;
-    int bone_count;
-    int bone_attach_id;
-    int bit_field;
-};
-
 struct ItemStateDesc
 {
     void *anim_joint;
@@ -334,13 +326,20 @@ struct itPublicData
     int *x14;
 };
 
+struct ItemModelDesc {
+    JOBJDesc *joint;    // 0x00
+    u32 bone_count;     // 0x04
+    int bone_attach_id; // 0x08
+    u8 bit_field;       // 0x0C
+};
+
 struct itData
 {
     itCommonAttr *param;  // 0x00
-    float *param_ext;     // 0x04
+    void *param_ext;      // 0x04
     void *hurtboxes;      // 0x08
     void *states;         // 0x0C
-    void *model;          // 0x10
+    ItemModelDesc *model; // 0x10
     ItDynamics *dynamics; // 0x14
 };
 
@@ -515,6 +514,20 @@ struct ItDynamicBoneset
     DynamicBoneset boneset; // 0x8
 };
 
+struct ItemLinkData
+{
+    ItemLinkData *prev;
+    ItemLinkData *next;
+    Vec3 vel;
+    Vec3 pos;
+    Vec3 x20;
+    u8 x2C_flags;
+    CollData coll_data;
+    int x1CC;
+    GOBJ* x1D0_GObj;
+    JOBJ* x1D4_JObj;
+};
+
 struct ItemData
 {
     int x0;                                             // 0x0
@@ -570,12 +583,13 @@ struct ItemData
     ItemState *item_states;                             // 0xbc
     int air_state;                                      // 0xc0
     itData *itData;                                     // 0xc4
-    JOBJ *joint;                                        // 0xc8
+    JOBJDesc *joint;                                    // 0xc8
     itCommonAttr *common_attr;                          // 0xcc
-    int xd0;                                            // 0xd0
+    ItemStateDesc *desc;                                // 0xd0
     ItDynamicBoneset dynamics_boneset[24];              // 0xd4
     int dynamics_num;                                   // 0x374
     CollData coll_data;                                 // 0x378 -> 0x518
+    int ecb_bot_lock_frames;                            // 0x514, frames until ecb bottom offset is no longer locked
     GOBJ *fighter_gobj;                                 // 0x518
     int x51c;                                           // 0x51c
     CmSubject *camera_subject;                          // 0x520
@@ -698,7 +712,7 @@ struct ItemData
     } dmg;                                              //
     GOBJ *hit_fighter;                                  // 0xcf4, fighter that got hit by, shielded, or hit this item. is removed after processing the damage callbacks
     GOBJ *detected_fighter;                             // 0xcf8, fighter that touched the items detect box. updated @ 800798d4
-    int xcfc;                                           // 0xcfc
+    GOBJ *unk_fighter;                                  // 0xcfc
     GOBJ *grabbed_fighter;                              // 0xd00
     GOBJ *attacker_item;                                // 0xd04
     u8 xd08;                                            // 0xd08
@@ -844,144 +858,150 @@ struct ItemData
     unsigned char xdd0_x04 : 1;                         // 0xdd0, 0x04
     unsigned char xdd0_x02 : 1;                         // 0xdd0, 0x02
     unsigned char xdd0_x01 : 1;                         // 0xdd0, 0x01
-    struct                                              // 0xdd4
-    {                                                   //
-        int var1;                                       // 0xdd4
-        int var2;                                       // 0xdd8
-        int var3;                                       // 0xddc
-        int var4;                                       // 0xde0
-        int var5;                                       // 0xde4
-        int var6;                                       // 0xde8
-        int var7;                                       // 0xdec
-        int var8;                                       // 0xdf0
-        int var9;                                       // 0xdf4
-        int var10;                                      // 0xdf8
-        int var11;                                      // 0xdfc
-        int var12;                                      // 0xe00
-        int xe04;                                       // 0xe04
-        int xe08;                                       // 0xe08
-        int xe0c;                                       // 0xe0c
-        int xe10;                                       // 0xe10
-        int xe14;                                       // 0xe14
-        int xe18;                                       // 0xe18
-        int xe1c;                                       // 0xe1c
-        int xe20;                                       // 0xe20
-        int xe24;                                       // 0xe24
-        int xe28;                                       // 0xe28
-        int xe2c;                                       // 0xe2c
-        int xe30;                                       // 0xe30
-        int xe34;                                       // 0xe34
-        int xe38;                                       // 0xe38
-        int xe3c;                                       // 0xe3c
-        int xe40;                                       // 0xe40
-        int xe44;                                       // 0xe44
-        int xe48;                                       // 0xe48
-        int xe4c;                                       // 0xe4c
-        int xe50;                                       // 0xe50
-        int xe54;                                       // 0xe54
-        int xe58;                                       // 0xe58
-        int xe5c;                                       // 0xe5c
-        int xe60;                                       // 0xe60
-        int xe64;                                       // 0xe64
-        int xe68;                                       // 0xe68
-        int xe6c;                                       // 0xe6c
-        int xe70;                                       // 0xe70
-        int xe74;                                       // 0xe74
-        int xe78;                                       // 0xe78
-        int xe7c;                                       // 0xe7c
-        int xe80;                                       // 0xe80
-        int xe84;                                       // 0xe84
-        int xe88;                                       // 0xe88
-        int xe8c;                                       // 0xe8c
-        int xe90;                                       // 0xe90
-        int xe94;                                       // 0xe94
-        int xe98;                                       // 0xe98
-        int xe9c;                                       // 0xe9c
-        int xea0;                                       // 0xea0
-        int xea4;                                       // 0xea4
-        int xea8;                                       // 0xea8
-        int xeac;                                       // 0xeac
-        int xeb0;                                       // 0xeb0
-        int xeb4;                                       // 0xeb4
-        int xeb8;                                       // 0xeb8
-        int xebc;                                       // 0xebc
-        int xec0;                                       // 0xec0
-        int xec4;                                       // 0xec4
-        int xec8;                                       // 0xec8
-        int xecc;                                       // 0xecc
-        int xed0;                                       // 0xed0
-        int xed4;                                       // 0xed4
-        int xed8;                                       // 0xed8
-        int xedc;                                       // 0xedc
-        int xee0;                                       // 0xee0
-        int xee4;                                       // 0xee4
-        int xee8;                                       // 0xee8
-        int xeec;                                       // 0xeec
-        int xef0;                                       // 0xef0
-        int xef4;                                       // 0xef4
-        int xef8;                                       // 0xef8
-        int xefc;                                       // 0xefc
-        int xf00;                                       // 0xf00
-        int xf04;                                       // 0xf04
-        int xf08;                                       // 0xf08
-        int xf0c;                                       // 0xf0c
-        int xf10;                                       // 0xf10
-        int xf14;                                       // 0xf14
-        int xf18;                                       // 0xf18
-        int xf1c;                                       // 0xf1c
-        int xf20;                                       // 0xf20
-        int xf24;                                       // 0xf24
-        int xf28;                                       // 0xf28
-        int xf2c;                                       // 0xf2c
-        int xf30;                                       // 0xf30
-        int xf34;                                       // 0xf34
-        int xf38;                                       // 0xf38
-        int xf3c;                                       // 0xf3c
-        int xf40;                                       // 0xf40
-        int xf44;                                       // 0xf44
-        int xf48;                                       // 0xf48
-        int xf4c;                                       // 0xf4c
-        int xf50;                                       // 0xf50
-        int xf54;                                       // 0xf54
-        int xf58;                                       // 0xf58
-        int xf5c;                                       // 0xf5c
-        int xf60;                                       // 0xf60
-        int xf64;                                       // 0xf64
-        int xf68;                                       // 0xf68
-        int xf6c;                                       // 0xf6c
-        int xf70;                                       // 0xf70
-        int xf74;                                       // 0xf74
-        int xf78;                                       // 0xf78
-        int xf7c;                                       // 0xf7c
-        int xf80;                                       // 0xf80
-        int xf84;                                       // 0xf84
-        int xf88;                                       // 0xf88
-        int xf8c;                                       // 0xf8c
-        int xf90;                                       // 0xf90
-        int xf94;                                       // 0xf94
-        int xf98;                                       // 0xf98
-        int xf9c;                                       // 0xf9c
-        int xfa0;                                       // 0xfa0
-        int xfa4;                                       // 0xfa4
-        int xfa8;                                       // 0xfa8
-        int xfac;                                       // 0xfac
-        int xfb0;                                       // 0xfb0
-        int xfb4;                                       // 0xfb4
-        int xfb8;                                       // 0xfb8
-        int xfbc;                                       // 0xfbc
-        int xfc0;                                       // 0xfc0
-        int xfc4;                                       // 0xfc4
-        int xfc8;                                       // 0xfc8
-    } item_var;                                         //
+    union itvars                                        // 
+    {
+        void *as_ptr[126];
+        struct {
+            int var1;                                       // 0xdd4
+            int var2;                                       // 0xdd8
+            int var3;                                       // 0xddc
+            int var4;                                       // 0xde0
+            int var5;                                       // 0xde4
+            int var6;                                       // 0xde8
+            int var7;                                       // 0xdec
+            int var8;                                       // 0xdf0
+            int var9;                                       // 0xdf4
+            int var10;                                      // 0xdf8
+            int var11;                                      // 0xdfc
+            int var12;                                      // 0xe00
+            int xe04;                                       // 0xe04
+            int xe08;                                       // 0xe08
+            int xe0c;                                       // 0xe0c
+            int xe10;                                       // 0xe10
+            int xe14;                                       // 0xe14
+            int xe18;                                       // 0xe18
+            int xe1c;                                       // 0xe1c
+            int xe20;                                       // 0xe20
+            int xe24;                                       // 0xe24
+            int xe28;                                       // 0xe28
+            int xe2c;                                       // 0xe2c
+            int xe30;                                       // 0xe30
+            int xe34;                                       // 0xe34
+            int xe38;                                       // 0xe38
+            int xe3c;                                       // 0xe3c
+            int xe40;                                       // 0xe40
+            int xe44;                                       // 0xe44
+            int xe48;                                       // 0xe48
+            int xe4c;                                       // 0xe4c
+            int xe50;                                       // 0xe50
+            int xe54;                                       // 0xe54
+            int xe58;                                       // 0xe58
+            int xe5c;                                       // 0xe5c
+            int xe60;                                       // 0xe60
+            int xe64;                                       // 0xe64
+            int xe68;                                       // 0xe68
+            int xe6c;                                       // 0xe6c
+            int xe70;                                       // 0xe70
+            int xe74;                                       // 0xe74
+            int xe78;                                       // 0xe78
+            int xe7c;                                       // 0xe7c
+            int xe80;                                       // 0xe80
+            int xe84;                                       // 0xe84
+            int xe88;                                       // 0xe88
+            int xe8c;                                       // 0xe8c
+            int xe90;                                       // 0xe90
+            int xe94;                                       // 0xe94
+            int xe98;                                       // 0xe98
+            int xe9c;                                       // 0xe9c
+            int xea0;                                       // 0xea0
+            int xea4;                                       // 0xea4
+            int xea8;                                       // 0xea8
+            int xeac;                                       // 0xeac
+            int xeb0;                                       // 0xeb0
+            int xeb4;                                       // 0xeb4
+            int xeb8;                                       // 0xeb8
+            int xebc;                                       // 0xebc
+            int xec0;                                       // 0xec0
+            int xec4;                                       // 0xec4
+            int xec8;                                       // 0xec8
+            int xecc;                                       // 0xecc
+            int xed0;                                       // 0xed0
+            int xed4;                                       // 0xed4
+            int xed8;                                       // 0xed8
+            int xedc;                                       // 0xedc
+            int xee0;                                       // 0xee0
+            int xee4;                                       // 0xee4
+            int xee8;                                       // 0xee8
+            int xeec;                                       // 0xeec
+            int xef0;                                       // 0xef0
+            int xef4;                                       // 0xef4
+            int xef8;                                       // 0xef8
+            int xefc;                                       // 0xefc
+            int xf00;                                       // 0xf00
+            int xf04;                                       // 0xf04
+            int xf08;                                       // 0xf08
+            int xf0c;                                       // 0xf0c
+            int xf10;                                       // 0xf10
+            int xf14;                                       // 0xf14
+            int xf18;                                       // 0xf18
+            int xf1c;                                       // 0xf1c
+            int xf20;                                       // 0xf20
+            int xf24;                                       // 0xf24
+            int xf28;                                       // 0xf28
+            int xf2c;                                       // 0xf2c
+            int xf30;                                       // 0xf30
+            int xf34;                                       // 0xf34
+            int xf38;                                       // 0xf38
+            int xf3c;                                       // 0xf3c
+            int xf40;                                       // 0xf40
+            int xf44;                                       // 0xf44
+            int xf48;                                       // 0xf48
+            int xf4c;                                       // 0xf4c
+            int xf50;                                       // 0xf50
+            int xf54;                                       // 0xf54
+            int xf58;                                       // 0xf58
+            int xf5c;                                       // 0xf5c
+            int xf60;                                       // 0xf60
+            int xf64;                                       // 0xf64
+            int xf68;                                       // 0xf68
+            int xf6c;                                       // 0xf6c
+            int xf70;                                       // 0xf70
+            int xf74;                                       // 0xf74
+            int xf78;                                       // 0xf78
+            int xf7c;                                       // 0xf7c
+            int xf80;                                       // 0xf80
+            int xf84;                                       // 0xf84
+            int xf88;                                       // 0xf88
+            int xf8c;                                       // 0xf8c
+            int xf90;                                       // 0xf90
+            int xf94;                                       // 0xf94
+            int xf98;                                       // 0xf98
+            int xf9c;                                       // 0xf9c
+            int xfa0;                                       // 0xfa0
+            int xfa4;                                       // 0xfa4
+            int xfa8;                                       // 0xfa8
+            int xfac;                                       // 0xfac
+            int xfb0;                                       // 0xfb0
+            int xfb4;                                       // 0xfb4
+            int xfb8;                                       // 0xfb8
+            int xfbc;                                       // 0xfbc
+            int xfc0;                                       // 0xfc0
+            int xfc4;                                       // 0xfc4
+            int xfc8;                                       // 0xfc8
+        };
+    } item_var;
 };
 
 /*** static reference ***/
 
 static itPublicData **stc_itPublicData = R13_OFFSET(-0x4978);
 static ItemDesc **stc_itdesc_enemies = R13_OFFSET(-0x4968);
+static HSD_ObjAllocData *stc_item_alloc_data = (void*)0x804A0BE0;
+static HSD_ObjAllocData *stc_item_link_alloc_data = (void*)0x804A0C38;
 
 /*** Functions ***/
 void Item_IndexStageItem(ItemDesc *item_desc, int index);
+void Item_OnUserDataRemove(void *userdata);
 void Item_Hold(GOBJ *item, GOBJ *fighter, int boneID);
 void Item_Catch(GOBJ *fighter, int unk);
 void Item_StoreItemDataToCharItemTable(int articleData, int articleID);
@@ -991,6 +1011,7 @@ GOBJ *Item_CreateItem1(SpawnItem *item_spawn);
 GOBJ *Item_CreateItem2(SpawnItem *item_spawn);
 GOBJ *Item_CreateItem3(SpawnItem *item_spawn);
 GOBJ *Item_CreateMapItem(int index, int initial_state, void *data, JOBJ *jobj, void *onHit, void *onHurt, void *onUnk);
+void Item_InitGObjObject(GOBJ *item);
 void Item_Destroy(GOBJ *item);
 int Item_CollGround_PassLedge(GOBJ *item, void *callback);
 int Item_CollGround_StopLedge(GOBJ *item, void *callback);
@@ -1047,9 +1068,10 @@ void Item_UpdateHitboxDamage(itHit *hit, int dmg, GOBJ *item);
 GOBJ *Item_GiveOwnershipToAttacker(GOBJ *item);
 char Item_GetHoldKind(GOBJ *item);
 float Item_GetDistanceFromPointSquared(GOBJ *item, Vec3 *position);
-void Item_DestroyAndRemovedGrabbed(GOBJ *item, int flag, float damage);
+void Item_DestroyAndRemoveGrabbed(GOBJ *item, int flag, float damage);
 bool Item_RemoveFighterReference(GOBJ *item, GOBJ *fighter);
 void Item_ClearHitlagFlag(GOBJ *item);
-
 void Egg_Destroy(GOBJ *egg_gobj);
+void Item_FindModelFromKind(GOBJ *item);
+void Item_AttachToFighterBone(GOBJ *item, char item_bone, GOBJ *fighter, char fighter_bone);
 #endif

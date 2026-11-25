@@ -6,6 +6,10 @@
 80068E98:Fighter_Create
 800BE7E0:Fighter_Create2
 8008c3e0:FSmash_GetASForAnalogAngle
+8008702c:Fighter_IncrementReferenceCount
+80087050:Fighter_DecrementReferenceCount
+800f1bac:Kirby_SetKirbyHat
+800EE5C0:Kirby_RemoveKirbyHat
 800693AC:ActionStateChange
 8006f190:FrameSpeedChange
 8036410C:AOBJ_ReqAnim
@@ -450,10 +454,13 @@
 8008E5A4:Fighter_TDI
 80090718:Fighter_PlayQueuedDamageSounds
 80160968:Fighter_GetPlyHUDColor
+80267978:Item_FindModelFromKind
 8026AC74:Item_Throw
+802680cc:Item_InitGObjObject
 80272C90:Item_GetHeldBone
 80272DB0:Item_BounceOffVictim
 80273078:Item_BounceOffShield
+80274f48:Item_AttachToFighterBone
 80016BE0:Archive_LoadFile
 80016C64:Archive_LoadInitReturnSymbol
 80016AF0:Archive_GetSections
@@ -683,7 +690,7 @@
 80272460:Item_UpdateHitboxDamage
 8027236C:Item_GiveOwnershipToAttacker
 802F23AC:Item_GetDistanceFromPointSquared
-802F28C8:Item_DestroyAndRemovedGrabbed
+802F28C8:Item_DestroyAndRemoveGrabbed
 8037210C:JOBJ_LoadDummy
 8036FB5C:JOBJ_AddAnimAll
 803717A8:JOBJ_AddChild

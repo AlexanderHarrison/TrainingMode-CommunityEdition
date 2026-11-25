@@ -2156,6 +2156,7 @@ struct FighterData
     int x6E8;                                 // 0x6E8
     int x6EC;                                 // 0x6EC
     CollData coll_data;                       // 0x6F0 -> 0x88C
+    int ecb_bot_lock_frames;                  // 0x88C, frames until ecb bottom offset is no longer locked
     CmSubject *camera_subject;                // 0x890
     struct state
     {
@@ -2273,13 +2274,15 @@ struct FighterData
         char jumps_used;               // 0x1968
         char walljumps_used;           // 0x1969
     } jump;                            //
-    float hitlag_mult;                 // 0x196c
-    int x1970;                         // 0x1970
-    GOBJ *item_held;                   // 0x1974
-    GOBJ *x1978;                       // 0x1978
-    int x197c;                         // 0x197c
-    GOBJ *item_head;                   // 0x1980
-    GOBJ *item_held_spec;              // 0x1984, special held item
+    float jab2_timer;                  // 0x196c
+    struct item {
+        int x1970;                     // 0x1970
+        GOBJ *held;               // 0x1974
+        GOBJ *held_2;             // 0x1978
+        GOBJ *held_3;             // 0x197c
+        GOBJ *head;               // 0x1980
+        GOBJ *held_special;       // 0x1984
+    } item;
     struct hurt                        // 0x1988
     {                                  //
         int kind_script;               // 0x1988, hurtkind set by action script
@@ -2428,7 +2431,7 @@ struct FighterData
     } afterimage;                         //
     int x2104;                            // 0x2104
     int x2108;                            // 0x2108
-    struct                                // 0x210c
+    struct wall                           // 0x210c
     {                                     //
         s8 timer;                         // 0x210c, Set to 0 when contact with a wall (other conditions necessary)
         float direction;                  // 0x2110
@@ -2669,60 +2672,63 @@ struct FighterData
         unsigned char x222a_x01 : 1;              // 0x01 - 0x222a
         char flags_222B;                          // 0x222B
     } flags;                                      //
-    struct fighter_var                            // 0x222c
-    {                                             //
-        int ft_var1;                              // 0x222c
-        int ft_var2;                              // 0x2230
-        int ft_var3;                              // 0x2234
-        int ft_var4;                              // 0x2238
-        int ft_var5;                              // 0x223c
-        int ft_var6;                              // 0x2240
-        int ft_var7;                              // 0x2244
-        int ft_var8;                              // 0x2248
-        int ft_var9;                              // 0x224c
-        int ft_var10;                             // 0x2250
-        int ft_var11;                             // 0x2254
-        int ft_var12;                             // 0x2258
-        int ft_var13;                             // 0x225c
-        int ft_var14;                             // 0x2260
-        int ft_var15;                             // 0x2264
-        int ft_var16;                             // 0x2268
-        int ft_var17;                             // 0x226c
-        int ft_var18;                             // 0x2270
-        int ft_var19;                             // 0x2274
-        int ft_var20;                             // 0x2278
-        int ft_var21;                             // 0x227c
-        int ft_var22;                             // 0x2280
-        int ft_var23;                             // 0x2284
-        int ft_var24;                             // 0x2288
-        int ft_var25;                             // 0x228c
-        int ft_var26;                             // 0x2290
-        int ft_var27;                             // 0x2294
-        int ft_var28;                             // 0x2298
-        int ft_var29;                             // 0x229c
-        int ft_var30;                             // 0x22a0
-        int ft_var31;                             // 0x22a4
-        int ft_var32;                             // 0x22a8
-        int ft_var33;                             // 0x22ac
-        int ft_var34;                             // 0x22b0
-        int ft_var35;                             // 0x22b4
-        int ft_var36;                             // 0x22b8
-        int ft_var37;                             // 0x22bc
-        int ft_var38;                             // 0x22c0
-        int ft_var39;                             // 0x22c4
-        int ft_var40;                             // 0x22c8
-        int ft_var41;                             // 0x22cc
-        int ft_var42;                             // 0x22d0
-        int ft_var43;                             // 0x22d4
-        int ft_var44;                             // 0x22d8
-        int ft_var45;                             // 0x22dc
-        int ft_var46;                             // 0x22e0
-        int ft_var47;                             // 0x22e4
-        int ft_var48;                             // 0x22e8
-        int ft_var49;                             // 0x22ec
-        int ft_var50;                             // 0x22f0
-        int ft_var51;                             // 0x22f4
-        int ft_var52;                             // 0x22f8
+    union fighter_var {
+        void *as_ptr[52];
+        struct                                        // 0x222c
+        {                                             //
+            int ft_var1;                              // 0x222c
+            int ft_var2;                              // 0x2230
+            int ft_var3;                              // 0x2234
+            int ft_var4;                              // 0x2238
+            int ft_var5;                              // 0x223c
+            int ft_var6;                              // 0x2240
+            int ft_var7;                              // 0x2244
+            int ft_var8;                              // 0x2248
+            int ft_var9;                              // 0x224c
+            int ft_var10;                             // 0x2250
+            int ft_var11;                             // 0x2254
+            int ft_var12;                             // 0x2258
+            int ft_var13;                             // 0x225c
+            int ft_var14;                             // 0x2260
+            int ft_var15;                             // 0x2264
+            int ft_var16;                             // 0x2268
+            int ft_var17;                             // 0x226c
+            int ft_var18;                             // 0x2270
+            int ft_var19;                             // 0x2274
+            int ft_var20;                             // 0x2278
+            int ft_var21;                             // 0x227c
+            int ft_var22;                             // 0x2280
+            int ft_var23;                             // 0x2284
+            int ft_var24;                             // 0x2288
+            int ft_var25;                             // 0x228c
+            int ft_var26;                             // 0x2290
+            int ft_var27;                             // 0x2294
+            int ft_var28;                             // 0x2298
+            int ft_var29;                             // 0x229c
+            int ft_var30;                             // 0x22a0
+            int ft_var31;                             // 0x22a4
+            int ft_var32;                             // 0x22a8
+            int ft_var33;                             // 0x22ac
+            int ft_var34;                             // 0x22b0
+            int ft_var35;                             // 0x22b4
+            int ft_var36;                             // 0x22b8
+            int ft_var37;                             // 0x22bc
+            int ft_var38;                             // 0x22c0
+            int ft_var39;                             // 0x22c4
+            int ft_var40;                             // 0x22c8
+            int ft_var41;                             // 0x22cc
+            int ft_var42;                             // 0x22d0
+            int ft_var43;                             // 0x22d4
+            int ft_var44;                             // 0x22d8
+            int ft_var45;                             // 0x22dc
+            int ft_var46;                             // 0x22e0
+            int ft_var47;                             // 0x22e4
+            int ft_var48;                             // 0x22e8
+            int ft_var49;                             // 0x22ec
+            int ft_var50;                             // 0x22f0
+            int ft_var51;                             // 0x22f4
+            int ft_var52;                             // 0x22f8
+        };
     } fighter_var;
     int x22fc;                     // 0x22fc
     int x2300;                     // 0x2300
@@ -2742,26 +2748,29 @@ struct FighterData
     int x2334;                     // 0x2334
     int x2338;                     // 0x2338
     int x233c;                     // 0x233c
-    struct state_var               // 0x2340
-    {                              //
-        int state_var1;            // 0x2340
-        int state_var2;            // 0x2344
-        int state_var3;            // 0x2348
-        int state_var4;            // 0x234c
-        int state_var5;            // 0x2350
-        int state_var6;            // 0x2354
-        int state_var7;            // 0x2358
-        int state_var8;            // 0x235c
-        int state_var9;            // 0x2360
-        int state_var10;           // 0x2364
-        int state_var11;           // 0x2368
-        int state_var12;           // 0x236c
-        int state_var13;           // 0x2370
-        int state_var14;           // 0x2374
-        int state_var15;           // 0x2378
-        int state_var16;           // 0x237c
-        int state_var17;           // 0x2380
-        int state_var18;           // 0x2384
+    union state_var {
+        void *as_ptr[18];
+        struct                         // 0x2340
+        {                              //
+            int state_var1;            // 0x2340
+            int state_var2;            // 0x2344
+            int state_var3;            // 0x2348
+            int state_var4;            // 0x234c
+            int state_var5;            // 0x2350
+            int state_var6;            // 0x2354
+            int state_var7;            // 0x2358
+            int state_var8;            // 0x235c
+            int state_var9;            // 0x2360
+            int state_var10;           // 0x2364
+            int state_var11;           // 0x2368
+            int state_var12;           // 0x236c
+            int state_var13;           // 0x2370
+            int state_var14;           // 0x2374
+            int state_var15;           // 0x2378
+            int state_var16;           // 0x237c
+            int state_var17;           // 0x2380
+            int state_var18;           // 0x2384
+        };
     } state_var;                   //
     int x2388;                     // 0x2388
     int x238c;                     // 0x238c
@@ -3188,6 +3197,8 @@ void Fighter_UpdateGFX(GOBJ *f);       // 8006c80c
 void Fighter_UpdateAllHitboxPos(GOBJ *f);
 void Fighter_UpdateBonePos(FighterData *fighter_data, int unk);
 void Fighter_SubactionFastForward(GOBJ *fighter);
+void Fighter_IncrementReferenceCount(int ply);
+void Fighter_DecrementReferenceCount(int ply);
 FtAction *Fighter_GetFtAction(FighterData *fighter, int action_id); // returns the desired ft action entry stored in the dat file
 Figatree *Fighter_GetAnimData(FighterData *fighter, int action_id); // this will request the anim data from the AJ file in ARAM and overwrite the current animation!
 float Fighter_GetAnimLength(Figatree *ft_anim);
@@ -3465,5 +3476,7 @@ void Fighter_PlayQueuedDamageSounds(FighterData *fp);
 GXColor Fighter_GetPlyHUDColor(int ply); // used for lupe, pokemon stadium text color, results viewport broder
 void FSmash_GetASForAnalogAngle(GOBJ *ft);
 Mtx *Fighter_GetMtxPtr(FighterData *fp);
+void Kirby_RemoveKirbyHat(GOBJ *ft);
+void Kirby_SetKirbyHat(GOBJ *ft, int hat_kind, bool play_sfx);
 
 #endif

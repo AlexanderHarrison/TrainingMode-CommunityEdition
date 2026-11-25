@@ -766,6 +766,19 @@ EventPage *EventPages[] = {
 
 RNGControl rng;
 
+int Savestate_Load(SavestateHeader *savestate, int flags) {
+    if (!savestate->is_initialized)
+        assert("savestate not initialized!");
+
+    if (savestate->version_major <= 1)
+        return Savestate_Load_v1((Savestate_v1*)savestate, flags);
+    else if (savestate->version_major == 2)
+        return Savestate_Load_v2((Savestate_v2*)savestate, flags);
+    else
+        assert("unsupported savestate version!");
+    return false;
+}
+
 EventVars stc_event_vars = {
     .event_desc = 0,
     .menu_assets = 0,
@@ -775,7 +788,8 @@ EventVars stc_event_vars = {
     .game_timer = 0,
     .flags = 0,
     .Savestate_Save_v1 = Savestate_Save_v1,
-    .Savestate_Load_v1 = Savestate_Load_v1,
+    .Savestate_Save_v2 = Savestate_Save_v2,
+    .Savestate_Load = Savestate_Load,
     .Message_Display = Message_Display,
     .Tip_Display = Tip_Display,
     .Tip_Destroy = Tip_Destroy,
@@ -789,7 +803,6 @@ EventVars stc_event_vars = {
 };
 
 static GOBJ *stc_msgmgr;
-static Savestate_v1 *stc_savestate;
 static TipMgr stc_tipmgr;
 
 static Vec2 stc_msg_queue_offsets_vertical[] = {
@@ -1304,9 +1317,7 @@ void EventLoad(void)
     GObj_AddProc(timer_gobj, Event_IncTimer, 0);
 
     // init savestate struct
-    stc_savestate = calloc(sizeof(Savestate_v1));
-    stc_savestate->is_exist = 0;
-    stc_event_vars.savestate = stc_savestate;
+    stc_event_vars.savestate2 = calloc(sizeof(Savestate_v2));
 
     // disable hazards if enabled
     if (event_desc->disable_hazards == 1)
@@ -1482,112 +1493,6 @@ void OnStartMelee(void)
 /// Miscellaneous Functions ///
 ///////////////////////////////
 
-GOBJ *GOBJToID(GOBJ *gobj)
-{
-    // ensure valid pointer
-    if (gobj == 0)
-        return (GOBJ *)-1;
-
-    // ensure its a fighter
-    if (gobj->entity_class != 4)
-        return (GOBJ *)-1;
-
-    // access the data
-    FighterData *ft_data = gobj->userdata;
-    u8 ply = ft_data->ply;
-    u8 ms = ft_data->flags.ms;
-
-    return (GOBJ *)((ply << 4) | ms);
-}
-FighterData *FtDataToID(FighterData *fighter_data)
-{
-    // ensure valid pointer
-    if (fighter_data == 0)
-        return (FighterData *)-1;
-
-    // ensure its a fighter
-    if (fighter_data->fighter == 0)
-        return (FighterData *)-1;
-
-    // get ply and ms
-    u8 ply = fighter_data->ply;
-    u8 ms = fighter_data->flags.ms;
-
-    return (FighterData *)((ply << 4) | ms);
-}
-JOBJ *BoneToID(FighterData *fighter_data, JOBJ *bone)
-{
-    // ensure bone exists
-    if (bone == 0)
-        return (JOBJ *)-1;
-
-    int bone_id = -1;
-
-    // painstakingly look for a match
-    for (int i = 0; i < fighter_data->bone_num; i++)
-    {
-        if (bone == fighter_data->bones[i].joint)
-        {
-            bone_id = i;
-            break;
-        }
-    }
-
-    // no bone found
-    if (bone_id == -1)
-        TMLOG("no bone found %x\n", bone);
-
-    return (JOBJ *)bone_id;
-}
-GOBJ *IDToGOBJ(GOBJ *id_as_ptr)
-{
-    int id = (int)id_as_ptr;
-
-    // ensure valid pointer
-    if (id == -1)
-        return (GOBJ *)0;
-
-    // get ply and ms
-    u8 ply = (id >> 4) & 0xF;
-    u8 ms = id & 0xF;
-
-    // get the gobj for this fighter
-    GOBJ *gobj = Fighter_GetSubcharGObj(ply, ms);
-
-    return gobj;
-}
-FighterData *IDToFtData(FighterData *id_as_ptr)
-{
-    int id = (int)id_as_ptr;
-
-    // ensure valid pointer
-    if (id == -1)
-        return 0;
-
-    // get ply and ms
-    u8 ply = (id >> 4) & 0xF;
-    u8 ms = id & 0xF;
-
-    // get the gobj for this fighter
-    GOBJ *gobj = Fighter_GetSubcharGObj(ply, ms);
-    FighterData *fighter_data = gobj->userdata;
-
-    return fighter_data;
-}
-JOBJ *IDToBone(FighterData *fighter_data, JOBJ *id_as_ptr)
-{
-    int id = (int)id_as_ptr;
-
-    // ensure valid pointer
-    if (id == -1)
-        return 0;
-
-    // get the bone
-    JOBJ *bone = fighter_data->bones[id].joint;
-
-    return bone;
-}
-
 void Event_IncTimer(GOBJ *gobj)
 {
     stc_event_vars.game_timer++;
@@ -1678,7 +1583,7 @@ void Hazards_Disable(void)
         // set bg skip flag
         GOBJ *map_gobj = Stage_GetMapGObj(3);
         MapData *map_data = map_gobj->userdata;
-        map_data->xc4 |= 0x40;
+        map_data->map_var.xc4 |= 0x40;
 
         // remove on-go function that changes this flag
         StageOnGO *on_go = stc_stage->on_go;

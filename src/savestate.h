@@ -3,7 +3,181 @@
 
 #include "../MexTK/mex.h"
 
+// COMMON #####################################################
+
 #define EVENT_DATASIZE 512
+
+typedef struct SavestateHeader {
+    // These 4 bytes were originally `int is_exist` in unc's original savestate format.
+    // The high 32 bits were completely unused, so we can easily fit in a version field here.
+    // version < 2 corresponds to v1.
+    u8 version_major;
+    u8 version_minor;
+    u8 _unused;
+    u8 is_initialized;
+    int frame;
+} SavestateHeader;
+
+// VERSION 2 #####################################################
+
+// TODO get rid of 'is_exist' fields, store counts instead
+
+typedef struct IDInfo {
+    // for locating gobj
+    char p_link;
+    char list_idx;
+
+    // for locating jobj (unused for FighterData and GOBJ)
+    char jobj_idx;
+    
+    // is pointer to GOBJ userdata
+    char is_userdata;
+} IDInfo;
+
+typedef union ID {
+    void *ptr;
+    IDInfo id;
+} ID;
+
+typedef struct VarPtr {
+    u8 valid : 1;
+    u8 index : 7;
+} VarPtr;
+
+typedef struct FtSaveStateData_v2 {
+    int is_exist;
+    int state_id;
+    float facing_direction;
+    float state_frame;
+    float state_rate;
+    float state_blend;
+    struct phys phys;
+    struct input input;
+    CollData coll_data;
+    int ecb_bot_lock_frames;
+    int ledge_cooldown;
+    ColorOverlay color[3];
+    CmSubject camera_subject;
+    ftHit hitbox[4];
+    ftHit throw_hitbox[2];
+    ftHit thrown_hitbox;
+    struct flags flags;
+    union fighter_var fighter_var;
+    union state_var state_var;
+    struct ftcmd_var ftcmd_var;
+    struct dmg dmg;
+    struct grab grab;
+    CPU cpu;
+    struct wall wall;
+    float jab2_timer;
+    struct item item;
+    struct jump jump;
+    struct smash smash;
+    struct hurt hurt;
+    struct shield shield;
+    struct shield_bubble shield_bubble;
+    struct reflect_bubble reflect_bubble;
+    struct absorb_bubble absorb_bubble;
+    struct reflect_hit reflect_hit;
+    struct absorb_hit absorb_hit;
+    struct cb cb;
+
+    VarPtr fighter_var_ptrs[8];
+    VarPtr state_var_ptrs[8];
+} FtSaveStateData_v2;
+
+typedef struct FtSaveState_v2 {
+    FtSaveStateData_v2 data[2];
+    Playerblock playerblock;
+    int stale_queue[11];
+} FtSaveState_v2;
+
+// enum StageSaveStateTag_v2 {
+//     STSV2_StadiumTransformation = 1,
+// };
+
+// typedef struct StageSaveState_v2 {
+//     u16 tag;
+//     union {
+//     };
+// } StageSaveState_v2;
+
+typedef struct GOBJSaveState_v2 {
+    short entity_class;
+    char p_link;
+    char gx_link;
+    char p_priority;
+    char gx_pri;
+    char obj_kind;
+    char data_kind;
+    void (*gx_cb)(GOBJ*, int);
+    u64 cobj_links;
+    void *destructor_function;
+
+    void *proc[12];
+    char proc_s_link[12];
+    char proc_flags[12];
+} GOBJSaveState_v2;
+
+typedef struct JOBJSaveState_v2 {
+    Vec4 rot;
+    Vec3 scale;
+    Vec3 trans;
+} JOBJSaveState_v2;
+
+typedef struct ItemSaveState_v2 {
+    int is_exist;
+    
+    GOBJSaveState_v2 gobj;
+    JOBJSaveState_v2 jobj;
+
+    JOBJ *attached;
+    JOBJ *attached_to;
+
+    VarPtr var_ptrs[16]; // ItemData var GOBJ ptrs
+    ItemData data;
+} ItemSaveState_v2;
+
+typedef struct ItemLinkSaveState_v2 {
+    int is_exist;
+    GOBJSaveState_v2 gobj;
+    JOBJSaveState_v2 jobj;
+    GOBJ *parent_fighter;
+    GOBJ *parent_item;
+    int parent_item_attributes_jobj_desc_idx;
+    ItemLinkData data;
+} ItemLinkSaveState_v2;
+
+typedef struct YoshisStorySaveState_v2 {
+    Vec3 randall_position;
+    u32 randall_timer;
+} YoshisStorySaveState_v2;
+
+typedef union StageSaveState_v2 {
+    YoshisStorySaveState_v2 yoshis_story;
+} StageSaveState_v2;
+
+typedef struct Savestate_v2
+{
+    SavestateHeader header;
+    u8 event_data[EVENT_DATASIZE];
+    FtSaveState_v2 ft_state[6];
+    ItemSaveState_v2 item_state[8];
+    ItemLinkSaveState_v2 item_link_state[32];
+
+    StageSaveState_v2 stage_state;
+} Savestate_v2;
+
+// VERSION 1 #####################################################
+    
+typedef struct ExportMenuSettings {
+    u8 hmn_mode;
+    u8 hmn_slot;
+    u8 cpu_mode;
+    u8 cpu_slot;
+    u8 loop_inputs;
+    u8 auto_restore;
+} ExportMenuSettings;
 
 typedef struct FtSaveStateData_v1
 {
@@ -19,6 +193,7 @@ typedef struct FtSaveStateData_v1
     ColorOverlay color[3];
     struct input input;
     CollData coll_data;
+    int ecb_bot_lock_frames;
     struct
     {
         void *alloc;            // 0x0
@@ -45,8 +220,8 @@ typedef struct FtSaveStateData_v1
     ftHit throw_hitbox[2];
     ftHit thrown_hitbox;
     struct flags flags;                // 0x2210
-    struct fighter_var fighter_var;    // 0x222c
-    struct state_var state_var;        // 0x2340
+    union fighter_var fighter_var;    // 0x222c
+    union state_var state_var;        // 0x2340
     struct ftcmd_var ftcmd_var;        // 0x2200
     struct
     {
@@ -185,14 +360,14 @@ typedef struct FtSaveState_v1
 
 typedef struct Savestate_v1
 {
-    int is_exist;
-    int frame;
+    SavestateHeader header;
     u8 event_data[EVENT_DATASIZE];
     FtSaveState_v1 ft_state[6];
 } Savestate_v1;
 
 enum savestate_flags {
-    // save: perform initial safety checks 
+    // save: perform initial safety checks
+    // not used in v2
     Savestate_Checks = 1 << 0,
     
     // save/load: don't play sfx and screen flash 
@@ -203,6 +378,8 @@ enum savestate_flags {
 };
 
 int Savestate_Save_v1(Savestate_v1 *savestate, int flags);
+int Savestate_Save_v2(Savestate_v2 *savestate, int flags);
 int Savestate_Load_v1(Savestate_v1 *savestate, int flags);
+int Savestate_Load_v2(Savestate_v2 *savestate, int flags);
 
 #endif

@@ -223,6 +223,13 @@ Rect HUD_DrawActionLogBar(u8 *action_log, GXColor *color_lookup, int log_count);
 void HUD_DrawActionLogKey(char **action_names, GXColor *action_colors, int action_count);
 void HUD_DrawInfoPanel(const char **label, const char **info, int count);
 
+// Serialized!
+#define RNG_SETTING_COUNT_PEACH_ITEM 8
+#define RNG_SETTING_COUNT_PEACH_FSMASH 3
+#define RNG_SETTING_COUNT_LUIGI_MISFIRE 3
+#define RNG_SETTING_COUNT_GNW_HAMMER 10
+#define RNG_SETTING_COUNT_NANA_THROW 6
+
 typedef struct RNGControl
 {
     u8 peach_item;      // 0x0
@@ -250,12 +257,14 @@ typedef struct EventVars
     RNGControl *rng;                                                                         // rng struct pointer
     int game_timer;                                                                          // amount of game frames passed
     u32 flags;                                                                               // misc flags
-    int (*Savestate_Save_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to save state
-    int (*Savestate_Load_v1)(Savestate_v1 *savestate, int flags);                                  // function pointer to load state
+    int (*Savestate_Save_v1)(Savestate_v1 *savestate, int flags);                            // function pointer to save state v1
+    int (*Savestate_Save_v2)(Savestate_v2 *savestate, int flags);                            // function pointer to save state v2
+    int (*Savestate_Load)(SavestateHeader *savestate, int flags);                            // function pointer to load state
     GOBJ *(*Message_Display)(int msg_kind, int queue_num, int msg_color, char *format, ...); // function pointer to display message
     int (*Tip_Display)(int lifetime, char *fmt, ...);
     void (*Tip_Destroy)(void);      // function pointer to destroy tip
-    Savestate_v1 *savestate;       // points to the events main savestate
+    Savestate_v1 *savestate;       // points to the events main savestate TODO: remove
+    Savestate_v2 *savestate2;      // points to the events main savestate
 
     // To allow minor savestates during mirrored playback, 
     // we need to record if the minor savestate was saved duting mirroring.
@@ -289,12 +298,6 @@ EventDesc *GetEventDesc(int page, int event);
 void EventInit(int page, int eventID, MatchInit *matchData);
 void EventLoad(void);
 int Text_AddSubtextManual(Text *text, char *string, int posx, int posy, int scalex, int scaley);
-GOBJ *GOBJToID(GOBJ *gobj);
-FighterData *FtDataToID(FighterData *fighter_data);
-JOBJ *BoneToID(FighterData *fighter_data, JOBJ *bone);
-GOBJ *IDToGOBJ(GOBJ *id_as_ptr);
-FighterData *IDToFtData(FighterData *id_as_ptr);
-JOBJ *IDToBone(FighterData *fighter_data, JOBJ *id_as_ptr);
 void UpdateDevCamera(void);
 void EventUpdate(void);
 void Event_IncTimer(GOBJ *gobj);
