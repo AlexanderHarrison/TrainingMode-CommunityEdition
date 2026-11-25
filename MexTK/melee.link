@@ -458,6 +458,7 @@
 80272C90:Item_GetHeldBone
 80272DB0:Item_BounceOffVictim
 80273078:Item_BounceOffShield
+80274f48:Item_AttachToFighterBone
 80016BE0:Archive_LoadFile
 80016C64:Archive_LoadInitReturnSymbol
 80016AF0:Archive_GetSections

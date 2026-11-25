@@ -7040,19 +7040,6 @@ void Event_Think_LabState_Normal(GOBJ *event) {
     }
 }
 
-static JOBJ *JOBJFindBonePtr(JOBJ *bone, char *bone_idx) {
-    if (bone == 0)
-        return 0;
-    if (*bone_idx == 0)
-        return bone;
-    (*bone_idx)--;
-    
-    JOBJ *target = JOBJFindBonePtr(bone->child, bone_idx);
-    if (target)
-        return target;
-    return JOBJFindBonePtr(bone->sibling, bone_idx);
-}
-
 // Think Function
 void Event_Think(GOBJ *event)
 {

@@ -1073,4 +1073,5 @@ bool Item_RemoveFighterReference(GOBJ *item, GOBJ *fighter);
 void Item_ClearHitlagFlag(GOBJ *item);
 void Egg_Destroy(GOBJ *egg_gobj);
 void Item_FindModelFromKind(GOBJ *item);
+void Item_AttachToFighterBone(GOBJ *item, char item_bone, GOBJ *fighter, char fighter_bone);
 #endif

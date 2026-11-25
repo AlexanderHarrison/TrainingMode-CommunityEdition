@@ -180,7 +180,6 @@ static JOBJ *JOBJToID(GOBJ *gobj, JOBJ *jobj) {
     if (jobj) {
         ID pun = { .id = { 1, 0, 0, 0 } }; // set as non-zero to prevent returning 0 if jobj_idx == 0
         JOBJFindBoneIdx(gobj->hsd_object, jobj, &pun.id.jobj_idx);
-        OSReport("found bone %u\n", pun.id.jobj_idx);
         return pun.ptr;
     }
     return 0;
@@ -190,6 +189,32 @@ static JOBJ *IDToJOBJ(GOBJ *gobj, JOBJ *jobj) {
     if (jobj) {
         ID pun = { .ptr = jobj };
         return JOBJFindBonePtr(gobj->hsd_object, &pun.id.jobj_idx);
+    }
+    return 0;
+}
+
+// uses fighter bone lookup table rather than walking jobj tree
+static JOBJ *BoneToID(GOBJ *ft, JOBJ *jobj) {
+    FighterData *ft_data = ft->userdata;
+    if (jobj) {
+        ID pun = { .id = { 1, 0, 0, 0 } }; // set as non-zero to prevent returning 0 if jobj_idx == 0
+        FighterBone *bones = ft_data->bones;
+        for (char i = 0; i < 140; ++i) {
+            if (bones[i].joint == jobj) {
+                pun.id.jobj_idx = i;
+                return pun.ptr;
+            }
+        }
+    }
+    return 0;
+}
+
+static JOBJ *IDToBone(GOBJ *ft, JOBJ *jobj) {
+    FighterData *ft_data = ft->userdata;
+    if (jobj) {
+        ID pun = { .ptr = jobj };
+        char jobj_idx = pun.id.jobj_idx;
+        return ft_data->bones[jobj_idx].joint;
     }
     return 0;
 }
@@ -444,8 +469,8 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             memcpy(&ft_data->hitbox, &fighter_data->hitbox, sizeof(fighter_data->hitbox));
             for (u32 k = 0; k < countof(fighter_data->hitbox); k++)
             {
-                OSReport("save: ft hitbox %x -> %x\n", ft_data->hitbox[k].bone, JOBJToID(fighter, ft_data->hitbox[k].bone));
-                ft_data->hitbox[k].bone = JOBJToID(fighter, ft_data->hitbox[k].bone);
+                OSReport("save: ft hitbox %x -> %x\n", ft_data->hitbox[k].bone, BoneToID(fighter, ft_data->hitbox[k].bone));
+                ft_data->hitbox[k].bone = BoneToID(fighter, ft_data->hitbox[k].bone);
                 for (u32 l = 0; l < countof(fighter_data->hitbox->victims); l++)
                     ft_data->hitbox[k].victims[l].data = FtDataToID(ft_data->hitbox[k].victims[l].data);
             }
@@ -454,14 +479,15 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             memcpy(&ft_data->throw_hitbox, &fighter_data->throw_hitbox, sizeof(fighter_data->throw_hitbox));
             for (u32 k = 0; k < countof(fighter_data->throw_hitbox); k++)
             {
-                ft_data->throw_hitbox[k].bone = JOBJToID(fighter, ft_data->throw_hitbox[k].bone);
+                OSReport("save: ft throw hitbox %x -> %x\n", ft_data->throw_hitbox[k].bone, BoneToID(fighter, ft_data->throw_hitbox[k].bone));
+                ft_data->throw_hitbox[k].bone = BoneToID(fighter, ft_data->throw_hitbox[k].bone);
                 for (u32 l = 0; l < countof(fighter_data->throw_hitbox->victims); l++)
                     ft_data->throw_hitbox[k].victims[l].data = FtDataToID(ft_data->throw_hitbox[k].victims[l].data);
             }
 
             // copy thrown hitboxes
             memcpy(&ft_data->thrown_hitbox, &fighter_data->thrown_hitbox, sizeof(fighter_data->thrown_hitbox));
-            ft_data->thrown_hitbox.bone = JOBJToID(fighter, ft_data->thrown_hitbox.bone);
+            ft_data->thrown_hitbox.bone = BoneToID(fighter, ft_data->thrown_hitbox.bone);
             for (u32 k = 0; k < countof(fighter_data->thrown_hitbox.victims); k++)
                 ft_data->thrown_hitbox.victims[k].data = FtDataToID(ft_data->thrown_hitbox.victims[k].data);
 
@@ -838,7 +864,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         item_data->attacker_item = IDToGOBJ(item_state->data.attacker_item);
         item_data->fighter_gobj = IDToGOBJ(item_state->data.fighter_gobj);
         item_data->coll_data.gobj = IDToGOBJ(item_state->data.coll_data.gobj);
-        
+
         // convert item var GOBJ pointers
         for (u32 i = 0; i < countof(item_state->var_ptrs); ++i) {
             VarPtr var_ptr = item_state->var_ptrs[i];
@@ -864,14 +890,16 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             FighterData *ft_data = item_data->fighter_gobj->userdata;
             Fighter_IncrementReferenceCount(ft_data->kind);
         }
-        
+
         JOBJ *attached = IDToJOBJ(item, item_state->attached);
         JOBJ *attached_to = IDToJOBJ(item_data->fighter_gobj, item_state->attached_to);
-        if (attached)
+        if (attached) {
+            OSReport("ATTACH ATTACH %x -> %x\n", attached, attached_to);
             JOBJ_AttachPositionRotation(attached, attached_to);
+        }
     }
     OSReport("load 6\n");
-    
+
     // restore item link pointers
     for (u32 i = 0; i < countof(savestate->item_link_state); ++i) {
         ItemLinkSaveState_v2 *item_link_state = &savestate->item_link_state[i];
@@ -979,7 +1007,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 }
 
                 OSReport("load ft 4\n", j);
-            
+
                 // restore coll data
                 CollData *thiscoll = &fighter_data->coll_data;
                 GOBJ *gobj = thiscoll->gobj;                                                            // 0x0
@@ -991,11 +1019,6 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 JOBJ *joint_6 = thiscoll->joint_6;                                                      // 0x11c
                 JOBJ *joint_7 = thiscoll->joint_7;                                                      // 0x120
                 memcpy(&fighter_data->coll_data, &ft_data->coll_data, sizeof(fighter_data->coll_data)); // copy collision
-                fighter_data->ecb_bot_lock_frames = ft_data->ecb_bot_lock_frames;
-                fighter_data->ledge_cooldown = ft_data->ledge_cooldown;
-        
-                OSReport("load ft 5\n", j);
-            
                 thiscoll->gobj = gobj;
                 thiscoll->joint_1 = joint_1;
                 thiscoll->joint_2 = joint_2;
@@ -1004,6 +1027,12 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 thiscoll->joint_5 = joint_5;
                 thiscoll->joint_6 = joint_6;
                 thiscoll->joint_7 = joint_7;
+
+                OSReport("load ft 5\n", j);
+            
+                fighter_data->ecb_bot_lock_frames = ft_data->ecb_bot_lock_frames;
+                fighter_data->ledge_cooldown = ft_data->ledge_cooldown;
+                
                 if (flags & Savestate_Mirror)
                 {
                     thiscoll->topN_Curr.X *= -1;
@@ -1067,7 +1096,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 fighter_data->jab2_timer = ft_data->jab2_timer;
                 
                 OSReport("load ft 9\n", j);
-            
+
                 // TODO check if we can id *_bubble struct bones
                 
                 fighter_data->item = (struct item) {
@@ -1085,7 +1114,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
 
                 for (u32 k = 0; k < countof(fighter_data->hitbox); k++)
                 {
-                    fighter_data->hitbox[k].bone = IDToJOBJ(fighter, ft_data->hitbox[k].bone);
+                    fighter_data->hitbox[k].bone = IDToBone(fighter, ft_data->hitbox[k].bone);
                     OSReport("load: ft hitbox %x -> %x\n", ft_data->hitbox[k].bone, fighter_data->hitbox[k].bone);
                     for (u32 l = 0; l < countof(fighter_data->hitbox->victims); l++) // pointers to hitbox victims
                     {
@@ -1094,13 +1123,14 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 }
                 for (u32 k = 0; k < countof(fighter_data->throw_hitbox); k++)
                 {
-                    fighter_data->throw_hitbox[k].bone = IDToJOBJ(fighter, ft_data->throw_hitbox[k].bone);
+                    OSReport("load: ft throw hitbox %x -> %x\n", ft_data->throw_hitbox[k].bone, BoneToID(fighter, ft_data->throw_hitbox[k].bone));
+                    fighter_data->throw_hitbox[k].bone = IDToBone(fighter, ft_data->throw_hitbox[k].bone);
                     for (u32 l = 0; l < countof(fighter_data->throw_hitbox->victims); l++) // pointers to hitbox victims
                     {
                         fighter_data->throw_hitbox[k].victims[l].data = IDToFtData(ft_data->throw_hitbox[k].victims[l].data);
                     }
                 }
-                fighter_data->thrown_hitbox.bone = IDToJOBJ(fighter, ft_data->thrown_hitbox.bone);
+                fighter_data->thrown_hitbox.bone = IDToBone(fighter, ft_data->thrown_hitbox.bone);
                 for (u32 k = 0; k < countof(fighter_data->thrown_hitbox.victims); k++) // pointers to hitbox victims
                 {
                     fighter_data->thrown_hitbox.victims[k].data = IDToFtData(ft_data->thrown_hitbox.victims[k].data);
