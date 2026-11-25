@@ -703,6 +703,8 @@ void Event_Init(GOBJ *gobj) {
     FighterData *hmn_data = hmn->userdata;
     hmn_pad_index = hmn_data->pad_index;
     null_pad_index = (hmn_pad_index + 1) % 4;
+
+    event_vars->savestate = calloc(sizeof(Savestate_v1));
 }
 
 static void Exit(GOBJ *menu) {

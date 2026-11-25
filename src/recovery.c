@@ -149,7 +149,9 @@ enum options_spacies {
     OPT_SPACIES_FF_HIGH,
     OPT_SPACIES_JUMP,
     OPT_SPACIES_ILLUSION,
+    OPT_SPACIES_SHORTEN,
     OPT_SPACIES_FASTFALL,
+    OPT_SPACIES_SHINESTALL,
     
     OPT_SPACIES_COUNT
 };
@@ -215,8 +217,18 @@ static EventOption RecOptions_Fox[] = {
     },
     {
         .kind = OPTKIND_TOGGLE,
+        .name = "Shorten",
+        .desc = {"Allow Fox to cancel his side special early."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
         .desc = {"Allow Fox to fast fall."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Shine Stall",
+        .desc = {"Allow Fox to slow his fall using shine."},
     },
 };
 static EventMenu RecMenu_Fox = {
@@ -256,8 +268,18 @@ static EventOption RecOptions_Falco[] = {
     },
     {
         .kind = OPTKIND_TOGGLE,
+        .name = "Shorten",
+        .desc = {"Allow Falco to cancel his side special early."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
         .name = "Fast Fall",
         .desc = {"Allow Falco to fast fall."},
+    },
+    {
+        .kind = OPTKIND_TOGGLE,
+        .name = "Shine Stall",
+        .desc = {"Allow Falco to slow his fall using shine."},
     },
 };
 static EventMenu RecMenu_Falco = {
@@ -530,18 +552,22 @@ static float ProjectedDistance(FighterData *a, FighterData *b, int future) {
 
 // Spacies ------------------------------------------------
 
-#define SP_UPB_CHANCE 12 
+#define SP_UPB_CHANCE 10 
 #define SP_JUMP_CHANCE_BELOW_LEDGE 4
 #define SP_JUMP_CHANCE_ABOVE_LEDGE 30
 #define SP_ILLUSION_CHANCE_ABOVE_LEDGE 30
 #define SP_ILLUSION_CHANCE_TO_LEDGE 12
 #define SP_FASTFALL_CHANCE 8
+#define SP_SHINESTALL_CHANCE 2
+#define SP_SHINESTALL_JUMP_CHANCE 14
+#define SP_SHORTEN_CHANCE 2
 
 #define SP_MAX_ILLUSION_HEIGHT 30.f
 #define SP_MIN_ILLUSION_HEIGHT -15.f
 #define SP_ILLUSION_DISTANCE 75.f
 #define SP_FIREFOX_DISTANCE 80.f
 #define SP_FIREBIRD_DISTANCE 70.f
+#define SP_SHORTEN_DISTANCE 22.f
 
 #define SP_SWEETSPOT_OFFSET_X 16
 #define SP_SWEETSPOT_OFFSET_Y 5
@@ -593,7 +619,6 @@ static void Think_Spacies(GOBJ *cpu, u32 opt_flags) {
         
     // ACTIONABLE
     } else if (IsAirActionable(cpu)) {
-
         // JUMP
         if (
             OptEnabled(OPT_SPACIES_JUMP)
@@ -636,7 +661,7 @@ static void Think_Spacies(GOBJ *cpu, u32 opt_flags) {
             
         // FIREFOX
         } else if (
-            vel.Y <= 1.5f
+            vel.Y <= 1.0f
             && can_upb
             && !can_fall_to_ledge
             && (
@@ -663,12 +688,51 @@ static void Think_Spacies(GOBJ *cpu, u32 opt_flags) {
         ) {
             cpu_data->cpu.lstickY = -127;
             
+        // SHINESTALL
+        } else if (
+            OptEnabled(OPT_SPACIES_SHINESTALL)
+            && can_jump
+            && vel.Y < 0.f
+            && HSD_Randi(SP_SHINESTALL_CHANCE) == 0
+        ) {
+            cpu_data->cpu.lstickY = -127;
+            cpu_data->cpu.held |= PAD_BUTTON_B;
+
         // WAIT
         } else {
             // drift towards stage
             cpu_data->cpu.lstickX = 127 * dir;
         }
-        
+
+    // SHINESTALL
+    } else if (0x16D <= state && state <= 0x170) {
+        if (
+            OptEnabled(OPT_SPACIES_JUMP)
+            && can_jump
+            && (
+                // force jump if at end of range
+                distance_to_ledgegrab > upb_distance
+
+                // otherwise, random chance to jump
+                || HSD_Randi(SP_SHINESTALL_JUMP_CHANCE) == 0
+            )
+        ) {
+            cpu_data->cpu.held |= PAD_BUTTON_Y;
+            cpu_data->cpu.lstickX = 127 * dir;
+        } else {
+            cpu_data->cpu.held |= PAD_BUTTON_B;
+        }
+
+    // SHORTEN
+    } else if (state == 0x15F && cpu_data->TM.state_frame == 1) {
+        if (
+            OptEnabled(OPT_SPACIES_SHORTEN)
+            && fabs(vec_to_ledgegrab.X) < SP_SHORTEN_DISTANCE
+            && HSD_Randi(SP_SHORTEN_CHANCE) == 0
+        ) {
+            cpu_data->cpu.held |= PAD_BUTTON_B;
+        }
+
     // FIREFOX STARTUP
     } else if (0x161 <= state && state <= 0x162) {
         // compute firefox angle

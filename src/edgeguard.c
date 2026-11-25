@@ -270,6 +270,8 @@ void Event_Init(GOBJ *gobj) {
     GOBJ *cpu = Fighter_GetGObj(1);
     FighterData *hmn_data = hmn->userdata;
     FighterData *cpu_data = cpu->userdata;
+
+    event_vars->savestate = calloc(sizeof(Savestate_v1));
     
     // change team - homing missiles don't move towards characters on same team
     hmn_data->team = 0;

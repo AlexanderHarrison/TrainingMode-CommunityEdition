@@ -1316,9 +1316,6 @@ void EventLoad(void)
     GOBJ *timer_gobj = GObj_Create(0, 7, 0);
     GObj_AddProc(timer_gobj, Event_IncTimer, 0);
 
-    // init savestate struct
-    stc_event_vars.savestate2 = calloc(sizeof(Savestate_v2));
-
     // disable hazards if enabled
     if (event_desc->disable_hazards == 1)
         Hazards_Disable();

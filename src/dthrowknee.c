@@ -239,6 +239,7 @@ void Event_Init(GOBJ *menu) {
     GOBJ *gobj = GObj_Create(0, 0, 0);
     GObj_AddProc(gobj, Event_PostThink, 20);
     GObj_AddGXLink(gobj, Event_GX, 5, 0);
+    event_vars->savestate = calloc(sizeof(Savestate_v1));
 }
 
 static int start_timer = -1;

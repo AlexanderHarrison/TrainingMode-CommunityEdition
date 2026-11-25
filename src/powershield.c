@@ -139,6 +139,10 @@ static int falco_shoot_direction = 0;
 
 static void PutOnGround(GOBJ *ft);
 
+void Event_Init(GOBJ *menu) {
+    event_vars->savestate = calloc(sizeof(Savestate_v1));
+}
+
 void Event_Think(GOBJ *menu) {
     GOBJ *player = Fighter_GetGObj(0);
     FighterData *player_data = player->userdata;

@@ -6463,6 +6463,9 @@ void Event_Init(GOBJ *gobj)
     GObj_AddProc(gobj, Event_PostThink, 20);
     GObj_AddGXLink(gobj, HitboxTrails_GX, 5, 0);
 
+    // init savestate struct
+    event_vars->savestate2 = calloc(sizeof(Savestate_v2));
+
     // Init runtime options...
     
     // recovery options
