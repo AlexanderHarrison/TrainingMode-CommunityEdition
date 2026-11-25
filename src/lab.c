@@ -1707,9 +1707,6 @@ void CPUOnHit(void) {
             if (hit_idx < stc_tdi_val_num)
             {
                 custom_di = &stc_tdi_vals[hit_idx];
-                int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
-                eventData->cpu_tdi_lstick_x = (int)(custom_di->lstickX * 127.f) * dir_factor;
-                eventData->cpu_tdi_lstick_y = (int)(custom_di->lstickY * 127.f);
                 break;
             } else {
                 goto TDI_RANDOM;
@@ -1718,9 +1715,6 @@ void CPUOnHit(void) {
         case (CPUTDI_RANDOM_CUSTOM):
         {
             custom_di = &stc_tdi_vals[Lab_Randi(stc_tdi_val_num)];
-            int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
-            eventData->cpu_tdi_lstick_x = (int)(custom_di->lstickX * 127.f) * dir_factor;
-            eventData->cpu_tdi_lstick_y = (int)(custom_di->lstickY * 127.f);
             break;
         }
         case (CPUTDI_NONE):
@@ -1734,58 +1728,62 @@ void CPUOnHit(void) {
     
     // decide ASDI direction ----------------------------------------
     
-    // only apply ASDI setting when not using custom TDI.
-    if (custom_di) goto ASDI_AUTO;
-
-    int asdi_kind = LabOptions_CPU[OPTCPU_ASDI].val;
-    switch (asdi_kind)
-    {
-        case (ASDI_AUTO):
-        ASDI_AUTO:
+    if (custom_di) {
+        int dir_factor = CustomTDI_DirectionFactor(cpu, hmn, custom_di);
+        eventData->cpu_tdi_lstick_x = (int)(custom_di->lstickX * 127.f) * dir_factor;
+        eventData->cpu_tdi_lstick_y = (int)(custom_di->lstickY * 127.f);
+        eventData->cpu_asdi_cstick_x = (int)(custom_di->cstickX * 127.f) * dir_factor;
+        eventData->cpu_asdi_cstick_y = (int)(custom_di->cstickY * 127.f);
+    } else {
+        int asdi_kind = LabOptions_CPU[OPTCPU_ASDI].val;
+        switch (asdi_kind)
         {
-            // follow TDI
-            eventData->cpu_asdi_cstick_x = 0;
-            eventData->cpu_asdi_cstick_y = 0;
-            break;
-        }
-        case (ASDI_AWAY):
-        {
-            eventData->cpu_asdi_cstick_x = -127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
-            eventData->cpu_asdi_cstick_y = 0;
-            break;
-        }
-        case (ASDI_TOWARD):
-        {
-            eventData->cpu_asdi_cstick_x = 127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
-            eventData->cpu_asdi_cstick_y = 0;
-            break;
-        }
-        case (ASDI_LEFT):
-        {
-            eventData->cpu_asdi_cstick_x = -127;
-            eventData->cpu_asdi_cstick_y = 0;
-            break;
-        }
-        case (ASDI_RIGHT):
-        {
-            eventData->cpu_asdi_cstick_x = 127;
-            eventData->cpu_asdi_cstick_y = 0;
-            break;
-        }
-        case (ASDI_UP):
-        {
-            eventData->cpu_asdi_cstick_x = 0;
-            eventData->cpu_asdi_cstick_y = 127;
-            break;
-        }
-        case (ASDI_DOWN):
-        {
-            eventData->cpu_asdi_cstick_x = 0;
-            eventData->cpu_asdi_cstick_y = -127;
-            break;
+            case (ASDI_AUTO):
+            {
+                // follow TDI
+                eventData->cpu_asdi_cstick_x = 0;
+                eventData->cpu_asdi_cstick_y = 0;
+                break;
+            }
+            case (ASDI_AWAY):
+            {
+                eventData->cpu_asdi_cstick_x = -127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
+                eventData->cpu_asdi_cstick_y = 0;
+                break;
+            }
+            case (ASDI_TOWARD):
+            {
+                eventData->cpu_asdi_cstick_x = 127 * Fighter_GetOpponentDir(cpu_data, hmn_data);
+                eventData->cpu_asdi_cstick_y = 0;
+                break;
+            }
+            case (ASDI_LEFT):
+            {
+                eventData->cpu_asdi_cstick_x = -127;
+                eventData->cpu_asdi_cstick_y = 0;
+                break;
+            }
+            case (ASDI_RIGHT):
+            {
+                eventData->cpu_asdi_cstick_x = 127;
+                eventData->cpu_asdi_cstick_y = 0;
+                break;
+            }
+            case (ASDI_UP):
+            {
+                eventData->cpu_asdi_cstick_x = 0;
+                eventData->cpu_asdi_cstick_y = 127;
+                break;
+            }
+            case (ASDI_DOWN):
+            {
+                eventData->cpu_asdi_cstick_x = 0;
+                eventData->cpu_asdi_cstick_y = -127;
+                break;
+            }
         }
     }
-
+    
     // decide SDI direction ------------------------------------
     
     if (custom_di) goto SDI_AUTO;
