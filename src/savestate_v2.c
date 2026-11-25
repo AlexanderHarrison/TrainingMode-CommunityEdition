@@ -440,7 +440,7 @@ int Savestate_Save_v2(Savestate_v2 *savestate, int flags)
             memcpy(&ft_data->cpu, &fighter_data->cpu, sizeof(fighter_data->cpu)); // TODO check ptrs
             memcpy(&ft_data->wall, &fighter_data->wall, sizeof(fighter_data->wall));
             ft_data->jab2_timer = fighter_data->jab2_timer;
-            
+
             // TODO check if we can id *_bubble struct bones
             
             // copy items
@@ -795,7 +795,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
         GObj_Destroy(item);
     
     OSReport("load 3\n");
-    
+
     // spawn items
     GOBJ *spawned_items[countof(savestate->item_state)];
     for (u32 i = 0; i < countof(savestate->item_state); ++i) {
@@ -961,7 +961,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
             if (ft_data->is_exist)
             {
                 OSReport("load ft 1\n", j);
-            
+                
                 // get state
                 GOBJ *fighter = Fighter_GetSubcharGObj(i, j);
                 FighterData *fighter_data = fighter->userdata;
@@ -1285,7 +1285,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                 Fighter_UpdateIK(fighter);
 
                 OSReport("load ft 21\n", j);
-            
+
                 // if shield is up, update shield
                 if ((fighter_data->state_id >= ASID_GUARDON) && (fighter_data->state_id <= ASID_GUARDREFLECT))
                 {
@@ -1297,14 +1297,32 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
                     Animation_GuardAgain(fighter);
                 }
 
-                OSReport("load ft 22\n", j);
-
+                // attach to thrower if necessary
                 if (fighter_data->flags.is_robj_child) {
-                    // reset flag, otherwise the attach function early returns and nothing happens
+                    // reset flag, otherwise the attach function early returns and nothing happens.
+                    // This is has a bit of rotation error, but at least it doesn't crash or do wacky stuff.
                     fighter_data->flags.is_robj_child = false;
                     Fighter_ThrownAttach(fighter_data->grab.attacker->userdata, fighter_data);
                 }
-            
+
+                // set kirby hat
+                if (fighter_data->kind == FTKIND_KIRBY) {
+                    int hat_kind = fighter_data->fighter_var.ft_var4;
+                    Kirby_RemoveKirbyHat(fighter);
+                    Kirby_SetKirbyHat(fighter, hat_kind, false);
+
+                    // This code saves samus/dk/sheik charge, but causes some crashes when reloading.
+                    // Also doesn't play well when the character is put to sleep when loading.
+                    // I tried to reload just those specific vars, but wasn't able to find them and gave up.
+                    // JOBJ *new_hat_jobj = (JOBJ*)fighter_data->fighter_var.ft_var5;
+                    // DOBJ *new_hat_dobj = (DOBJ*)fighter_data->fighter_var.ft_var7;
+                    // DOBJ *new_hat_dobj2 = (DOBJ*)fighter_data->fighter_var.ft_var9;
+                    // memcpy(&fighter_data->fighter_var, &ft_data->fighter_var, sizeof(fighter_data->fighter_var));
+                    // fighter_data->fighter_var.ft_var5 = (int)new_hat_jobj;
+                    // fighter_data->fighter_var.ft_var7 = (int)new_hat_dobj;
+                    // fighter_data->fighter_var.ft_var9 = (int)new_hat_dobj2;
+                }
+
                 // process dynamics
 
                 int dyn_proc_num = 45;
@@ -1335,6 +1353,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
     // snap camera to the new positions
     Match_CorrectCamera();
 
+    OSReport("load 9\n");
+    
     // stop crowd cheer
     SFX_StopCrowd();
     
@@ -1351,6 +1371,8 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
     // restore event data
     memcpy(event_vars->event_gobj->userdata, &savestate->event_data, sizeof(savestate->event_data));
 
+    OSReport("load 11\n");
+    
     // remove all particles
     for (int i = 0; i < PTCL_LINKMAX; i++)
     {
@@ -1406,5 +1428,7 @@ int Savestate_Load_v2(Savestate_v2 *savestate, int flags)
     if ((flags & Savestate_Silent) == 0)
         SFX_PlayCommon(0);
 
+    OSReport("load finish\n");
+    
     return true;
 }

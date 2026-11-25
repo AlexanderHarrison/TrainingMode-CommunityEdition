@@ -3476,5 +3476,7 @@ void Fighter_PlayQueuedDamageSounds(FighterData *fp);
 GXColor Fighter_GetPlyHUDColor(int ply); // used for lupe, pokemon stadium text color, results viewport broder
 void FSmash_GetASForAnalogAngle(GOBJ *ft);
 Mtx *Fighter_GetMtxPtr(FighterData *fp);
+void Kirby_RemoveKirbyHat(GOBJ *ft);
+void Kirby_SetKirbyHat(GOBJ *ft, int hat_kind, bool play_sfx);
 
 #endif

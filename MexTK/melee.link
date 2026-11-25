@@ -8,6 +8,8 @@
 8008c3e0:FSmash_GetASForAnalogAngle
 8008702c:Fighter_IncrementReferenceCount
 80087050:Fighter_DecrementReferenceCount
+800f1bac:Kirby_SetKirbyHat
+800EE5C0:Kirby_RemoveKirbyHat
 800693AC:ActionStateChange
 8006f190:FrameSpeedChange
 8036410C:AOBJ_ReqAnim
