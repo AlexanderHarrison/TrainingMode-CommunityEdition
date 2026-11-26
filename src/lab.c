@@ -8,7 +8,7 @@ static DIDraw didraws[6];
 static SDIDraw sdidraws[6];
 static GOBJ *infodisp_gobj_hmn;
 static GOBJ *infodisp_gobj_cpu;
-static RecData_v1 rec_data;
+static RecData_v2 rec_data;
 static SavestateHeader *rec_state;
 static u8 export_status;
 static Arch_LabData *stc_lab_data;

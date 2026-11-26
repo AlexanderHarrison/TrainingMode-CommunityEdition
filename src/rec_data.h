@@ -60,7 +60,6 @@ typedef struct ParsedExportData_v2 {
 // VERSION 1 #####################################################
 
 #define REC_SLOTS_OLD 6
-#define REC_SLOTS 10
 
 typedef struct ExportData_v1
 {
@@ -138,6 +137,25 @@ typedef struct RecordingSave_v1
 } RecordingSave_v1;
 
 // VERSION 2 #####################################################
+
+#define REC_SLOTS 10
+
+typedef struct RecData_v2
+{
+    int hmn_rndm_slot;
+    RecInputData_v1 *hmn_inputs[REC_SLOTS];
+    RecInputData_v1 *hmn_rerecord_inputs;
+    int cpu_rndm_slot;
+    RecInputData_v1 *cpu_inputs[REC_SLOTS];
+    RecInputData_v1 *cpu_rerecord_inputs;
+    int rng_seed_recording_num;
+    u32 *rng_seed_recording;
+    int restore_timer;
+    JOBJ *seek_jobj;
+    Text *text;
+    float seek_left;
+    float seek_right;
+} RecData_v2;
 
 // These work for v1 as well. It will convert v1 losslessly into the v2 format.
 ParsedExportData_v2 ExportData_Import(u8 *transfer_buf);
