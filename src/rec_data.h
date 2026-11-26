@@ -59,7 +59,8 @@ typedef struct ParsedExportData_v2 {
 
 // VERSION 1 #####################################################
 
-#define REC_SLOTS 6
+#define REC_SLOTS_OLD 6
+#define REC_SLOTS 10
 
 typedef struct ExportData_v1
 {
@@ -114,10 +115,10 @@ typedef struct RecInputData_v1
 typedef struct RecData_v1
 {
     int hmn_rndm_slot;
-    RecInputData_v1 *hmn_inputs[REC_SLOTS];
+    RecInputData_v1 *hmn_inputs[REC_SLOTS_OLD];
     RecInputData_v1 *hmn_rerecord_inputs;
     int cpu_rndm_slot;
-    RecInputData_v1 *cpu_inputs[REC_SLOTS];
+    RecInputData_v1 *cpu_inputs[REC_SLOTS_OLD];
     RecInputData_v1 *cpu_rerecord_inputs;
     int rng_seed_recording_num;
     u32 *rng_seed_recording;
@@ -132,8 +133,8 @@ typedef struct RecordingSave_v1
 {
     MatchInit match_data; // this will point to a struct containing match info
     Savestate_v1 savestate;
-    RecInputData_v1 hmn_inputs[REC_SLOTS];
-    RecInputData_v1 cpu_inputs[REC_SLOTS];
+    RecInputData_v1 hmn_inputs[REC_SLOTS_OLD];
+    RecInputData_v1 cpu_inputs[REC_SLOTS_OLD];
 } RecordingSave_v1;
 
 // VERSION 2 #####################################################
@@ -241,8 +242,8 @@ typedef struct ALIGN_4 RecEventData_MenuSettings_Record_v2 {
     u8 start_paused;
     u8 hmn_random_percent;
     u8 cpu_random_percent;
-    u8 hmn_slot_chances[6];
-    u8 cpu_slot_chances[6];
+    u8 hmn_slot_chances[REC_SLOTS];
+    u8 cpu_slot_chances[REC_SLOTS];
 } RecEventData_MenuSettings_Record_v2;
 
 typedef struct CustomTDI {

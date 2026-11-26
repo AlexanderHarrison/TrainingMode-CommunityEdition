@@ -727,6 +727,10 @@ static CPUAction Lab_CPUActionSlot3[] = { { .recSlot = 3 }, ActionEnd, };
 static CPUAction Lab_CPUActionSlot4[] = { { .recSlot = 4 }, ActionEnd, };
 static CPUAction Lab_CPUActionSlot5[] = { { .recSlot = 5 }, ActionEnd, };
 static CPUAction Lab_CPUActionSlot6[] = { { .recSlot = 6 }, ActionEnd, };
+static CPUAction Lab_CPUActionSlot7[] = { { .recSlot = 7 }, ActionEnd, };
+static CPUAction Lab_CPUActionSlot8[] = { { .recSlot = 8 }, ActionEnd, };
+static CPUAction Lab_CPUActionSlot9[] = { { .recSlot = 9 }, ActionEnd, };
+static CPUAction Lab_CPUActionSlot10[] = { { .recSlot = 10 }, ActionEnd, };
 static CPUAction Lab_CPUActionSlotRandom[] = { { .recSlot = RECSLOT_RANDOM }, ActionEnd, };
 
 static CPUAction Lab_CPUActionRandom[] = { { .random = true }, ActionEnd, };
@@ -779,6 +783,10 @@ static CPUAction *Lab_CPUActions[] = {
     Lab_CPUActionSlot4,
     Lab_CPUActionSlot5,
     Lab_CPUActionSlot6,
+    Lab_CPUActionSlot7,
+    Lab_CPUActionSlot8,
+    Lab_CPUActionSlot9,
+    Lab_CPUActionSlot10,
     Lab_CPUActionSlotRandom,
     Lab_CPUActionRandomAdv,
     Lab_CPUActionRandom,
@@ -838,6 +846,10 @@ enum CPU_ACTIONS
     CPUACT_SLOT4,
     CPUACT_SLOT5,
     CPUACT_SLOT6,
+    CPUACT_SLOT7,
+    CPUACT_SLOT8,
+    CPUACT_SLOT9,
+    CPUACT_SLOT10,
     CPUACT_SLOT_RANDOM,
     CPUACT_RANDOMADV,
     CPUACT_RANDOM,
@@ -845,8 +857,8 @@ enum CPU_ACTIONS
     CPUACT_COUNT // total number of counter actions
 };
 
-#define SLOT_ACTIONS CPUACT_SLOT1, CPUACT_SLOT2, CPUACT_SLOT3, CPUACT_SLOT4, CPUACT_SLOT5, CPUACT_SLOT6, CPUACT_SLOT_RANDOM
-#define SLOT_NAMES "Play Slot 1", "Play Slot 2", "Play Slot 3", "Play Slot 4", "Play Slot 5", "Play Slot 6", "Play Random Slot"
+#define SLOT_ACTIONS CPUACT_SLOT1, CPUACT_SLOT2, CPUACT_SLOT3, CPUACT_SLOT4, CPUACT_SLOT5, CPUACT_SLOT6, CPUACT_SLOT7, CPUACT_SLOT8, CPUACT_SLOT9, CPUACT_SLOT10, CPUACT_SLOT_RANDOM
+#define SLOT_NAMES "Play Slot 1", "Play Slot 2", "Play Slot 3", "Play Slot 4", "Play Slot 5", "Play Slot 6", "Play Slot 7", "Play Slot 8", "Play Slot 9", "Play Slot 10", "Play Random Slot"
 
 // Serialized!
 static u8 CPUCounterActionsGround[] = {CPUACT_NONE, CPUACT_SPOTDODGE, CPUACT_SHIELD, CPUACT_RUNUPGRAB, CPUACT_UPB, CPUACT_SIDEBTOWARD, CPUACT_SIDEBAWAY, CPUACT_DOWNB, CPUACT_NEUTRALB, CPUACT_USMASH, CPUACT_DSMASH, CPUACT_FSMASH, CPUACT_ROLLAWAY, CPUACT_ROLLTOWARDS, CPUACT_ROLLRDM, CPUACT_NAIR, CPUACT_FAIR, CPUACT_DAIR, CPUACT_BAIR, CPUACT_UAIR, CPUACT_JAB, CPUACT_FTILT, CPUACT_UTILT, CPUACT_DTILT, CPUACT_DASHATTACK, CPUACT_SHORTHOP, CPUACT_FULLHOP, CPUACT_WAVEDASH_AWAY, CPUACT_WAVEDASH_TOWARDS, CPUACT_WAVEDASH_DOWN, CPUACT_DASH_AWAY, CPUACT_DASH_TOWARDS, SLOT_ACTIONS, CPUACT_RANDOMADV, CPUACT_RANDOM};
@@ -2896,6 +2908,10 @@ enum slot_chance_menu
     OPTSLOTCHANCE_4,
     OPTSLOTCHANCE_5,
     OPTSLOTCHANCE_6,
+    OPTSLOTCHANCE_7,
+    OPTSLOTCHANCE_8,
+    OPTSLOTCHANCE_9,
+    OPTSLOTCHANCE_10,
     OPTSLOTCHANCE_PERCENT,
     OPTSLOTCHANCE_COUNT
 };
@@ -2954,6 +2970,42 @@ static EventOption LabOptions_SlotChancesHMN[OPTSLOTCHANCE_COUNT] = {
         .value_num = 101,
         .disable = 1,
         .OnChange = Lab_ChangeSlot6ChanceHMN,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 7",
+        .desc = {"Chance of slot 7 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot7ChanceHMN,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 8",
+        .desc = {"Chance of slot 8 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot8ChanceHMN,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 9",
+        .desc = {"Chance of slot 9 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot9ChanceHMN,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 10",
+        .desc = {"Chance of slot 10 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot10ChanceHMN,
     },
     {
         .kind = OPTKIND_INT,
@@ -3019,6 +3071,42 @@ static EventOption LabOptions_SlotChancesCPU[OPTSLOTCHANCE_COUNT] = {
         .value_num = 101,
         .disable = 1,
         .OnChange = Lab_ChangeSlot6ChanceCPU,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 7",
+        .desc = {"Chance of slot 7 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot7ChanceCPU,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 8",
+        .desc = {"Chance of slot 8 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot8ChanceCPU,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 9",
+        .desc = {"Chance of slot 9 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot9ChanceCPU,
+    },
+    {
+        .kind = OPTKIND_INT,
+        .name = "Slot 10",
+        .desc = {"Chance of slot 10 occuring."},
+        .format = "%d%%",
+        .value_num = 101,
+        .disable = 1,
+        .OnChange = Lab_ChangeSlot10ChanceCPU,
     },
     {
         .kind = OPTKIND_INT,
@@ -3127,7 +3215,7 @@ enum rec_option
 };
 
 // Serialized!
-static const char *LabValues_RecordSlot[] = {"Random", "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6"};
+static const char *LabValues_RecordSlot[] = {"Random", "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6", "Slot 7", "Slot 8", "Slot 9", "Slot 10"};
 static const char *LabValues_HMNRecordMode[] = {"Off", "Record", "Playback", "Re-Record"};
 static const char *LabValues_CPURecordMode[] = {"Off", "Control", "Record", "Playback", "Re-Record"};
 static const char *LabValues_AutoRestore[] = {"Off", "Playback Ends", "CPU Counters"};
@@ -3306,7 +3394,7 @@ enum player_type {
 };
 
 static const char *LabOptions_HmnCpu[] = {"HMN", "CPU"};
-static const char *LabOptions_Slot[] = {"Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6"};
+static const char *LabOptions_Slot[] = {"Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6", "Slot 7", "Slot 8", "Slot 9", "Slot 10"};
 
 static EventOption LabOptions_SlotManagement[OPTSLOT_COUNT] = {
     {

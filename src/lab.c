@@ -494,6 +494,10 @@ void Lab_ChangeSlot3ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChanc
 void Lab_ChangeSlot4ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 3); }
 void Lab_ChangeSlot5ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 4); }
 void Lab_ChangeSlot6ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 5); }
+void Lab_ChangeSlot7ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 6); }
+void Lab_ChangeSlot8ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 7); }
+void Lab_ChangeSlot9ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 8); }
+void Lab_ChangeSlot10ChanceHMN (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesHMN, 9); }
 
 void Lab_ChangeSlot1ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 0); }
 void Lab_ChangeSlot2ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 1); }
@@ -501,6 +505,10 @@ void Lab_ChangeSlot3ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChanc
 void Lab_ChangeSlot4ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 3); }
 void Lab_ChangeSlot5ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 4); }
 void Lab_ChangeSlot6ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 5); }
+void Lab_ChangeSlot7ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 6); }
+void Lab_ChangeSlot8ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 7); }
+void Lab_ChangeSlot9ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 8); }
+void Lab_ChangeSlot10ChanceCPU (GOBJ *menu_gobj, int _new_val) { ReboundSlotChances(LabOptions_SlotChancesCPU, 9); }
 
 void Lab_ChangeCPUIntang(GOBJ *menu_gobj, int value)
 {
