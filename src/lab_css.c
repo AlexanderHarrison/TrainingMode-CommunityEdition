@@ -538,6 +538,7 @@ void Menu_SelFile_Init(GOBJ *menu_gobj)
 #define FILEINFO_CPUY FILEINFO_HMNY + FILEINFO_YOFFSET
 #define FILEINFO_DATEY FILEINFO_CPUY + (FILEINFO_YOFFSET * 2)
 #define FILEINFO_TIMEY FILEINFO_DATEY + FILEINFO_YOFFSET
+#define FILEINFO_VERSIONY FILEINFO_TIMEY + FILEINFO_YOFFSET
 
     // create file info text
     Text *fileinfo_text = Text_CreateText(SIS_ID, import_data.canvas);
@@ -554,6 +555,7 @@ void Menu_SelFile_Init(GOBJ *menu_gobj)
     Text_AddSubtext(fileinfo_text, FILEINFO_X, FILEINFO_CPUY, "CPU: ");
     Text_AddSubtext(fileinfo_text, FILEINFO_X, FILEINFO_DATEY, "Date: ");
     Text_AddSubtext(fileinfo_text, FILEINFO_X, FILEINFO_TIMEY, "Time: ");
+    Text_AddSubtext(fileinfo_text, FILEINFO_X, FILEINFO_VERSIONY, "Version: ");
 
     // edit title
     Text_SetText(import_data.title_text, 0, "Select Recording");
@@ -683,6 +685,7 @@ void Menu_SelFile_Think(GOBJ *menu_gobj)
     Text_SetText(import_data.fileinfo_text, 2, "CPU: %s", Fighter_GetName(metadata->cpu));
     Text_SetText(import_data.fileinfo_text, 3, "Date: %d/%d/%d", metadata->month, metadata->day, metadata->year);
     Text_SetText(import_data.fileinfo_text, 4, "Time: %d:%02d:%02d", metadata->hour, metadata->minute, metadata->second);
+    Text_SetText(import_data.fileinfo_text, 5, "Version: %i", metadata->version);
 
 
     // check for exit
