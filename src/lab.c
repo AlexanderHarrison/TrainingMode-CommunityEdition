@@ -1015,6 +1015,24 @@ void InfoDisplay_Update(GOBJ *menu_gobj, EventOption menu[], GOBJ *fighter, GOBJ
                     Text_SetText(text, i, "Blastzone U/D: (%.2f,%.2f)", stage->blastzoneTop, stage->blastzoneBottom);
                     break;
                 }
+                case (INFDISP_STALEMOVES):
+                {
+                    Playerblock *pb = Fighter_GetPlayerblock(fighter_data->ply);
+                    // OSReport("%p\n", Fighter_GetStaleMoveTable(fighter_data->ply));
+                    
+                    s16 staled[10] = {0};
+                    int st_i = 0;
+                    for (int i = pb->stale_moves.cur; i < 10; ++i)
+                        staled[st_i++] = pb->stale_moves.queue[i].attack_id;
+                    for (int i = 0; i < pb->stale_moves.cur; ++i)
+                        staled[st_i++] = pb->stale_moves.queue[i].attack_id;
+
+                    Text_SetText(text, i, "Stale: %i %i %i %i %i %i %i %i %i %i",
+                        staled[0], staled[1], staled[2], staled[3], staled[4],
+                        staled[5], staled[6], staled[7], staled[8], staled[9]
+                    );
+                    break;
+                }
                 }
             }
 

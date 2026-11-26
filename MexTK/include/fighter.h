@@ -840,8 +840,12 @@ struct Playerblock
     void *cb_subft_init;  // 0xb8, function executed on subfighter after creating them @ 80031c84
     struct                // 0xbc, stale moves
     {                     //
+        int unk;
         int cur;          // Zero-Indexed. Rolls over after 9. Increments after each write.
-        s16 queue[10];    // array of attack indices
+        struct {
+            u16 attack_id;
+            u16 unk;
+        } queue[10];    // array of attack indices
     } stale_moves;        //
     struct                // 0xE8
     {                     //
