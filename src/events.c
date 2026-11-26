@@ -779,6 +779,10 @@ int Savestate_Load(SavestateHeader *savestate, int flags) {
     return false;
 }
 
+int Savestate_Save(Savestate_v2 *savestate, int flags) {
+    return Savestate_Save_v2((Savestate_v2*)savestate, flags);
+}
+
 EventVars stc_event_vars = {
     .event_desc = 0,
     .menu_assets = 0,
@@ -787,8 +791,7 @@ EventVars stc_event_vars = {
     .rng = &rng,
     .game_timer = 0,
     .flags = 0,
-    .Savestate_Save_v1 = Savestate_Save_v1,
-    .Savestate_Save_v2 = Savestate_Save_v2,
+    .Savestate_Save = Savestate_Save,
     .Savestate_Load = Savestate_Load,
     .Message_Display = Message_Display,
     .Tip_Display = Tip_Display,
@@ -1327,6 +1330,9 @@ void EventLoad(void)
     // Init static structure containing event variables
     stc_event_vars.event_desc = event_desc;
     stc_event_vars.event_gobj = gobj;
+
+    // init savestate
+    event_vars->savestate = calloc(sizeof(Savestate_v2));
 
     // init the pause menu
     GOBJ *menu_gobj = EventMenu_Init(*evFunction->menu_start);

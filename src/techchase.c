@@ -443,7 +443,7 @@ void MoveFighter(GOBJ *ft, Vec3 *pos, float *facing_direction) {
 
 void Event_Think(GOBJ *menu) {
     if (event_vars->game_timer == 1) {
-        event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
+        event_vars->Savestate_Save(event_vars->savestate, Savestate_Silent);
         Reset();
     }
 
@@ -703,8 +703,6 @@ void Event_Init(GOBJ *gobj) {
     FighterData *hmn_data = hmn->userdata;
     hmn_pad_index = hmn_data->pad_index;
     null_pad_index = (hmn_pad_index + 1) % 4;
-
-    event_vars->savestate = calloc(sizeof(Savestate_v1));
 }
 
 static void Exit(GOBJ *menu) {

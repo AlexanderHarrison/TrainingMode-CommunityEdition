@@ -4150,7 +4150,7 @@ void Record_InitState(GOBJ *menu_gobj)
 {
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
-    if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
+    if (event_vars->Savestate_Save((Savestate_v2*)rec_state, 0)) {
         Record_OnSuccessfulSave(1);
     }
 }
@@ -4161,7 +4161,7 @@ int Record_RemakeState(void)
     stc_playback_cancelled_hmn = false;
     stc_playback_cancelled_cpu = false;
     int prev_frame = rec_state->frame;
-    if (event_vars->Savestate_Save_v2((Savestate_v2*)rec_state, 0)) {
+    if (event_vars->Savestate_Save((Savestate_v2*)rec_state, 0)) {
         Record_OnSuccessfulSave(0);
     }
     int new_frame = rec_state->frame;
@@ -4533,7 +4533,7 @@ void Record_OnSuccessfulSave(int deleteRecordings)
 
     // also save to personal savestate
     
-    event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
+    event_vars->Savestate_Save(event_vars->savestate, 0);
     event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
 }
 void Memcard_Wait()
@@ -4735,7 +4735,7 @@ void Savestates_Update()
                     if (save_timer[port] == SAVE_THRESHOLD)
                     {
                         // save state
-                        event_vars->Savestate_Save_v2(event_vars->savestate2, 0);
+                        event_vars->Savestate_Save(event_vars->savestate, 0);
                         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
                         save_timer[port] = 0; // Reset timer after saving
                         lockout_timer = LOCKOUT_DURATION;
@@ -4750,7 +4750,7 @@ void Savestates_Update()
                 if (pad->down & loadstate_mask)
                 {
                     // load state
-                    Record_LoadSavestate(&event_vars->savestate2->header);
+                    Record_LoadSavestate(&event_vars->savestate->header);
                     stc_playback_cancelled_hmn = false;
                     stc_playback_cancelled_cpu = false;
 
@@ -6480,7 +6480,7 @@ void Event_Init(GOBJ *gobj)
     GObj_AddGXLink(gobj, HitboxTrails_GX, 5, 0);
 
     // init savestate struct
-    event_vars->savestate2 = calloc(sizeof(Savestate_v2));
+    event_vars->savestate = calloc(sizeof(Savestate_v2));
 
     // Init runtime options...
     
@@ -7064,8 +7064,8 @@ void Event_Think(GOBJ *event)
 {
     // Save a minor state at event start, so people can reset if they SD.
     // This cannot be done in Event_Init, so we do it here.
-    if (!event_vars->savestate2->header.is_initialized) {
-        event_vars->Savestate_Save_v2(event_vars->savestate2, Savestate_Silent);
+    if (!event_vars->savestate->header.is_initialized) {
+        event_vars->Savestate_Save(event_vars->savestate, Savestate_Silent);
         event_vars->savestate_saved_while_mirrored = event_vars->loaded_mirrored;
     }
 

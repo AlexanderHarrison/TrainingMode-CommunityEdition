@@ -1221,7 +1221,7 @@ static EventOption LabOptions_General[OPTGEN_COUNT] = {
     },
     {
         .kind = OPTKIND_INT,
-        .value_num = 999,
+        .value_num = 1000,
         .name = "Player Percent",
         .desc = {"Adjust the player's percent."},
         .format = "%d%%",
@@ -2067,7 +2067,7 @@ static EventOption LabOptions_ActionLog_Default[OPTACTIONLOG_COUNT] = {
     },
     {
         .kind = OPTKIND_INT,
-        .value_num = 999,
+        .value_num = 1000,
         .format = "%d",
         .name = "State Frame",
         .desc = {"Set the minimum state frame."},
@@ -2359,7 +2359,7 @@ static const EventOption LabOptions_CPU_FinishMoveCPU = {
 static EventOption LabOptions_CPU[OPTCPU_COUNT] = {
     {
         .kind = OPTKIND_INT,
-        .value_num = 999,
+        .value_num = 1000,
         .name = "CPU Percent",
         .desc = {"Adjust the CPU's percent."},
         .format = "%d%%",

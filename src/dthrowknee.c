@@ -239,7 +239,6 @@ void Event_Init(GOBJ *menu) {
     GOBJ *gobj = GObj_Create(0, 0, 0);
     GObj_AddProc(gobj, Event_PostThink, 20);
     GObj_AddGXLink(gobj, Event_GX, 5, 0);
-    event_vars->savestate = calloc(sizeof(Savestate_v1));
 }
 
 static int start_timer = -1;
@@ -258,7 +257,7 @@ void Event_Think(GOBJ *menu) {
         PutOnGround(hmn);
         PutOnGround(cpu);
         Match_CorrectCamera();
-        event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
+        event_vars->Savestate_Save(event_vars->savestate, Savestate_Silent);
         Reset();
     }
     

@@ -271,8 +271,6 @@ void Event_Init(GOBJ *gobj) {
     FighterData *hmn_data = hmn->userdata;
     FighterData *cpu_data = cpu->userdata;
 
-    event_vars->savestate = calloc(sizeof(Savestate_v1));
-    
     // change team - homing missiles don't move towards characters on same team
     hmn_data->team = 0;
     cpu_data->team = 1;
@@ -289,7 +287,7 @@ void Event_Think(GOBJ *menu) {
     // For some reason, Savestate_Save crashes in Event_Init.
     // So we need to init on first think frame.
     if (event_vars->game_timer == 1) {
-        event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
+        event_vars->Savestate_Save(event_vars->savestate, Savestate_Silent);
         Reset();
     }
     

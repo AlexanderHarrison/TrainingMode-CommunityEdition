@@ -203,12 +203,11 @@ void Event_Init(GOBJ* gobj) {
     GetLedgePositions(ledge_positions);
     GOBJ *draw_gobj = GObj_Create(0, 0, 0);
     GObj_AddGXLink(draw_gobj, Draw_Lines, 3, 0);
-    event_vars->savestate = calloc(sizeof(Savestate_v1));
 }
 
 void Event_Think(GOBJ *menu) {
     if (event_vars->game_timer == 1) {
-        event_vars->Savestate_Save_v1(event_vars->savestate, Savestate_Silent);
+        event_vars->Savestate_Save(event_vars->savestate, Savestate_Silent);
         Reset(0);
     }
 
